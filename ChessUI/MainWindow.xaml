@@ -5,17 +5,44 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Chess"
         mc:Ignorable="d"
-        Title="MainWindow" Height="800" Width="800"
-        Icon="pics/icon.ico">
-    <Grid>
-        <Grid.Background>
-            <ImageBrush ImageSource="pics/Board.png"/>
-        </Grid.Background>
-        
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="41*"/>
-            <ColumnDefinition Width="9*"/>
-        </Grid.ColumnDefinitions>
+        Title="Chess" Width="600" SizeToContent="Height"
+        Icon="pics/icon.ico"
+        WindowStartupLocation="CenterScreen"
+        Background="Black">
+    <Viewbox>
 
-    </Grid>
+        <Grid x:Name="PieceGrid"
+              Width="600"
+              Height="600">
+            <Grid.Background>
+                <ImageBrush ImageSource="pics/Board.png"/>
+            </Grid.Background>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+        </Grid>
+    </Viewbox>
+        
+
+
+
 </Window>
