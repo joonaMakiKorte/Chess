@@ -1,20 +1,109 @@
 #include "ChessBoard.h"
 
-ChessBoard::Board::Board() {
-	white_pawns = 0x000000000000FF00;      // a2, b2, c2, d2, e2, f2, g2, h2
-	black_pawns = 0x00FF000000000000;      // a7, b7, c7, d7, e7, f7, g7, h7
-	white_rooks = 0x0000000000000081;      // a1, h1
-	black_rooks = 0x8100000000000000;      // a8, h8
-	white_knights = 0x0000000000000042;    // b1, g1
-	black_knights = 0x4200000000000000;    // b8, g8
-	white_bishops = 0x0000000000000024;    // c1, f1
-	black_bishops = 0x2400000000000000;    // c8, f8
-	white_queen = 0x0000000000000010;      // d1
-	black_queen = 0x1000000000000000;      // d8
-	white_king = 0x0000000000000008;       // e1
-	black_king = 0x0800000000000000;       // e8
+ChessBoard::ChessBoard() {
+    board = ChessLogic();
 }
 
-ChessBoard::ChessBoard() {
-	chess_board = Board();
+bool ChessBoard::ValidateMove(const char* move) {
+    // Validate move notation
+    if (strlen(move) != 4) {
+        throw std::invalid_argument("Invalid move notation");
+    }
+
+    // Extract source and target squares
+    char sourceSquare[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
+    char targetSquare[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
+
+
+
+	return false;
+}
+
+std::string ChessBoard::GetBoardState() {
+	// Generate the FEN string based on the current board state
+	std::string fen;
+
+    // 1. Piece Placement
+    for (int rank = 7; rank >= 0; rank--) {
+        int empty_squares = 0;
+        for (int file = 0; file < 8; file++) {
+            int square = rank * 8 + file;
+
+            // Get piece type at square
+            char piece = board.getPieceType(square);
+
+            // If empty continue
+            if (piece == '\0') {
+                empty_squares++;
+                continue;
+            }
+
+            // Add empty squares count if any
+            if (empty_squares > 0) {
+                fen += std::to_string(empty_squares);
+                empty_squares = 0;
+            }
+
+            // Add the piece
+            fen += piece;
+        }
+
+        // Add empty squares count at the end of the rank
+        if (empty_squares > 0) {
+            fen += std::to_string(empty_squares);
+        }
+
+        // Add a slash between ranks (except the last one)
+        if (rank > 0) {
+            fen += '/';
+        }
+    }
+
+    // 2. Active Color
+    std::string active_color = board.isWhite() ? " w " : " b ";
+    fen += active_color;
+
+    // 3. Castling Rights (assume all castling rights available for simplicity)
+    fen += board.getCastlingRightsString();
+
+    // 4. En Passant Target Square (none for starting position)
+    fen += " " + board.getEnPassantString() + " ";
+
+    // 5. Half-Move Clock (assume 0 for simplicity)
+    fen += board.getHalfMoveString();
+
+    // 6. Full-Move Number (assume 1 for starting position)
+    fen += board.getFullMoveString();
+
+    return fen;
+}
+
+uint64_t ChessBoard::SquareToBitboard(const char* square) {
+    // Validate square notation
+    if (strlen(square) != 2) {
+        throw std::invalid_argument("Invalid square notation");
+    }
+
+    // Extract file and rank from the square string
+    // File=col, rank=row
+    char file_char = square[0]; // File (a-h)
+    char rank_char = square[1]; // Rank (1-8)
+
+    // Convert file to 0-based index (a=0, b=1, ..., h=7)
+    int file = tolower(file_char) - 'a';
+    if (file < 0 || file > 7) {
+        throw std::invalid_argument("Invalid file in square notation");
+    }
+
+    // Convert rank to 0-based index (1=0, 2=1, ..., 8=7)
+    int rank = rank_char - '1';
+    if (rank < 0 || rank > 7) {
+        throw std::invalid_argument("Invalid rank in square notation");
+    }
+
+    // Calculate the square index (0-63)
+    int square_index = rank * 8 + file;
+
+    // Create a bitboard with only this square set
+    return 1ULL << square_index;
 }

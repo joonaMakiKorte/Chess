@@ -7,8 +7,14 @@
 #ifndef PCH_H
 #define PCH_H
 
-// add headers that you want to pre-compile here
+// Pre-compiled headers
 #include "framework.h"
 #include <cstdint>
+#include <string>
+#include <cstring>
+#include <stdexcept>
+
+// Pre-compiled variables
+constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
 
 #endif //PCH_H
