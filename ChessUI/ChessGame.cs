@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace Chess
 {
@@ -28,9 +29,24 @@ namespace Chess
     { "R", "N", "B", "Q", "K", "B", "N", "R" }
     };
 
-    public string[,] GetBoardState()
+        public string[,] GetBoardState()
         {
             return pieceLocations;
         }
+
+
+        // Moves the piece
+        public void MovePiece(int fromRow, int fromCol, int toRow, int toCol)
+        {
+            // check if there even is a piece to move
+            if (pieceLocations[fromRow, fromCol] == "") return;
+
+            pieceLocations[toRow, toCol] = pieceLocations[fromRow, fromCol]; // Moves the piece
+            pieceLocations[fromRow, fromCol] = ""; // clear the old pos
+
+            Console.WriteLine();
+            
+        }
+
     }
 }
