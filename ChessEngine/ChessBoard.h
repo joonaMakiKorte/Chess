@@ -2,52 +2,40 @@
 #define CHESSBOARD_H	
 
 #include "pch.h"
+#include "Board.h"
 
 class ChessBoard {
 private:
-    // Struct type to store state of chessboard
-    struct Board {
-        // Represent each piece type as a bitboard
-        uint64_t white_pawns;
-        uint64_t black_pawns;
-        uint64_t white_knights;
-        uint64_t black_knights;
-        uint64_t white_bishops;
-        uint64_t black_bishops;
-        uint64_t white_rooks;
-        uint64_t black_rooks;
-        uint64_t white_queen;
-        uint64_t black_queen;
-        uint64_t white_king;
-        uint64_t black_king;
-
-        // Get locations of white or black pieces (bitboard)
-        // Uses bitwise OR operation to combine occupancy of all pieces of same color
-        const uint64_t white_pieces() const {
-            return white_pawns | white_rooks | white_knights |
-                white_bishops | white_queen | white_king;
-        }
-        const uint64_t black_pieces() const {
-            return black_pawns | black_rooks | black_knights |
-                black_bishops | black_queen | black_king;
-        }
-
-        // Get all occupied squares (bitboard)
-        // Uses bitwise OR operation to combine occupancy of all white and black pieces
-        const uint64_t occupied() const {
-            return white_pieces() | black_pieces();
-        }
-
-        // Initialize each piece with starting pos
-        Board();
-    };
-
-    // Store the board
-    Board chess_board;
+    // Store the board logic
+    Board board;
 
 public:
     // Initialize the chessboard
     ChessBoard();
+
+    // Return bool indicating if move is valid
+    // If valid, update board accordingly
+    // Takes the move as const char pointer parameter
+    bool ValidateMove(const char* move);
+
+    // Return board state as a FEN string (Forsyth-Edwards Notation)
+    // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+    // Explanation:
+    // 8 ranks, '/' separates the ranks
+    // 'p'=pawn, 'r'=rook, 'n'=knight, 'b'=bishop, 'q'=queen, 'k'=king
+    // Lowercase = black, uppercase = white
+    // 
+    // 'w' = active color
+    // 'KQkq' = catling rights
+    // '-' = En Passant Target Square
+    // '0' = half move clock
+    // '1' = full move number
+    std::string GetBoardState();
+
+private:
+    // Converts a square to its bitboard representation
+    // Takes a C-style string of the square as the param
+    uint64_t SquareToBitboard(const char* square);
 };
 
 

@@ -139,14 +139,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AttackTables.h" />
     <ClInclude Include="ChessBoard.h" />
     <ClInclude Include="ChessEngineExports.h" />
+    <ClInclude Include="Board.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AttackTables.cpp" />
     <ClCompile Include="ChessBoard.cpp" />
     <ClCompile Include="ChessEngineExports.cpp" />
+    <ClCompile Include="Board.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
