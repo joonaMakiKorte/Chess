@@ -9,6 +9,11 @@ namespace Chess
 {
     public class ChessGame
     {
+
+
+        private bool isWhiteTurn = true; // white moves first
+
+
         private IntPtr board;
         string[,] pieceLocations = new string[8, 8] {
     // Rank 8 (Black back row)
@@ -33,20 +38,27 @@ namespace Chess
         {
             return pieceLocations;
         }
+        public bool IsWhiteTURN()
+        {
+            return isWhiteTurn;
+        }
+        //Method to switch turn
+        public void SwitchTurn()
+        {
+            isWhiteTurn = !isWhiteTurn; // switches between false and true
+        }
 
 
         // Moves the piece
         public void MovePiece(int fromRow, int fromCol, int toRow, int toCol)
         {
-            // check if there even is a piece to move
-            if (pieceLocations[fromRow, fromCol] == "") return;
+            
 
             pieceLocations[toRow, toCol] = pieceLocations[fromRow, fromCol]; // Moves the piece
             pieceLocations[fromRow, fromCol] = ""; // clear the old pos
-
-            Console.WriteLine();
-            
         }
+
+
 
     }
 }

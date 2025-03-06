@@ -11,35 +11,58 @@
         Background="Black">
     <Viewbox>
 
-        <Grid x:Name="PieceGrid"
-              Width="600"
-              Height="600">
-            <Grid.Background>
-                <ImageBrush ImageSource="pics/Board.png"/>
-            </Grid.Background>
 
+
+        <Grid x:Name="MainGrid">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+                
+                <RowDefinition Height="Auto" />
+                <!--for label-->
+                <RowDefinition Height="*"/> <!--for chessboard-->
 
+            </Grid.RowDefinitions>
+            
+            
+
+            <Label x:Name="TurnLabel" Content="White's Turn" 
+                   HorizontalAlignment="Center" VerticalAlignment="Top" 
+                   FontSize="20" Foreground="White" Margin="0,10,0,0"
+                   Grid.Row="0"/>
+            
+            <Grid x:Name="PieceGrid"
+                MouseDown="PieceGrid_MouseDown"
+                Grid.Row="1"
+                Width="600"
+                Height="600">
+                <Grid.Background>
+                    <ImageBrush ImageSource="pics/Board.png"/>
+                </Grid.Background>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+
+            </Grid>
         </Grid>
+        
     </Viewbox>
         
 

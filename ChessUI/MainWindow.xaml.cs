@@ -40,37 +40,57 @@ namespace Chess
         }
 
 
-        private void Piece_Click(object sender, MouseButtonEventArgs e)
+        
+
+
+        private void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Image clickedImage = sender as Image;
+            // Get the mouse position relative to the grid.
+            Point position = e.GetPosition(PieceGrid);
 
-            int index = PieceGrid.Children.IndexOf(clickedImage);
-            int row = index / 8;
-            int col = index % 8;
+            // Calculate the dimensions of each cell assuming an 8x8 grid.
+            double cellWidth = PieceGrid.ActualWidth / 8;
+            double cellHeight = PieceGrid.ActualHeight / 8;
 
+            // Determine the column and row indices based on the click.
+            int col = (int)(position.X / cellWidth);
+            int row = (int)(position.Y / cellHeight);
 
-
-            if (selectedPiece == null) // First click: Select piece
+            // First click: select a piece if one exists.
+            if (selectedPiece == null)
             {
                 string piece = chessGame.GetBoardState()[row, col];
-                if (!string.IsNullOrEmpty(piece)) // Check if piece exists
+
+                // check if piece exists and if it belongs to right player
+                if (!string.IsNullOrEmpty(piece))
                 {
-                    selectedPiece = (row, col);
+                    if ((chessGame.IsWhiteTURN() && Char.IsUpper(piece[0]) ||
+                        (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))) 
+                    {
+                        selectedPiece = (row, col);
+                    }
+
+
+                else
+                    {
+                        return;
+                    } 
                 }
             }
-            else // Second click: Move piece
+            else // Second click: move the piece.
             {
                 (int fromRow, int fromCol) = selectedPiece.Value;
                 string move = $"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}";
+                Console.WriteLine(move);
                 chessGame.MovePiece(fromRow, fromCol, row, col);
                 UpdateBoard();
 
 
-                selectedPiece = null; // Reset selection
+                chessGame.SwitchTurn();
 
-
+                UpdateTurnDisplay();
+                selectedPiece = null; // Reset selection.
             }
-
         }
         private void InitializeBoard()
         {
@@ -81,12 +101,14 @@ namespace Chess
             {
                 for (int col = 0; col < 8; col++)
                 {
+
                     Image image = new Image();
                     pieceImages[row, col] = image;
-                    image.MouseDown += Piece_Click; // click event
+                    
                     Grid.SetRow(image, row);
                     Grid.SetColumn(image, col);
                     PieceGrid.Children.Add(image);
+
                 }
             }
         }
@@ -103,6 +125,14 @@ namespace Chess
                     pieceImages[row, col].Source = images.GetPieceImage(piece);
                 }
             }
+        }
+
+        private void UpdateTurnDisplay()
+        {
+           
+            TurnLabel.Content = chessGame.IsWhiteTURN() ? "White's Turn" : "Black's Turn";
+
+
         }
     }
 }
