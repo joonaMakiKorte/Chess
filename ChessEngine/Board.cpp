@@ -1,5 +1,7 @@
+#include "pch.h"
 #include "Board.h"
 #include "AttackTables.h"
+
 
 Board::Board(): 
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
@@ -111,7 +113,7 @@ std::string Board::squareToString(int square) const {
 uint64_t Board::getPawnMoves(uint64_t pawn) {
 	if (pawn == 0) return 0; // No pawn present
 
-	int square = __builtin_ctzll(pawn); // Get index of the pawn's position
+    int square = std::bitset<64>(pawn).to_ullong(); // Get index of the pawn's position
 	// Using bitwise OR operation get all moves from the location
 	// Get moves from white or black pawn move table depending which turn is active
 	return white ?
@@ -119,22 +121,3 @@ uint64_t Board::getPawnMoves(uint64_t pawn) {
 	  : (BLACK_PAWN_MOVES[square].single_push | BLACK_PAWN_MOVES[square].double_push | BLACK_PAWN_MOVES[square].captures);
 }
 
-uint64_t Board::getKnightMoves(uint64_t knight) {
-	
-}
-
-uint64_t Board::getBishopMoves(uint64_t bishop) {
-
-}
-
-uint64_t Board::getRookMoves(uint64_t rook) {
-
-}
-
-uint64_t Board::getQueenMoves(uint64_t queen) {
-
-}
-
-uint64_t Board::getKingMoves(uint64_t king) {
-
-}

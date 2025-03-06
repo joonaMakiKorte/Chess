@@ -1,7 +1,6 @@
 #ifndef CHESSBOARD_H
 #define CHESSBOARD_H	
 
-#include "pch.h"
 #include "Board.h"
 
 class ChessBoard {

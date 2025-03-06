@@ -1,8 +1,6 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "pch.h"
-
 class Board {
 private:
     // Represent each piece type as a bitboard

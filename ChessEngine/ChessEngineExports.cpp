@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ChessEngineExports.h"
 #include "ChessBoard.h"
 
@@ -19,5 +20,5 @@ extern "C" CHESSENGINE_API bool ValidateMove(void* board, const char* move) {
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* back to ChessBoard*
     std::string state = b->GetBoardState(); // Get board state as FEN string
-    strncpy(output, state.c_str(), size); // Convert state to C-style string and copy into the output buffer 
+    strncpy_s(output, size, state.c_str(), _TRUNCATE); // Convert state to C-style string and copy into the output buffer 
 }

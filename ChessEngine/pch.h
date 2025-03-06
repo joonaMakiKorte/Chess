@@ -14,6 +14,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <array>
+#include <bitset>
 
 // Pre-computed variables
 constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables

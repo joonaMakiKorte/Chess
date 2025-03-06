@@ -63,6 +63,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ChessEngineInterop.cs" />
     <Compile Include="ChessGame.cs" />
     <Compile Include="Images.cs" />
     <Compile Include="MainWindow.xaml.cs">
