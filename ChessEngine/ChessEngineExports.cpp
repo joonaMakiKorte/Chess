@@ -12,8 +12,8 @@ extern "C" CHESSENGINE_API void DestroyBoard(void* board) {
 }
 
 extern "C" CHESSENGINE_API bool ValidateMove(void* board, const char* move) {
-    ChessBoard* b = static_cast<ChessBoard*>(board);
-    return b->ValidateMove(move); // Implement this method in the Board class
+    ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
+    return b->ValidateMove(move); // Return move validity
 }
 
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {

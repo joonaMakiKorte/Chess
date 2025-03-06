@@ -1,4 +1,5 @@
 #include "Board.h"
+#include "AttackTables.h"
 
 Board::Board(): 
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
@@ -74,13 +75,16 @@ std::string Board::getFullMoveString() const {
 }
 
 uint64_t Board::getLegalMoves(uint64_t from) {
+	uint64_t legal_moves = 0ULL;
 	// Get the piece type at the source square
 	char piece = getPieceType(from);
 	switch (tolower(piece)) // Convert to lowercase, we use turn flag to determine if white or not
 	{
-
-		default: throw std::invalid_argument("Invalid piece type");
+	case 'p': legal_moves = getPawnMoves(from); break;
+	default: throw std::invalid_argument("Invalid piece type");
 	}
+
+	return legal_moves;
 }
 
 const uint64_t Board::whitePieces() const {
@@ -105,7 +109,14 @@ std::string Board::squareToString(int square) const {
 }
 
 uint64_t Board::getPawnMoves(uint64_t pawn) {
-	
+	if (pawn == 0) return 0; // No pawn present
+
+	int square = __builtin_ctzll(pawn); // Get index of the pawn's position
+	// Using bitwise OR operation get all moves from the location
+	// Get moves from white or black pawn move table depending which turn is active
+	return white ?
+		(WHITE_PAWN_MOVES[square].single_push | WHITE_PAWN_MOVES[square].double_push | WHITE_PAWN_MOVES[square].captures)
+	  : (BLACK_PAWN_MOVES[square].single_push | BLACK_PAWN_MOVES[square].double_push | BLACK_PAWN_MOVES[square].captures);
 }
 
 uint64_t Board::getKnightMoves(uint64_t knight) {

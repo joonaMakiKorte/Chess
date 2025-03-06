@@ -18,9 +18,12 @@ bool ChessBoard::ValidateMove(const char* move) {
     uint64_t source_bitb = SquareToBitboard(source_square);
     uint64_t target_bitb = SquareToBitboard(target_square);
 
+    // Get all legal moves from the source square
+    uint64_t legal_moves = board.getLegalMoves(source_bitb);
 
-
-	return false;
+    // Bitwise AND operation to check if target is in legal moves
+    // Returns bool indicating if result is non-zero, meaning target exists in moves
+    return (target_bitb & legal_moves) != 0;
 }
 
 std::string ChessBoard::GetBoardState() {
