@@ -68,6 +68,8 @@ namespace Chess
                         (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))) 
                     {
                         selectedPiece = (row, col);
+
+                        pieceBorders[row, col].BorderBrush = Brushes.Blue; // change color
                     }
 
 
@@ -85,6 +87,9 @@ namespace Chess
                 chessGame.MovePiece(fromRow, fromCol, row, col);
                 UpdateBoard();
 
+                // clear border after move
+                pieceBorders[fromRow, fromCol].BorderBrush = Brushes.Transparent;
+
 
                 chessGame.SwitchTurn();
 
@@ -92,6 +97,10 @@ namespace Chess
                 selectedPiece = null; // Reset selection.
             }
         }
+
+
+        //keeps track of borders
+        private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
         private void InitializeBoard()
         {
 
@@ -102,7 +111,30 @@ namespace Chess
                 for (int col = 0; col < 8; col++)
                 {
 
-                    Image image = new Image();
+
+                    // Create a border for each square
+                    Border border = new Border
+                    {
+                        BorderBrush = Brushes.Transparent, // no border first
+                        BorderThickness = new Thickness(3), // set border's thickness
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        VerticalAlignment = VerticalAlignment.Stretch
+                    };
+                    pieceBorders[row, col] = border;
+
+                    // add border to grid
+                    Grid.SetRow(border, row);
+                    Grid.SetColumn(border, col);
+                    PieceGrid.Children.Add(border);
+
+
+                    // create image for each piece
+                    Image image = new Image
+                    {
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        VerticalAlignment = VerticalAlignment.Stretch,
+                        Stretch = Stretch.UniformToFill
+                    };
                     pieceImages[row, col] = image;
                     
                     Grid.SetRow(image, row);
@@ -122,7 +154,14 @@ namespace Chess
                 for (int col = 0; col < 8; col++)
                 {
                     string piece = boardState[row, col];
+
+                    // image for each piece
                     pieceImages[row, col].Source = images.GetPieceImage(piece);
+
+                    // set image alignment and stretch
+                    pieceImages[row, col].HorizontalAlignment = HorizontalAlignment.Stretch;
+                    pieceImages[row, col].VerticalAlignment = VerticalAlignment.Stretch;
+                    pieceImages[row, col].Stretch = Stretch.UniformToFill;
                 }
             }
         }
