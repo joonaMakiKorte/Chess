@@ -10,6 +10,7 @@ Board::Board():
 	half_moves(0),                         // Initially 0
 	full_moves(0)                          // Initially 0
 {
+	// Standard little-endian rank-file mapping (LSB = a1, MSB = h8)
 	white_pawns = 0x000000000000FF00;      // a2, b2, c2, d2, e2, f2, g2, h2
 	black_pawns = 0x00FF000000000000;      // a7, b7, c7, d7, e7, f7, g7, h7
 	white_rooks = 0x0000000000000081;      // a1, h1
@@ -29,23 +30,19 @@ bool Board::isWhite() {
 }
 
 char Board::getPieceType(uint64_t square) const {
-	char piece = '\0'; // Empty as default
-
-	// Check each piece type
-	if (white_pawns & square) piece = 'P';
-	else if (black_pawns & square) piece = 'p';
-	else if (white_knights & square) piece = 'N';
-	else if (black_knights & square) piece = 'n';
-	else if (white_bishops & square) piece = 'B';
-	else if (black_bishops & square) piece = 'b';
-	else if (white_rooks & square) piece = 'R';
-	else if (black_rooks & square) piece = 'r';
-	else if (white_queen & square) piece = 'Q';
-	else if (black_queen & square) piece = 'q';
-	else if (white_king & square) piece = 'K';
-	else if (black_king & square) piece = 'k';
-
-	return piece;
+	if (white_pawns & square) return 'P';
+	if (black_pawns & square) return 'p';
+	if (white_knights & square) return 'N';
+	if (black_knights & square) return 'n';
+	if (white_bishops & square) return 'B';
+	if (black_bishops & square) return 'b';
+	if (white_rooks & square) return 'R';
+	if (black_rooks & square) return 'r';
+	if (white_queen & square) return 'Q';
+	if (black_queen & square) return 'q';
+	if (white_king & square) return 'K';
+	if (black_king & square) return 'k';
+	return '\0'; // Empty square
 }
 
 std::string Board::getCastlingRightsString() const {
@@ -68,13 +65,14 @@ std::string Board::getEnPassantString() const {
 	return square;
 }
 
-std::string Board::getHalfMoveString() const {
-	return std::to_string(half_moves);
+int Board::getHalfMoveClock() const {
+	return half_moves;
 }
 
-std::string Board::getFullMoveString() const {
-	return std::to_string(full_moves);
+int Board::getFullMoveNumber() const {
+	return full_moves;
 }
+
 
 uint64_t Board::getLegalMoves(uint64_t from) {
 	uint64_t legal_moves = 0ULL;

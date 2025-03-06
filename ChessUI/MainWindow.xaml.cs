@@ -37,12 +37,8 @@ namespace Chess
             chessGame.LoadFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
             InitializeBoard();
             UpdateBoard();
-
-
+            chessGame.LoadDll();
         }
-
-
-        
 
 
         private void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)

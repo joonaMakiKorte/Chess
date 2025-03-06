@@ -48,11 +48,11 @@ public:
     // Get en passant target square as a string
     std::string getEnPassantString() const;
 
-    // Get half moves as string
-    std::string getHalfMoveString() const;
+    // Get half moves
+    int getHalfMoveClock() const;
 
-    // Get full moves as string
-    std::string getFullMoveString() const;
+    // Get full moves 
+    int getFullMoveNumber() const;
 
     // Get all legal moves from a square as a bitboard
     // Takes the source square as the parameter

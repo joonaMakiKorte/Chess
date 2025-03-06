@@ -53,7 +53,28 @@ namespace Chess
 
         }
 
+        public void LoadDll()
+        {
+            // Create a new chess board
+            IntPtr board = ChessEngineInterop.CreateBoard();
 
+            if (board == IntPtr.Zero)
+            {
+                Console.WriteLine("Failed to create board.");
+                return;
+            }
+
+            // Retrieve and print the board state (FEN)
+            string fen = ChessEngineInterop.GetBoardStateString(board);
+            Console.WriteLine("Board State: " + fen);
+
+            // Validate a move (e.g., "e7e6")
+            bool isValid = ChessEngineInterop.ValidateMove(board, "e7e6");
+            Console.WriteLine($"Move e7e6 is {(isValid ? "valid" : "invalid")}");
+
+            // Destroy the board when done
+            ChessEngineInterop.DestroyBoard(board);
+        }
 
 
     

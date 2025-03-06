@@ -35,7 +35,7 @@ std::string ChessBoard::GetBoardState() {
     for (int rank = 7; rank >= 0; rank--) {
         int empty_squares = 0;
         for (int file = 0; file < 8; file++) {
-            uint64_t square = static_cast<uint64_t>(rank * 8 + file);
+            uint64_t square = 1ULL << (rank * 8 + file); // Get current square as bitboard
 
             // Get piece type at square
             char piece = board.getPieceType(square);
@@ -74,14 +74,15 @@ std::string ChessBoard::GetBoardState() {
     // 3. Castling Rights (assume all castling rights available for simplicity)
     fen += board.getCastlingRightsString();
 
-    // 4. En Passant Target Square (none for starting position)
-    fen += " " + board.getEnPassantString() + " ";
+    // 4. En Passant Target Square
+    std::string enPassant = board.getEnPassantString();
+    fen += " " + (enPassant.empty() ? "-" : enPassant);
 
-    // 5. Half-Move Clock (assume 0 for simplicity)
-    fen += board.getHalfMoveString();
+    // 5. Half-Move Clock
+    fen += " " + std::to_string(board.getHalfMoveClock());
 
-    // 6. Full-Move Number (assume 1 for starting position)
-    fen += board.getFullMoveString();
+    // 6. Full-Move Number
+    fen += " " + std::to_string(board.getFullMoveNumber());
 
     return fen;
 }
