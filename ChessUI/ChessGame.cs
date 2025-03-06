@@ -10,29 +10,53 @@ namespace Chess
     public class ChessGame
     {
 
-
         private bool isWhiteTurn = true; // white moves first
+        private string[,] pieceLocations = new string[8, 8];
+        public ChessGame()
+        {
+            LoadFromFEN("rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+        }
+
+        public void LoadFromFEN(string fen)
+        {
+            string[] sections = fen.Split(' '); // split fen string
+            Console.WriteLine(sections);
+
+            string[] rows = sections[0].Split('/'); // Board setup part
+
+            for (int row = 0; row < 8; row++)
+            {
+                int col = 0;
+
+                // iterate over every row
+                foreach (char c in rows[row])
+                {
+                    if (char.IsDigit(c)) // empty square
+                    {
+                        int emptyCount = c - '0';
+
+                        //iterate accoding to c
+                        for (int i=0; i<emptyCount; i++)
+                        {
+                            // add nothing to every part
+                            pieceLocations[row, col++] = "";
+                        }
+
+                    }
+
+                    else // piece character is in the spot
+                    {
+                        pieceLocations[row, col++] = c.ToString();
+                    }
+                }
+            }
+
+        }
 
 
-        private IntPtr board;
-        string[,] pieceLocations = new string[8, 8] {
-    // Rank 8 (Black back row)
-    { "r", "n", "b", "q", "k", "b", "n", "r" },
-    // Rank 7 (Black pawns)
-    { "p", "p", "p", "p", "p", "p", "p", "p" },
-    // Rank 6 (Empty)
-    { "", "", "", "", "", "", "", "" },
-    // Rank 5 (Empty)
-    { "", "", "", "", "", "", "", "" },
-    // Rank 4 (Empty)
-    { "", "", "", "", "", "", "", "" },
-    // Rank 3 (Empty)
-    { "", "", "", "", "", "", "", "" },
-    // Rank 2 (White pawns)
-    { "P", "P", "P", "P", "P", "P", "P", "P" },
-    // Rank 1 (White back row)
-    { "R", "N", "B", "Q", "K", "B", "N", "R" }
-    };
+
+
+    
 
         public string[,] GetBoardState()
         {
