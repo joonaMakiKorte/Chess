@@ -1,7 +1,7 @@
 #include "ChessBoard.h"
 
 ChessBoard::ChessBoard() {
-    board = ChessLogic();
+    board = Board();
 }
 
 bool ChessBoard::ValidateMove(const char* move) {
@@ -11,8 +11,12 @@ bool ChessBoard::ValidateMove(const char* move) {
     }
 
     // Extract source and target squares
-    char sourceSquare[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
-    char targetSquare[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
+    char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
+    char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
+
+    // Get bitboard represantations of moves
+    uint64_t source_bitb = SquareToBitboard(source_square);
+    uint64_t target_bitb = SquareToBitboard(target_square);
 
 
 
@@ -27,7 +31,7 @@ std::string ChessBoard::GetBoardState() {
     for (int rank = 7; rank >= 0; rank--) {
         int empty_squares = 0;
         for (int file = 0; file < 8; file++) {
-            int square = rank * 8 + file;
+            uint64_t square = static_cast<uint64_t>(rank * 8 + file);
 
             // Get piece type at square
             char piece = board.getPieceType(square);

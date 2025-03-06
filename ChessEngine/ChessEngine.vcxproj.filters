@@ -27,7 +27,7 @@
     <ClInclude Include="ChessEngineExports.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ChessLogic.h">
+    <ClInclude Include="Board.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,7 +44,7 @@
     <ClCompile Include="ChessEngineExports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ChessLogic.cpp">
+    <ClCompile Include="Board.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

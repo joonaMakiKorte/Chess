@@ -1,7 +1,9 @@
-#ifndef CHESSLOGIC_H
-#define CHESSLOGIC_H
+#ifndef BOARD_H
+#define BOARD_H
 
-class ChessLogic {
+#include "pch.h"
+
+class Board {
 private:
     // Represent each piece type as a bitboard
     uint64_t white_pawns;
@@ -34,13 +36,13 @@ private:
 
 public:
     // Initialize each piece with starting pos
-    ChessLogic();
+    Board();
 
     // Get player turn
     bool isWhite(); 
 
     // Helper to get the piece type at a given square
-    char getPieceType(int square) const;
+    char getPieceType(uint64_t square) const;
 
     // Helper function to get castling rights as a string
     std::string getCastlingRightsString() const;
@@ -48,9 +50,15 @@ public:
     // Get en passant target square as a string
     std::string getEnPassantString() const;
 
+    // Get half moves as string
     std::string getHalfMoveString() const;
 
+    // Get full moves as string
     std::string getFullMoveString() const;
+
+    // Get all legal moves from a square as a bitboard
+    // Takes the source square as the parameter
+    uint64_t getLegalMoves(uint64_t from);
 
 private:
     // Get locations of white or black pieces (bitboard)
@@ -64,6 +72,14 @@ private:
 
     // Helper function to convert a square index to algebraic notation
     std::string squareToString(int square) const;
+
+    // Helper functions to create legal moves for different piece types
+    uint64_t getPawnMoves(uint64_t pawn);
+    uint64_t getKnightMoves(uint64_t knight);
+    uint64_t getBishopMoves(uint64_t bishop);
+    uint64_t getRookMoves(uint64_t rook);
+    uint64_t getQueenMoves(uint64_t queen);
+    uint64_t getKingMoves(uint64_t king);
 };
 
 #endif CHESSLOGIC_H

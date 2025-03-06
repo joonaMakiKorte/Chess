@@ -1,7 +1,6 @@
-#include "pch.h"
-#include "ChessLogic.h"
+#include "Board.h"
 
-ChessLogic::ChessLogic(): 
+Board::Board(): 
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	white(true),                           // White starts
@@ -22,31 +21,31 @@ ChessLogic::ChessLogic():
 	black_king = 0x0800000000000000;       // e8
 }
 
-bool ChessLogic::isWhite() {
+bool Board::isWhite() {
 	return white;
 }
 
-char ChessLogic::getPieceType(int square) const {
+char Board::getPieceType(uint64_t square) const {
 	char piece = '\0'; // Empty as default
 
 	// Check each piece type
-	if (white_pawns & (1ULL << square)) piece = 'P';
-	else if (black_pawns & (1ULL << square)) piece = 'p';
-	else if (white_knights & (1ULL << square)) piece = 'N';
-	else if (black_knights & (1ULL << square)) piece = 'n';
-	else if (white_bishops & (1ULL << square)) piece = 'B';
-	else if (black_bishops & (1ULL << square)) piece = 'b';
-	else if (white_rooks & (1ULL << square)) piece = 'R';
-	else if (black_rooks & (1ULL << square)) piece = 'r';
-	else if (white_queen & (1ULL << square)) piece = 'Q';
-	else if (black_queen & (1ULL << square)) piece = 'q';
-	else if (white_king & (1ULL << square)) piece = 'K';
-	else if (black_king & (1ULL << square)) piece = 'k';
+	if (white_pawns & square) piece = 'P';
+	else if (black_pawns & square) piece = 'p';
+	else if (white_knights & square) piece = 'N';
+	else if (black_knights & square) piece = 'n';
+	else if (white_bishops & square) piece = 'B';
+	else if (black_bishops & square) piece = 'b';
+	else if (white_rooks & square) piece = 'R';
+	else if (black_rooks & square) piece = 'r';
+	else if (white_queen & square) piece = 'Q';
+	else if (black_queen & square) piece = 'q';
+	else if (white_king & square) piece = 'K';
+	else if (black_king & square) piece = 'k';
 
 	return piece;
 }
 
-std::string ChessLogic::getCastlingRightsString() const {
+std::string Board::getCastlingRightsString() const {
 	std::string rights;
 	if (castling_rights & 0x01) rights += 'K'; // White kingside
 	if (castling_rights & 0x02) rights += 'Q'; // White queenside
@@ -55,7 +54,7 @@ std::string ChessLogic::getCastlingRightsString() const {
 	return rights.empty() ? "-" : rights;
 }
 
-std::string ChessLogic::getEnPassantString() const {
+std::string Board::getEnPassantString() const {
 	std::string square;
 	if (en_passant_target != UNASSIGNED) {
 		square = squareToString(en_passant_target); // Transform to algebraic notation
@@ -66,31 +65,65 @@ std::string ChessLogic::getEnPassantString() const {
 	return square;
 }
 
-std::string ChessLogic::getHalfMoveString() const {
+std::string Board::getHalfMoveString() const {
 	return std::to_string(half_moves);
 }
 
-std::string ChessLogic::getFullMoveString() const {
+std::string Board::getFullMoveString() const {
 	return std::to_string(full_moves);
 }
 
-const uint64_t ChessLogic::whitePieces() const {
+uint64_t Board::getLegalMoves(uint64_t from) {
+	// Get the piece type at the source square
+	char piece = getPieceType(from);
+	switch (tolower(piece)) // Convert to lowercase, we use turn flag to determine if white or not
+	{
+
+		default: throw std::invalid_argument("Invalid piece type");
+	}
+}
+
+const uint64_t Board::whitePieces() const {
 	return white_pawns | white_rooks | white_knights |
 		white_bishops | white_queen | white_king;
 
 }
 
-const uint64_t ChessLogic::blackPieces() const {
+const uint64_t Board::blackPieces() const {
 	return black_pawns | black_rooks | black_knights |
 		black_bishops | black_queen | black_king;
 }
 
-const uint64_t ChessLogic::getOccupied() const {
+const uint64_t Board::getOccupied() const {
 	return whitePieces() | blackPieces();
 }
 
-std::string ChessLogic::squareToString(int square) const {
+std::string Board::squareToString(int square) const {
 	char file = 'a' + (square % 8);
 	char rank = '1' + (square / 8);
 	return std::string() + file + rank;
+}
+
+uint64_t Board::getPawnMoves(uint64_t pawn) {
+	
+}
+
+uint64_t Board::getKnightMoves(uint64_t knight) {
+	
+}
+
+uint64_t Board::getBishopMoves(uint64_t bishop) {
+
+}
+
+uint64_t Board::getRookMoves(uint64_t rook) {
+
+}
+
+uint64_t Board::getQueenMoves(uint64_t queen) {
+
+}
+
+uint64_t Board::getKingMoves(uint64_t king) {
+
 }

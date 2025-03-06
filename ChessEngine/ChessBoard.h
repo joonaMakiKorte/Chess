@@ -2,12 +2,12 @@
 #define CHESSBOARD_H	
 
 #include "pch.h"
-#include "ChessLogic.h"
+#include "Board.h"
 
 class ChessBoard {
 private:
     // Store the board logic
-    ChessLogic board;
+    Board board;
 
 public:
     // Initialize the chessboard
@@ -25,7 +25,7 @@ public:
     // 'p'=pawn, 'r'=rook, 'n'=knight, 'b'=bishop, 'q'=queen, 'k'=king
     // Lowercase = black, uppercase = white
     // 
-    // 'w' = White (assume white) active color
+    // 'w' = active color
     // 'KQkq' = catling rights
     // '-' = En Passant Target Square
     // '0' = half move clock
