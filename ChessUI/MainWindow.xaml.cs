@@ -29,11 +29,8 @@ namespace Chess
         
         private ChessGame chessGame = new ChessGame();
         private Images images = new Images();
-        private (int row, int col)? selectedPiece = null; // clicked piece pos
         private BoardUI boardUi;
-
-        
-
+        private BoardInteract boardInteract;
 
         public MainWindow()
         {
@@ -47,58 +44,10 @@ namespace Chess
             boardUi = new BoardUI(PieceGrid, TurnLabel, images);
             boardUi.UpdateBoard(chessGame.GetBoardState());
             boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-            
+
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUi);
             
         }
-
-
-        private void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            Point position = e.GetPosition(PieceGrid);
-            double cellWidth = PieceGrid.ActualWidth / 8;
-            double cellHeight = PieceGrid.ActualHeight / 8;
-
-            int col = (int)(position.X / cellWidth);
-            int row = (int)(position.Y / cellHeight);
-
-            if (selectedPiece == null)
-            {
-                string piece = chessGame.GetBoardState()[row, col];
-                if (!string.IsNullOrEmpty(piece))
-                {
-                    if ((chessGame.IsWhiteTURN() && Char.IsUpper(piece[0])) ||
-                        (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))
-                    {
-                        selectedPiece = (row, col);
-
-                        boardUi.HighlightSquare(row, col, Brushes.Yellow);
-                    }
-                    
-                }
-                else
-                {
-                    return;
-                }
-            }
-            else
-            {
-                (int fromRow, int fromCol) = selectedPiece.Value;
-                string move = $"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}";
-                Console.WriteLine(move);
-                chessGame.MovePiece(fromRow, fromCol, row, col);
-                boardUi.UpdateBoard(chessGame.GetBoardState());
-
-                chessGame.SwitchTurn();
-                boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-
-                boardUi.ClearHighlights();
-                selectedPiece = null;
-            }
-        }
-
-
-
-
 
     }
 }
