@@ -30,7 +30,6 @@
                    Grid.Row="0"/>
             
             <Grid x:Name="PieceGrid"
-                MouseDown="PieceGrid_MouseDown"
                 Grid.Row="1"
                 Width="600"
                 Height="600">
