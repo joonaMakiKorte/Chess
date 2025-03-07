@@ -69,7 +69,7 @@ namespace Chess
             Console.WriteLine("Board State: " + fen);
 
             // Validate a move (e.g., "e7e6")
-            bool isValid = ChessEngineInterop.ValidateMove(board, "e7e6");
+            bool isValid = ChessEngineInterop.ValidateMove(board, "e2e4");
             Console.WriteLine($"Move e7e6 is {(isValid ? "valid" : "invalid")}");
 
             // Destroy the board when done
