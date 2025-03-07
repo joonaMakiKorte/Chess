@@ -4,6 +4,7 @@
 // Init tables
 PawnMoves WHITE_PAWN_MOVES[64];
 PawnMoves BLACK_PAWN_MOVES[64];
+BishopMoves BISHOP_MOVES[64];
 
 
 void initWhitePawnMoves(int square) {
@@ -32,9 +33,62 @@ void initBlackPawnMoves(int square) {
 	BLACK_PAWN_MOVES[square] = { single_push, double_push, captures };
 }
 
+
+
+
+void initBishopMoves(int square) {
+	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
+
+	// different bishop routes
+	uint64_t top_left = 0ULL;
+	uint64_t top_right = 0ULL;
+	uint64_t bottom_left = 0ULL;
+	uint64_t bottom_right = 0ULL;
+
+	int directions[] = { -7, 7, -9, 9 };  // Top-left, bottom-left, top-right, bottom-right
+
+
+	// next we iterate over the diagonal directions
+	for (int direction : directions) {
+
+		
+		uint64_t current_square = bitboard;
+
+		// loop and explore the bitboard in the current direction
+		while (true) {
+
+			// shift bitboard according to current location
+			current_square <<= direction;
+
+
+			// Check if the move has gone beyond the edge of the board
+			// The conditions handle edge cases where the move crosses the board's boundary
+			// Each direction is checked against the corresponding edge of the board
+			if ((direction == -7 && (current_square & FILE_A)) ||
+				(direction == 7 && (current_square & FILE_H)) ||
+				(direction == -9 && (current_square & FILE_H)) ||
+				(direction == 9 && (current_square & FILE_A))) {
+				break;
+			}
+
+			// Add the current square to the corresponding diagonal move bitboard
+			// Depending on the direction, the move will be added to the appropriate diagonal
+			if (direction == -7) top_left |= current_square;
+			else if (direction == 7) bottom_left |= current_square;
+			else if (direction == -9) top_right |= current_square;
+			else if (direction == 9) bottom_right |= current_square;
+		}
+	}
+
+	// Store the calculated moves for this square
+	BISHOP_MOVES[square] = { top_left, top_right, bottom_left, bottom_right };
+}
+
+
 void initMoveTables() {
 	for (int square = 0; square < 64; square++) {
 		initWhitePawnMoves(square);
 		initBlackPawnMoves(square);
+		initBishopMoves(square);
 	}
 }
