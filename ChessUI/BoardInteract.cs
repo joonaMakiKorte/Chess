@@ -47,7 +47,7 @@ namespace Chess
                         (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))
                     {
                         selectedPiece = (row, col);
-                        boardUi.HighlightSquare(row, col, Brushes.Yellow);
+                        boardUi.HighlightSquare(row, col, Brushes.LightBlue);
                     }
 
                 }

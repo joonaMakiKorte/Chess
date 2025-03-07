@@ -78,7 +78,7 @@ namespace Chess
 
 
     
-
+        //gives the pieceLocations dict fully
         public string[,] GetBoardState()
         {
             return pieceLocations;

@@ -108,7 +108,7 @@ namespace Chess
 
         public void HighlightSquare(int row, int col, Brush color)
         {
-            pieceBorders[row, col].BorderBrush = color;
+            pieceBorders[row, col].Background = color;
         }
 
         public void ClearHighlights()
@@ -117,7 +117,7 @@ namespace Chess
             {
                 for (int col = 0; col < 8; col++)
                 {
-                    pieceBorders[row, col].BorderBrush = Brushes.Transparent;
+                    pieceBorders[row, col].Background = Brushes.Transparent;
                 }
             }
         }
