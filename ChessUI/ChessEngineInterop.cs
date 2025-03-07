@@ -14,7 +14,6 @@ namespace Chess
         public static extern void DestroyBoard(IntPtr board);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.I1)]
         public static extern bool ValidateMove(IntPtr board, string move);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

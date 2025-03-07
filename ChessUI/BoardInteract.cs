@@ -66,7 +66,7 @@ namespace Chess
                     boardUi.UpdateBoard(chessGame.GetBoardState());
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
                     boardUi.ClearHighlights();
-                    selectedPiece = null; // Unselect
+                    selectedPiece = null; // Deselect
                 }
             }
         }

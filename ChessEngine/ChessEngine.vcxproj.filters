@@ -30,7 +30,7 @@
     <ClInclude Include="Board.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AttackTables.h">
+    <ClInclude Include="MoveTables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,7 +50,7 @@
     <ClCompile Include="Board.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AttackTables.cpp">
+    <ClCompile Include="MoveTables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

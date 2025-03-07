@@ -151,7 +151,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AttackTables.h" />
+    <ClInclude Include="MoveTables.h" />
     <ClInclude Include="ChessBoard.h" />
     <ClInclude Include="ChessEngineExports.h" />
     <ClInclude Include="Board.h" />
@@ -159,7 +159,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AttackTables.cpp" />
+    <ClCompile Include="MoveTables.cpp" />
     <ClCompile Include="ChessBoard.cpp" />
     <ClCompile Include="ChessEngineExports.cpp" />
     <ClCompile Include="Board.cpp" />
