@@ -8,7 +8,7 @@ ChessBoard::ChessBoard() {
 bool ChessBoard::ValidateMove(const char* move) {
     // Validate move notation
     if (strlen(move) != 4) {
-        throw std::invalid_argument("Invalid move notation");
+        return false;
     }
 
     // Extract source and target squares
@@ -111,7 +111,7 @@ uint64_t ChessBoard::SquareToBitboard(const char* square) {
     }
 
     // Calculate the square index (0-63)
-    int square_index = rank * 8 + file;
+    int square_index = (7 - rank) * 8 + file;
 
     // Create a bitboard with only this square set
     return 1ULL << square_index;

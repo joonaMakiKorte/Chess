@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "AttackTables.h"
+#include "MoveTables.h"
 
 // Init tables
 PawnMoves WHITE_PAWN_MOVES[64];

@@ -17,6 +17,7 @@ namespace Chess
         private readonly Image[,] pieceImages = new Image[8, 8];
         private Images images;
         private readonly Label turnLabel;
+        private (int row, int col)? highlightedSquare = null;
 
         public BoardUI(Grid grid, Label turnLabel, Images images)
         {
@@ -26,21 +27,14 @@ namespace Chess
             InitializeBoard();
         }
             
-        
-
-
-
         public void InitializeBoard()
         {
-
             pieceGrid.Children.Clear(); // Clear older images
 
             for (int row = 0; row < 8; row++)
             {
                 for (int col = 0; col < 8; col++)
                 {
-
-
                     // Create a border for each square
                     Border border = new Border
                     {
@@ -50,17 +44,13 @@ namespace Chess
                         VerticalAlignment = VerticalAlignment.Stretch
                     };
 
-
-
                     pieceBorders[row, col] = border;
-
-                    // add border to grid
+                    // Add border to grid
                     Grid.SetRow(border, row);
                     Grid.SetColumn(border, col);
                     pieceGrid.Children.Add(border);
 
-
-                    // create image for each piece
+                    // Create image for each piece
                     Image image = new Image
                     {
                         HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -79,18 +69,14 @@ namespace Chess
 
         public void UpdateBoard(string[,] boardState)
         {
-
             for (int row = 0; row < 8; row++)
             {
                 for (int col = 0; col < 8; col++)
                 {
-
-                    string piece = boardState[row, col];
-
-                    // image for each piece
+                    string piece = boardState[row, col]; // Get piece at square
+                    // Image for each piece
                     pieceImages[row, col].Source = images.GetPieceImage(piece);
-
-                    // set image alignment and stretch
+                    // Set image alignment and stretch
                     pieceImages[row, col].HorizontalAlignment = HorizontalAlignment.Stretch;
                     pieceImages[row, col].VerticalAlignment = VerticalAlignment.Stretch;
                     pieceImages[row, col].Stretch = Stretch.UniformToFill;
@@ -98,27 +84,22 @@ namespace Chess
             }
         }
 
-        public void UpdateTurnDisplay(bool isWhiteturn)
-        {
-
-            turnLabel.Content =isWhiteturn ? "White's Turn" : "Black's Turn";
-
-
-        }
+        public void UpdateTurnDisplay(bool isWhiteturn) => turnLabel.Content = isWhiteturn ? "White's Turn" : "Black's Turn";
 
         public void HighlightSquare(int row, int col, Brush color)
         {
+            highlightedSquare = (row, col);
             pieceBorders[row, col].Background = color;
         }
 
         public void ClearHighlights()
         {
-            for (int row = 0; row < 8; row++)
+            // Clear highlights at selected square
+            if (highlightedSquare != null)
             {
-                for (int col = 0; col < 8; col++)
-                {
-                    pieceBorders[row, col].Background = Brushes.Transparent;
-                }
+                (int row, int col) = highlightedSquare.Value;
+                pieceBorders[row, col].Background = Brushes.Transparent;
+                highlightedSquare = null;
             }
         }
     }

@@ -1,6 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include "AttackTables.h"
+#include "MoveTables.h"
 #include "ChessEngineExports.h"
 
 BOOL APIENTRY DllMain( HMODULE hModule,

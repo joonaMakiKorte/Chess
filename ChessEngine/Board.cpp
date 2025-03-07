@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Board.h"
-#include "AttackTables.h"
+#include "MoveTables.h"
 
 
 Board::Board(): 
@@ -87,19 +87,14 @@ uint64_t Board::getLegalMoves(uint64_t from) {
 	return legal_moves;
 }
 
-const uint64_t Board::whitePieces() const {
+uint64_t Board::whitePieces() {
 	return white_pawns | white_rooks | white_knights |
 		white_bishops | white_queen | white_king;
-
 }
 
-const uint64_t Board::blackPieces() const {
+uint64_t Board::blackPieces() {
 	return black_pawns | black_rooks | black_knights |
 		black_bishops | black_queen | black_king;
-}
-
-const uint64_t Board::getOccupied() const {
-	return whitePieces() | blackPieces();
 }
 
 std::string Board::squareToString(int square) const {
@@ -111,11 +106,26 @@ std::string Board::squareToString(int square) const {
 uint64_t Board::getPawnMoves(uint64_t pawn) {
 	if (pawn == 0) return 0; // No pawn present
 
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	uint64_t occupied = white_pieces | black_pieces;
+
     int square = std::bitset<64>(pawn).to_ullong(); // Get index of the pawn's position
 	// Using bitwise OR operation get all moves from the location
 	// Get moves from white or black pawn move table depending which turn is active
-	return white ?
-		(WHITE_PAWN_MOVES[square].single_push | WHITE_PAWN_MOVES[square].double_push | WHITE_PAWN_MOVES[square].captures)
-	  : (BLACK_PAWN_MOVES[square].single_push | BLACK_PAWN_MOVES[square].double_push | BLACK_PAWN_MOVES[square].captures);
+	if (white) { // White pawn moves
+		uint64_t singlePush = WHITE_PAWN_MOVES[square].single_push & ~occupied;
+		uint64_t doublePush = WHITE_PAWN_MOVES[square].double_push & ~occupied & (singlePush << 8); // Ensure single step is free
+		uint64_t captures = WHITE_PAWN_MOVES[square].captures & black_pieces; // Capture only black pieces
+
+		return singlePush | doublePush | captures;
+	}
+	else { // Black pawn moves
+		uint64_t singlePush = BLACK_PAWN_MOVES[square].single_push & ~occupied;
+		uint64_t doublePush = BLACK_PAWN_MOVES[square].double_push & ~occupied & (singlePush >> 8);
+		uint64_t captures = BLACK_PAWN_MOVES[square].captures & white_pieces; // Capture only white pieces
+
+		return singlePush | doublePush | captures;
+	}
 }
 

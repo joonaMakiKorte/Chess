@@ -1,5 +1,5 @@
-#ifndef ATTACKTABLES_H
-#define ATTACKTABLES_H
+#ifndef MOVETABLES_H
+#define MOVETABLES_H
 
 // Define move tables for pieces
 struct PawnMoves {
@@ -20,6 +20,12 @@ extern PawnMoves WHITE_PAWN_MOVES[64];
 extern PawnMoves BLACK_PAWN_MOVES[64];
 extern PawnMoves BISHOP_MOVES[64];
 
+
+/*
+* TODO
+* Move tables for other pieces
+* Implement like PawnMoves
+*/
 
 // Generate move tables at runtime
 // Loops over the 64 squares of the chessboard and creates moveset for each piece at each location

@@ -61,17 +61,17 @@ public:
 private:
     // Get locations of white or black pieces (bitboard)
      // Uses bitwise OR operation to combine occupancy of all pieces of same color
-    const uint64_t whitePieces() const;
-    const uint64_t blackPieces() const;
-
-    // Get all occupied squares (bitboard)
-    // Uses bitwise OR operation to combine occupancy of all white and black pieces
-    const uint64_t getOccupied() const;
+    // To get all occupied squares, combine these two functions with bitwise OR
+    uint64_t whitePieces();
+    uint64_t blackPieces();
 
     // Helper function to convert a square index to algebraic notation
     std::string squareToString(int square) const;
 
     // Helper functions to create legal moves for different piece types
+    /*
+    * TODO: Implement the rest after creating the corresponding movetables
+    */
     uint64_t getPawnMoves(uint64_t pawn);
     uint64_t getKnightMoves(uint64_t knight);
     uint64_t getBishopMoves(uint64_t bishop);
