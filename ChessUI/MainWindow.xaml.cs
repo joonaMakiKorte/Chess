@@ -24,9 +24,7 @@ namespace Chess
     /// </summary>
     /// 
     public partial class MainWindow : Window
-    {
-
-        
+    {      
         private ChessGame chessGame = new ChessGame();
         private Images images = new Images();
         private BoardUI boardUi;
@@ -36,17 +34,16 @@ namespace Chess
         {
             InitializeComponent();
 
-
+            // Init chess logic
             chessGame = new ChessGame();
-            chessGame.LoadFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-
+            // Init UI
             boardUi = new BoardUI(PieceGrid, TurnLabel, images);
             boardUi.UpdateBoard(chessGame.GetBoardState());
             boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
 
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUi);
-            
+            // Init UI interactions
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUi);         
         }
 
     }

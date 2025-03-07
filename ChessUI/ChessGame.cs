@@ -10,41 +10,48 @@ namespace Chess
     public class ChessGame
     {
 
-        private bool isWhiteTurn = true; // white moves first
-        private string[,] pieceLocations = new string[8, 8];
+        private bool isWhiteTurn = true; // White moves first
+        private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
+        private IntPtr board; // Pointer to native board
+
         public ChessGame()
         {
-            LoadFromFEN("rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+            board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
+            if (board == IntPtr.Zero)
+            {
+                throw new Exception("Failed to initialize chess engine.");
+            }
+
+            // Get initial board state and apply to pieceLocations
+            string fen = ChessEngineInterop.GetBoardStateString(board);
+            LoadFromFEN(fen);
         }
 
-        public void LoadFromFEN(string fen)
+        // Parse data from FEN representation of the board status
+        private void LoadFromFEN(string fen)
         {
-            string[] sections = fen.Split(' '); // split fen string
-            Console.WriteLine(sections);
+            string[] sections = fen.Split(' '); // Split
+            string[] rows = sections[0].Split('/'); // Parts for board setup
 
-            string[] rows = sections[0].Split('/'); // Board setup part
-
+            // Apply piece locations for rows
             for (int row = 0; row < 8; row++)
             {
                 int col = 0;
-
-                // iterate over every row
+                // Iterate over every row
                 foreach (char c in rows[row])
                 {
-                    if (char.IsDigit(c)) // empty square
+                    if (char.IsDigit(c)) // Empty square
                     {
                         int emptyCount = c - '0';
-
-                        //iterate accoding to c
+                        //Iterate accoding to c
                         for (int i=0; i<emptyCount; i++)
                         {
-                            // add nothing to every part
+                            // Add nothing to every part
                             pieceLocations[row, col++] = "";
                         }
 
                     }
-
-                    else // piece character is in the spot
+                    else // Piece character is in the spot
                     {
                         pieceLocations[row, col++] = c.ToString();
                     }
@@ -53,57 +60,53 @@ namespace Chess
 
         }
 
-        public void LoadDll()
-        {
-            // Create a new chess board
-            IntPtr board = ChessEngineInterop.CreateBoard();
+        // Gives the pieceLocations dict fully
+        public string[,] GetBoardState() => pieceLocations;
 
-            if (board == IntPtr.Zero)
-            {
-                Console.WriteLine("Failed to create board.");
-                return;
-            }
+        // Get turn
+        public bool IsWhiteTURN() => isWhiteTurn;
 
-            // Retrieve and print the board state (FEN)
-            string fen = ChessEngineInterop.GetBoardStateString(board);
-            Console.WriteLine("Board State: " + fen);
-
-            // Validate a move (e.g., "e7e6")
-            bool isValid = ChessEngineInterop.ValidateMove(board, "e7e6");
-            Console.WriteLine($"Move e7e6 is {(isValid ? "valid" : "invalid")}");
-
-            // Destroy the board when done
-            ChessEngineInterop.DestroyBoard(board);
-        }
-
-
-    
-        //gives the pieceLocations dict fully
-        public string[,] GetBoardState()
-        {
-            return pieceLocations;
-        }
-        public bool IsWhiteTURN()
-        {
-            return isWhiteTurn;
-        }
-        //Method to switch turn
-        public void SwitchTurn()
-        {
-            isWhiteTurn = !isWhiteTurn; // switches between false and true
-        }
+        // Switch turn
+        public void SwitchTurn() => isWhiteTurn = !isWhiteTurn;
 
 
         // Moves the piece
-        public void MovePiece(int fromRow, int fromCol, int toRow, int toCol)
+        public bool MovePiece(string move)
         {
-            
+            // Ei toimi vielä vittu
+            //if (!ChessEngineInterop.ValidateMove(board, move))
+            //{
+            //    Console.WriteLine($"Invalid move: {move}");
+            //    return false;
+            //}
 
-            pieceLocations[toRow, toCol] = pieceLocations[fromRow, fromCol]; // Moves the piece
-            pieceLocations[fromRow, fromCol] = ""; // clear the old pos
+            // TODO!!!
+            // Apply move in the native engine
+            //ChessEngineInterop.MakeMove(board, move);
+
+            // Update local board state from DLL
+            string fen = ChessEngineInterop.GetBoardStateString(board);
+            LoadFromFEN(fen);
+            Console.WriteLine(fen);
+
+            SwitchTurn(); // Change turn
+            return true;
         }
 
+        // Destroy board
+        public void Dispose()
+        {
+            if (board != IntPtr.Zero)
+            {
+                ChessEngineInterop.DestroyBoard(board);
+                board = IntPtr.Zero;
+            }
+        }
 
+        ~ChessGame()
+        {
+            Dispose();
+        }
 
     }
 }
