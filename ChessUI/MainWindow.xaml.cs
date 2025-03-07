@@ -37,12 +37,17 @@ namespace Chess
 
         public MainWindow()
         {
+            InitializeComponent();
+
+
+            chessGame = new ChessGame();
+            chessGame.LoadFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
+
             boardUi = new BoardUI(PieceGrid, TurnLabel, images);
             boardUi.UpdateBoard(chessGame.GetBoardState());
             boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-            InitializeComponent();
-            chessGame = new ChessGame();
-            chessGame.LoadFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            
             
         }
 
@@ -65,7 +70,10 @@ namespace Chess
                         (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))
                     {
                         selectedPiece = (row, col);
+
+                        boardUi.HighlightSquare(row, col, Brushes.Yellow);
                     }
+                    
                 }
                 else
                 {
@@ -82,6 +90,8 @@ namespace Chess
 
                 chessGame.SwitchTurn();
                 boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+
+                boardUi.ClearHighlights();
                 selectedPiece = null;
             }
         }
