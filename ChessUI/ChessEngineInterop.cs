@@ -14,13 +14,13 @@ namespace Chess
         public static extern void DestroyBoard(IntPtr board);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool ValidateMove(IntPtr board, string move);
+        public static extern bool ValidateMove(IntPtr board, [MarshalAs(UnmanagedType.LPStr)] string move);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void GetBoardState(IntPtr board, IntPtr output, int size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr GetDebugMessage(IntPtr board);
+        private static extern IntPtr GetDebugMessage(IntPtr board, IntPtr output, int size);
 
         // Helper method to get board state as a string
         public static string GetBoardStateString(IntPtr board)
@@ -39,8 +39,15 @@ namespace Chess
         // Helper to get debug messages as string
         public static string GetDebugMessageString(IntPtr board)
         {
-            IntPtr ptr = GetDebugMessage(board);
-            return Marshal.PtrToStringAnsi(ptr);
+            int bufferSize = 100;
+            IntPtr buffer = Marshal.AllocHGlobal(bufferSize);
+
+            GetDebugMessage(board, buffer, bufferSize);
+
+            string message = Marshal.PtrToStringAnsi(buffer);
+            Marshal.FreeHGlobal(buffer);
+
+            return message;
         }
     }
 }

@@ -40,9 +40,9 @@ public:
     std::string GetDebugMessage() const;
 
 private:
-    // Converts a square to its bitboard representation
+    // Converts a square to its integer representation
     // Takes a C-style string of the square as the param
-    uint64_t SquareToBitboard(const char* square);
+    int SquareToInt(const char* square);
 };
 
 

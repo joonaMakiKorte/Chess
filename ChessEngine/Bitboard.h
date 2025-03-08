@@ -44,7 +44,7 @@ public:
     bool isWhite(); 
 
     // Helper to get the piece type at a given square
-    char getPieceType(uint64_t square) const;
+    char getPieceType(int square) const;
 
     // Helper function to get castling rights as a string
     std::string getCastlingRightsString() const;
@@ -60,7 +60,7 @@ public:
 
     // Get all legal moves from a square as a bitboard
     // Takes the source square as the parameter
-    uint64_t getLegalMoves(uint64_t from);
+    uint64_t getLegalMoves(int from);
 
 private:
     // Get locations of white or black pieces (bitboard)

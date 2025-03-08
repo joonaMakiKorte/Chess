@@ -58,8 +58,6 @@ namespace Chess
                 // Convert selected squares to "e4e3" for example
                 (int fromRow, int fromCol) = selectedPiece.Value;
                 string move = $"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}";
-                Console.WriteLine(move);
-
                 // Apply move in dll
                 if (chessGame.MovePiece(move))
                 {

@@ -29,7 +29,9 @@ bool Bitboard::isWhite() {
 	return white;
 }
 
-char Bitboard::getPieceType(uint64_t square) const {
+char Bitboard::getPieceType(int square_int) const {
+	uint64_t square = 1ULL << square_int; // Cast to bitboard
+
 	if (white_pawns & square) return 'P';
 	if (black_pawns & square) return 'p';
 	if (white_knights & square) return 'N';
@@ -74,11 +76,10 @@ int Bitboard::getFullMoveNumber() const {
 }
 
 
-uint64_t Bitboard::getLegalMoves(uint64_t from) {
+uint64_t Bitboard::getLegalMoves(int from) {
 	if (from == 0) return 0ULL; // Invalid source square
 
-	int square = std::countr_zero(from); // Extract index from bitboard as LSB (least significant bit)
-	char piece = getPieceType(from);
+	char piece = getPieceType(from); // Get piece type at square
 
 	uint64_t legal_moves = 0ULL;
 	switch (tolower(piece)) // Convert to lowercase, we use turn flag to determine if white or not

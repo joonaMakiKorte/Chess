@@ -73,15 +73,15 @@ namespace Chess
         // Moves the piece
         public bool MovePiece(string move)
         {
-            // Ei toimi vielä vittu
-            if (!ChessEngineInterop.ValidateMove(board, move))
+            Console.WriteLine(move); // Debug
+            bool isValid = ChessEngineInterop.ValidateMove(board, move);                                                                      
+            string message = ChessEngineInterop.GetDebugMessageString(board);
+            Console.WriteLine(message);
+            if (!isValid)
             {
                 Console.WriteLine($"Invalid move: {move}");
                 return false;
             }
-            // Debug move
-            string message = ChessEngineInterop.GetDebugMessageString(board);
-            Console.WriteLine(message);
 
             // TODO!!!
             // Apply move in the native engine

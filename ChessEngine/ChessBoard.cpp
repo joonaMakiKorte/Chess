@@ -15,23 +15,20 @@ bool ChessBoard::ValidateMove(const char* move) {
     char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
     char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
 
-    // Update the debug message with selected squares
-    std::string message = "Validating move from " + std::string(source_square) + " to " + std::string(target_square);
-    UpdateDebugMessage(message); // Update debugMessage with the current move
-
     // Get source and target as bitboards
-    //uint64_t source_bitb = SquareToBitboard(source_square);
-    //uint64_t target_bitb = SquareToBitboard(target_square);
+    int source = SquareToInt(source_square);
+    int target = SquareToInt(target_square);
+
+    std::string message = "Source: " + std::to_string(source) + " Target: " + std::to_string(target);
+    UpdateDebugMessage(message);
 
     // Get all legal moves from the source square
-    //uint64_t legal_moves = board->getLegalMoves(source_bitb);
+    uint64_t legal_moves = board->getLegalMoves(source);
+    uint64_t target_bitb = 1ULL << target; // Convert target to bitboard
 
     // Bitwise AND operation to check if target is in legal moves
     // Returns bool indicating if result is non-zero, meaning target exists in moves
-    //return (target_bitb & legal_moves) != 0;
-
-    // Dummy return
-    return true;
+    return (target_bitb & legal_moves) != 0;
 }
 
 std::string ChessBoard::GetBoardState() {
@@ -42,7 +39,7 @@ std::string ChessBoard::GetBoardState() {
     for (int rank = 7; rank >= 0; rank--) {
         int empty_squares = 0;
         for (int file = 0; file < 8; file++) {
-            uint64_t square = 1ULL << (rank * 8 + file); // Get current square as bitboard
+            int square = rank * 8 + file; // Get current square as bitboard
 
             // Get piece type at square
             char piece = board->getPieceType(square);
@@ -102,7 +99,7 @@ std::string ChessBoard::GetDebugMessage() const {
     return debugMessage;
 }
 
-uint64_t ChessBoard::SquareToBitboard(const char* square) {
+int ChessBoard::SquareToInt(const char* square) {
     // Validate square notation
     if (strlen(square) != 2) {
         throw std::invalid_argument("Invalid square notation");
@@ -128,6 +125,5 @@ uint64_t ChessBoard::SquareToBitboard(const char* square) {
     // Calculate the square index (0-63)
     int square_index = (7 - rank) * 8 + file;
 
-    // Create a bitboard with only this square set
-    return 1ULL << square_index;
+    return square_index;
 }

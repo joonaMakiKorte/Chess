@@ -15,25 +15,19 @@ extern "C" CHESSENGINE_API void DestroyBoard(void* board) {
 extern "C" CHESSENGINE_API bool ValidateMove(void* board, const char* move) {
     if (!board || !move) return false; // Prevent crashes
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-
-    std::string debugMessage = "Validating move: ";
-    debugMessage += move;
-
-    // Update the static debug message with selected squares
-    b->UpdateDebugMessage(debugMessage); // Assuming this method updates the debug message in ChessBoard
-
     return b->ValidateMove(move); // Return move validity
 }
 
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {
+    if (!board) return; // Prevent crashes if the board is null
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* back to ChessBoard*
     std::string state = b->GetBoardState(); // Get board state as FEN string
     strncpy_s(output, size, state.c_str(), _TRUNCATE); // Convert state to C-style string and copy into the output buffer 
 }
 
-extern "C" CHESSENGINE_API const char* GetDebugMessage(void* board) {
-    if (!board) return nullptr; // Prevent crashes if the board is null
+extern "C" CHESSENGINE_API void GetDebugMessage(void* board, char* output, int size) {
+    if (!board) return; // Prevent crashes if the board is null
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-    static std::string debugMessage = b->GetDebugMessage(); // Store the debug message in a static variable
-    return debugMessage.c_str(); // Return the C-style string
+    std::string debug_message = b->GetDebugMessage(); // Store the debug message in a static variable
+    strncpy_s(output, size, debug_message.c_str(), _TRUNCATE); // Copy into the output buffer
 }
