@@ -7,7 +7,7 @@ using System.Windows.Media;
 
 namespace Chess
 {
-    public class ChessGame
+    public class ChessGame : IDisposable
     {
 
         private bool isWhiteTurn = true; // White moves first
@@ -19,7 +19,7 @@ namespace Chess
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
             {
-                throw new Exception("Failed to initialize chess engine.");
+                throw new Exception("Failed to initialize the chess board from the engine.");
             }
 
             // Get initial board state and apply to pieceLocations
@@ -73,12 +73,12 @@ namespace Chess
         // Moves the piece
         public bool MovePiece(string move)
         {
-            // Ei toimi vielä vittu
+            // Ei toimi vieläkään vittu ++++1
             //if (!ChessEngineInterop.ValidateMove(board, move))
-            //{
-            //    Console.WriteLine($"Invalid move: {move}");
-            //    return false;
-            //}
+            {
+                Console.WriteLine($"Invalid move: {move}");
+                return false;
+            }
 
             // TODO!!!
             // Apply move in the native engine

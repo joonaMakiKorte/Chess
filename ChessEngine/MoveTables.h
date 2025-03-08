@@ -18,7 +18,7 @@ struct BishopMoves {
 // Declare tables
 extern PawnMoves WHITE_PAWN_MOVES[64];
 extern PawnMoves BLACK_PAWN_MOVES[64];
-extern PawnMoves BISHOP_MOVES[64];
+extern BishopMoves BISHOP_MOVES[64];
 
 
 /*
