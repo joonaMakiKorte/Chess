@@ -1,0 +1,16 @@
+#ifndef BITBOARD_CONSTANTS_H
+#define BITBOARD_CONSTANTS_H
+
+#include <cstdint>
+
+// File masks
+constexpr uint64_t FILE_A = 0x0101010101010101ULL;
+constexpr uint64_t FILE_H = 0x8080808080808080ULL;
+
+// Rank masks
+constexpr uint64_t RANK_2 = 0x000000000000FF00ULL;
+constexpr uint64_t RANK_4 = 0x00000000FF000000ULL;
+constexpr uint64_t RANK_5 = 0x000000FF00000000ULL;
+constexpr uint64_t RANK_7 = 0x00FF000000000000ULL;
+
+#endif // BITBOARD_CONSTANTS_H

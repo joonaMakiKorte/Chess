@@ -27,10 +27,13 @@
     <ClInclude Include="ChessEngineExports.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Board.h">
+    <ClInclude Include="Bitboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MoveTables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BitboardConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,7 +50,7 @@
     <ClCompile Include="ChessEngineExports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Board.cpp">
+    <ClCompile Include="Bitboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MoveTables.cpp">
