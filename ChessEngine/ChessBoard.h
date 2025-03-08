@@ -1,12 +1,14 @@
 #ifndef CHESSBOARD_H
 #define CHESSBOARD_H	
 
-#include "Board.h"
+#include "Bitboard.h"
 
 class ChessBoard {
 private:
     // Store the board logic
-    Board board;
+    std::unique_ptr<Bitboard> board; // Smart pointer
+
+    std::string debugMessage;
 
 public:
     // Initialize the chessboard
@@ -30,6 +32,12 @@ public:
     // '0' = half move clock
     // '1' = full move number
     std::string GetBoardState();
+
+    // Set debug messages dynamically
+    void UpdateDebugMessage(const std::string& message);
+
+    // Get debug message
+    std::string GetDebugMessage() const;
 
 private:
     // Converts a square to its bitboard representation

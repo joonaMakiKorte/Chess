@@ -1,7 +1,11 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-class Board {
+// Pre-computed variables
+constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
+constexpr int MAX_MOVES = 32; // Max number of legal moves for a piece, in theory max would be 28 (for queen) but we use 32 for alignment and placement
+
+class Bitboard {
 private:
     // Represent each piece type as a bitboard
     uint64_t white_pawns;
@@ -34,7 +38,7 @@ private:
 
 public:
     // Initialize each piece with starting pos
-    Board();
+    Bitboard();
 
     // Get player turn
     bool isWhite(); 
@@ -72,7 +76,7 @@ private:
     /*
     * TODO: Implement the rest after creating the corresponding movetables
     */
-    uint64_t getPawnMoves(uint64_t pawn);
+    uint64_t getPawnMoves(int pawn);
     uint64_t getKnightMoves(uint64_t knight);
     uint64_t getBishopMoves(uint64_t bishop);
     uint64_t getRookMoves(uint64_t rook);

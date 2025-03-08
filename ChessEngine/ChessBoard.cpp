@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "ChessBoard.h"
 
-ChessBoard::ChessBoard() {
-    board = Board();
-}
+ChessBoard::ChessBoard() 
+    : board(std::make_unique<Bitboard>()), debugMessage("Initial debug message")
+{}
 
 bool ChessBoard::ValidateMove(const char* move) {
     // Validate move notation
@@ -15,21 +15,28 @@ bool ChessBoard::ValidateMove(const char* move) {
     char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
     char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
 
-    // Get bitboard represantations of moves
-    uint64_t source_bitb = SquareToBitboard(source_square);
-    uint64_t target_bitb = SquareToBitboard(target_square);
+    // Update the debug message with selected squares
+    std::string message = "Validating move from " + std::string(source_square) + " to " + std::string(target_square);
+    UpdateDebugMessage(message); // Update debugMessage with the current move
+
+    // Get source and target as bitboards
+    //uint64_t source_bitb = SquareToBitboard(source_square);
+    //uint64_t target_bitb = SquareToBitboard(target_square);
 
     // Get all legal moves from the source square
-    uint64_t legal_moves = board.getLegalMoves(source_bitb);
+    //uint64_t legal_moves = board->getLegalMoves(source_bitb);
 
     // Bitwise AND operation to check if target is in legal moves
     // Returns bool indicating if result is non-zero, meaning target exists in moves
-    return (target_bitb & legal_moves) != 0;
+    //return (target_bitb & legal_moves) != 0;
+
+    // Dummy return
+    return true;
 }
 
 std::string ChessBoard::GetBoardState() {
-	// Generate the FEN string based on the current board state
-	std::string fen;
+    // Generate the FEN string based on the current board state
+    std::string fen;
 
     // 1. Piece Placement
     for (int rank = 7; rank >= 0; rank--) {
@@ -38,7 +45,7 @@ std::string ChessBoard::GetBoardState() {
             uint64_t square = 1ULL << (rank * 8 + file); // Get current square as bitboard
 
             // Get piece type at square
-            char piece = board.getPieceType(square);
+            char piece = board->getPieceType(square);
 
             // If empty continue
             if (piece == '\0') {
@@ -68,23 +75,31 @@ std::string ChessBoard::GetBoardState() {
     }
 
     // 2. Active Color
-    std::string active_color = board.isWhite() ? " w " : " b ";
+    std::string active_color = board->isWhite() ? " w " : " b ";
     fen += active_color;
 
     // 3. Castling Rights (assume all castling rights available for simplicity)
-    fen += board.getCastlingRightsString();
+    fen += board->getCastlingRightsString();
 
     // 4. En Passant Target Square
-    std::string enPassant = board.getEnPassantString();
+    std::string enPassant = board->getEnPassantString();
     fen += " " + (enPassant.empty() ? "-" : enPassant);
 
     // 5. Half-Move Clock
-    fen += " " + std::to_string(board.getHalfMoveClock());
+    fen += " " + std::to_string(board->getHalfMoveClock());
 
     // 6. Full-Move Number
-    fen += " " + std::to_string(board.getFullMoveNumber());
+    fen += " " + std::to_string(board->getFullMoveNumber());
 
     return fen;
+}
+
+void ChessBoard::UpdateDebugMessage(const std::string& message) {
+    debugMessage = message;
+}
+
+std::string ChessBoard::GetDebugMessage() const {
+    return debugMessage;
 }
 
 uint64_t ChessBoard::SquareToBitboard(const char* square) {

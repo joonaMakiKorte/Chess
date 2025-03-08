@@ -1,9 +1,9 @@
 #include "pch.h"
-#include "Board.h"
+#include "Bitboard.h"
 #include "MoveTables.h"
 
 
-Board::Board(): 
+Bitboard::Bitboard():
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	white(true),                           // White starts
@@ -25,11 +25,11 @@ Board::Board():
 	black_king = 0x0800000000000000;       // e8
 }
 
-bool Board::isWhite() {
+bool Bitboard::isWhite() {
 	return white;
 }
 
-char Board::getPieceType(uint64_t square) const {
+char Bitboard::getPieceType(uint64_t square) const {
 	if (white_pawns & square) return 'P';
 	if (black_pawns & square) return 'p';
 	if (white_knights & square) return 'N';
@@ -45,7 +45,7 @@ char Board::getPieceType(uint64_t square) const {
 	return '\0'; // Empty square
 }
 
-std::string Board::getCastlingRightsString() const {
+std::string Bitboard::getCastlingRightsString() const {
 	std::string rights;
 	if (castling_rights & 0x01) rights += 'K'; // White kingside
 	if (castling_rights & 0x02) rights += 'Q'; // White queenside
@@ -54,7 +54,7 @@ std::string Board::getCastlingRightsString() const {
 	return rights.empty() ? "-" : rights;
 }
 
-std::string Board::getEnPassantString() const {
+std::string Bitboard::getEnPassantString() const {
 	std::string square;
 	if (en_passant_target != UNASSIGNED) {
 		square = squareToString(en_passant_target); // Transform to algebraic notation
@@ -65,67 +65,79 @@ std::string Board::getEnPassantString() const {
 	return square;
 }
 
-int Board::getHalfMoveClock() const {
+int Bitboard::getHalfMoveClock() const {
 	return half_moves;
 }
 
-int Board::getFullMoveNumber() const {
+int Bitboard::getFullMoveNumber() const {
 	return full_moves;
 }
 
 
-uint64_t Board::getLegalMoves(uint64_t from) {
-	uint64_t legal_moves = 0ULL;
-	// Get the piece type at the source square
+uint64_t Bitboard::getLegalMoves(uint64_t from) {
+	if (from == 0) return 0ULL; // Invalid source square
+
+	int square = std::countr_zero(from); // Extract index from bitboard as LSB (least significant bit)
 	char piece = getPieceType(from);
+
+	uint64_t legal_moves = 0ULL;
 	switch (tolower(piece)) // Convert to lowercase, we use turn flag to determine if white or not
 	{
 	case 'p': legal_moves = getPawnMoves(from); break;
+	/*
+	* TODO: IMPLEMENT THE REST
+	*/
+	case 'n': break;
+	case 'b': break;
+	case 'r': break;
+	case 'q': break;
+	case 'k': break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
 
 	return legal_moves;
 }
 
-uint64_t Board::whitePieces() {
+uint64_t Bitboard::whitePieces() {
 	return white_pawns | white_rooks | white_knights |
 		white_bishops | white_queen | white_king;
 }
 
-uint64_t Board::blackPieces() {
+uint64_t Bitboard::blackPieces() {
 	return black_pawns | black_rooks | black_knights |
 		black_bishops | black_queen | black_king;
 }
 
-std::string Board::squareToString(int square) const {
+std::string Bitboard::squareToString(int square) const {
 	char file = 'a' + (square % 8);
 	char rank = '1' + (square / 8);
 	return std::string() + file + rank;
 }
 
-uint64_t Board::getPawnMoves(uint64_t pawn) {
-	if (pawn == 0) return 0; // No pawn present
+uint64_t Bitboard::getPawnMoves(int square) {
+	uint64_t pawn_bitboard = 1ULL << square; // Convert index to bitboard
+	if ((white_pawns & pawn_bitboard) == 0 && (black_pawns & pawn_bitboard) == 0) {
+		return 0ULL; // No pawn exists at this square
+	}
 
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
 	uint64_t occupied = white_pieces | black_pieces;
 
-    int square = std::bitset<64>(pawn).to_ullong(); // Get index of the pawn's position
-	// Using bitwise OR operation get all moves from the location
-	// Get moves from white or black pawn move table depending which turn is active
-	if (white) { // White pawn moves
+	if (white_pawns & pawn_bitboard) { // White pawn
 		uint64_t singlePush = WHITE_PAWN_MOVES[square].single_push & ~occupied;
 		uint64_t doublePush = WHITE_PAWN_MOVES[square].double_push & ~occupied & (singlePush << 8); // Ensure single step is free
 		uint64_t captures = WHITE_PAWN_MOVES[square].captures & black_pieces; // Capture only black pieces
 
 		return singlePush | doublePush | captures;
 	}
-	else { // Black pawn moves
+	else if (black_pawns & pawn_bitboard) { // Black pawn
 		uint64_t singlePush = BLACK_PAWN_MOVES[square].single_push & ~occupied;
 		uint64_t doublePush = BLACK_PAWN_MOVES[square].double_push & ~occupied & (singlePush >> 8);
 		uint64_t captures = BLACK_PAWN_MOVES[square].captures & white_pieces; // Capture only white pieces
 
 		return singlePush | doublePush | captures;
 	}
-}
 
+	return 0ULL; // Should never reach here
+}
