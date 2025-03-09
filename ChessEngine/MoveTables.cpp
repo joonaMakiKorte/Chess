@@ -2,7 +2,8 @@
 #include "MoveTables.h"
 #include "BitboardConstants.h"
 
-// Init tables
+// Static allocation of tables
+// Declared as global arrays
 PawnMoves WHITE_PAWN_MOVES[64];
 PawnMoves BLACK_PAWN_MOVES[64];
 BishopMoves BISHOP_MOVES[64];
@@ -34,13 +35,12 @@ void initBlackPawnMoves(int square) {
 
 	uint64_t captures = 0ULL;
 	// Ensure that only bits that are not on the border files can shift left/right
-	if (!(bitboard & FILE_A)) captures |= (bitboard >> 9); // SW attack
-	if (!(bitboard & FILE_H)) captures |= (bitboard >> 7); // SE attack
+	if (!(bitboard & FILE_A)) captures |= (bitboard >> 7); // SW attack
+	if (!(bitboard & FILE_H)) captures |= (bitboard >> 9); // SE attack
 
 	// Insert moveset at square
 	BLACK_PAWN_MOVES[square] = { single_push, double_push, captures };
 }
-
 
 void initBishopMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
@@ -60,36 +60,27 @@ void initBishopMoves(int square) {
 
 		// loop and explore the bitboard in the current direction
 		while (true) {
-			// Check if the move has gone beyond the edge of the board
-			// The conditions handle edge cases where the move crosses the board's boundary
-			// Each direction is checked against the corresponding edge of the board
-			if ((direction == -7 && (current_square & FILE_A)) ||
-				(direction == 7 && (current_square & FILE_H)) ||
-				(direction == -9 && (current_square & FILE_H)) ||
-				(direction == 9 && (current_square & FILE_A))) {
-				break;
-			}
-
 			// Shift in the given direction
 			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
 
 			// Ensure square remains on the board
 			if (current_square == 0) break;
 
-			// Add the current square to the corresponding diagonal move bitboard
-			// Depending on the direction, the move will be added to the appropriate diagonal
+			// Check for wraparound using file masks
+			if ((direction == -7 || direction == 9) && (current_square & FILE_A)) break;
+			if ((direction == -9 || direction == 7) && (current_square & FILE_H)) break;
+
+			// Store in corresponding move bitboard
 			if (direction == -7) top_left |= current_square;
-			else if (direction == 7) bottom_left |= current_square;
+			else if (direction == 7) bottom_right |= current_square;
 			else if (direction == -9) top_right |= current_square;
-			else if (direction == 9) bottom_right |= current_square;
+			else if (direction == 9) bottom_left |= current_square;
 		}
 	}
 
 	// Store the calculated moves for this square
 	BISHOP_MOVES[square] = { top_left, top_right, bottom_left, bottom_right };
 }
-
-
 
 
 void initRookMoves(int square) {
@@ -110,8 +101,8 @@ void initRookMoves(int square) {
 		// Loop and explore the bitboard in the current direction
 		while (true) {
 			// Check if the move has gone beyond the edge of the board
-			if ((direction == 1 && (current_square & FILE_H)) ||
-				(direction == -1 && (current_square & FILE_A))) {
+			if ((direction == 1 && (current_square & FILE_H)) || // Prevent left wrap
+				(direction == -1 && (current_square & FILE_A))) { // Preven right wrap
 				break;
 			}
 
@@ -120,6 +111,7 @@ void initRookMoves(int square) {
 
 			// Ensure square remains on the board
 			if (current_square == 0) break;
+
 
 			// Add the current square to the corresponding move bitboard
 			if (direction == 8) upwards |= current_square;

@@ -46,6 +46,7 @@ public:
 
 private:
     // Converts a square to its integer representation
+    // Uses little-endian rank-file mapping (LSM = a1, MSB = h8)
     // Takes a C-style string of the square as the param
     int SquareToInt(const char* square);
 };

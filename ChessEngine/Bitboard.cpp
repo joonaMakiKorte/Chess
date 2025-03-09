@@ -81,8 +81,6 @@ int Bitboard::getFullMoveNumber() const {
 
 
 uint64_t Bitboard::getLegalMoves(int from) {
-	if (from == 0) return 0ULL; // Invalid source square
-
 	char piece = getPieceType(from); // Get piece type at square
 
 	uint64_t legal_moves = 0ULL;
@@ -118,8 +116,7 @@ void Bitboard::applyMove(int source, int target) {
 	};
 
 	// Before applying move check if target is an empty square
-	// Use bitwise AND to check if target is occupied
-	bool empty = !(target_square & (whitePieces() | blackPieces()));
+	bool empty = target_piece == '\0';
 
 	// Call movePiece depending which turn ongoing
 	switch (tolower(source_piece))
@@ -204,20 +201,14 @@ uint64_t Bitboard::getKnightMoves(int square) {
 		return 0ULL; // No knight exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces;
-
-	uint64_t moves = KNIGHT_MOVES[square].moves & ~occupied; // Remove occupied squares
-
 	if (white_knights & knight_bitboard) {
-		moves &= ~white_pieces; // White knight can't move onto white pieces
+		return KNIGHT_MOVES[square].moves &= ~whitePieces(); // White knight can't move onto white pieces
 	}
 	else if (black_knights & knight_bitboard) {
-		moves &= ~black_pieces; // Black knight can't move onto black pieces
+		return KNIGHT_MOVES[square].moves &= ~blackPieces(); // Black knight can't move onto black pieces
 	}
 
-	return moves;
+	return 0ULL; // Should never reach here
 }
 
 uint64_t Bitboard::getBishopMoves(int square) {
@@ -226,23 +217,20 @@ uint64_t Bitboard::getBishopMoves(int square) {
 		return 0ULL; // No bishop exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces;
-
+	// Combine moves
 	uint64_t moves = (BISHOP_MOVES[square].top_left |
 		BISHOP_MOVES[square].top_right |
 		BISHOP_MOVES[square].bottom_left |
-		BISHOP_MOVES[square].bottom_right) & ~occupied; // Remove occupied squares
+		BISHOP_MOVES[square].bottom_right);
 
 	if (white_bishops & bishop_bitboard) {
-		moves &= ~white_pieces; // White bishop can't move onto white pieces
+		return moves &= ~whitePieces(); // White bishop can't move onto white pieces
 	}
 	else if (black_bishops & bishop_bitboard) {
-		moves &= ~black_pieces; // Black bishop can't move onto black pieces
+		return moves &= ~blackPieces(); // Black bishop can't move onto black pieces
 	}
 
-	return moves;
+	return 0ULL; // Should never reach here
 }
 
 uint64_t Bitboard::getRookMoves(int square) {
@@ -251,23 +239,20 @@ uint64_t Bitboard::getRookMoves(int square) {
 		return 0ULL; // No rook exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces;
-
-	uint64_t moves = (ROOK_MOVES[square].upwards & ~occupied |
-		ROOK_MOVES[square].downwards & ~occupied |
-		ROOK_MOVES[square].right & ~occupied |
-		ROOK_MOVES[square].left & ~occupied);
+	// Combine moves
+	uint64_t moves = (ROOK_MOVES[square].upwards |
+		ROOK_MOVES[square].downwards |
+		ROOK_MOVES[square].right |
+		ROOK_MOVES[square].left);
 
 	if (white_rooks & rook_bitboard) {
-		moves &= ~white_pieces; // White rook can't move onto white pieces
+		return moves &= ~whitePieces(); // White rook can't move onto white pieces
 	}
 	else if (black_rooks & rook_bitboard) {
-		moves &= ~black_pieces; // Black rook can't move onto black pieces
+		return moves &= ~blackPieces(); // Black rook can't move onto black pieces
 	}
 
-	return moves;
+	return 0ULL; // Should never reach here
 }
 
 uint64_t Bitboard::getQueenMoves(int square) {
@@ -276,39 +261,25 @@ uint64_t Bitboard::getQueenMoves(int square) {
 		return 0ULL; // No queen exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces;
-
-	uint64_t moves = 0ULL;
+	// Combine moves
+	uint64_t moves = (QUEEN_MOVES[square].top |
+		QUEEN_MOVES[square].bottom |
+		QUEEN_MOVES[square].left |
+		QUEEN_MOVES[square].right |
+		QUEEN_MOVES[square].top_left |
+		QUEEN_MOVES[square].top_right |
+		QUEEN_MOVES[square].bottom_left |
+		QUEEN_MOVES[square].bottom_right);
 
 	if (white_queen & queen_bitboard) { // White queen
-		// For white queen, combine all possible moves (top, bottom, left, right, etc.)
-		moves |= (QUEEN_MOVES[square].top & ~occupied);
-		moves |= (QUEEN_MOVES[square].bottom & ~occupied);
-		moves |= (QUEEN_MOVES[square].left & ~occupied);
-		moves |= (QUEEN_MOVES[square].right & ~occupied);
-		moves |= (QUEEN_MOVES[square].top_left & ~occupied);
-		moves |= (QUEEN_MOVES[square].top_right & ~occupied);
-		moves |= (QUEEN_MOVES[square].bottom_left & ~occupied);
-		moves |= (QUEEN_MOVES[square].bottom_right & ~occupied);
+		return moves &= ~whitePieces(); 
 	}
 	else if (black_queen & queen_bitboard) { // Black queen
-		// For black queen, combine all possible moves (top, bottom, left, right, etc.)
-		moves |= (QUEEN_MOVES[square].top & ~occupied);
-		moves |= (QUEEN_MOVES[square].bottom & ~occupied);
-		moves |= (QUEEN_MOVES[square].left & ~occupied);
-		moves |= (QUEEN_MOVES[square].right & ~occupied);
-		moves |= (QUEEN_MOVES[square].top_left & ~occupied);
-		moves |= (QUEEN_MOVES[square].top_right & ~occupied);
-		moves |= (QUEEN_MOVES[square].bottom_left & ~occupied);
-		moves |= (QUEEN_MOVES[square].bottom_right & ~occupied);
+		return moves &= ~blackPieces();
 	}
 
-	return moves;
+	return 0ULL; // Should never reach here
 }
-
-
 
 uint64_t Bitboard::getKingMoves(int square) {
 	uint64_t king_bitboard = 1ULL << square; // Convert index to bitboard
@@ -316,18 +287,12 @@ uint64_t Bitboard::getKingMoves(int square) {
 		return 0ULL; // No king exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces;
-
-	uint64_t moves = KING_MOVES[square].moves & ~occupied; // Remove occupied squares
-
 	if (white_king & king_bitboard) {
-		moves &= ~white_pieces; // White king can't move onto white pieces
+		return KING_MOVES[square].moves &= ~whitePieces(); // White king can't move onto white pieces
 	}
 	else if (black_king & king_bitboard) {
-		moves &= ~black_pieces; // Black king can't move onto black pieces
+		return KING_MOVES[square].moves &= ~blackPieces(); // Black king can't move onto black pieces
 	}
 
-	return moves;
+	return 0ULL; // Should never reach here
 }

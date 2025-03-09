@@ -74,10 +74,7 @@ namespace Chess
         public bool MovePiece(string move)
         {
             Console.WriteLine(move); // Debug
-            bool isValid = ChessEngineInterop.ValidateMove(board, move);                                                                      
-            string message = ChessEngineInterop.GetDebugMessageString(board);
-            Console.WriteLine(message);
-            if (!isValid)
+            if (!ChessEngineInterop.ValidateMove(board,move))
             {
                 Console.WriteLine($"Invalid move: {move}");
                 return false;
@@ -85,6 +82,8 @@ namespace Chess
 
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, move);
+            string message = ChessEngineInterop.GetDebugMessageString(board);
+            Console.WriteLine(message);
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);

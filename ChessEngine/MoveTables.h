@@ -42,7 +42,6 @@ struct KingMoves {
 };
 
 
-
 // Declare tables
 extern PawnMoves WHITE_PAWN_MOVES[64];
 extern PawnMoves BLACK_PAWN_MOVES[64];
@@ -51,14 +50,6 @@ extern RookMoves ROOK_MOVES[64];
 extern KnightMoves KNIGHT_MOVES[64];
 extern QueenMoves QUEEN_MOVES[64];
 extern KingMoves KING_MOVES[64];
-
-
-
-/*
-* TODO
-* Move tables for other pieces
-* Implement like PawnMoves
-*/
 
 // Generate move tables at runtime
 // Loops over the 64 squares of the chessboard and creates moveset for each piece at each location

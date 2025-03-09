@@ -19,9 +19,6 @@ bool ChessBoard::ValidateMove(const char* move) {
     int source = SquareToInt(source_square);
     int target = SquareToInt(target_square);
 
-    std::string message = "Source: " + std::to_string(source) + " Target: " + std::to_string(target);
-    UpdateDebugMessage(message);
-
     // Get all legal moves from the source square
     uint64_t legal_moves = board->getLegalMoves(source);
     uint64_t target_bitb = 1ULL << target; // Convert target to bitboard
@@ -137,7 +134,7 @@ int ChessBoard::SquareToInt(const char* square) {
     }
 
     // Calculate the square index (0-63)
-    int square_index = (7 - rank) * 8 + file;
+    int square_index = rank * 8 + file;
 
     return square_index;
 }
