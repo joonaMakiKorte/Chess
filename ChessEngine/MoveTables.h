@@ -15,10 +15,46 @@ struct BishopMoves {
 	uint64_t bottom_right; // Diagonal bottom-right direction
 };
 
+struct RookMoves {
+	uint64_t upwards;    // moving upwards
+	uint64_t downwards;   // moving downwards
+	uint64_t right; // moving right
+	uint64_t left; // moving left
+};
+
+
+
+
+struct KnightMoves {
+	uint64_t moves;
+};
+
+struct QueenMoves {
+	uint64_t top;
+	uint64_t bottom;
+	uint64_t left;
+	uint64_t right;
+	uint64_t top_left;
+	uint64_t top_right;
+	uint64_t bottom_left;
+	uint64_t bottom_right;
+};
+
+struct KingMoves {
+	uint64_t moves;
+};
+
+
+
 // Declare tables
 extern PawnMoves WHITE_PAWN_MOVES[64];
 extern PawnMoves BLACK_PAWN_MOVES[64];
 extern BishopMoves BISHOP_MOVES[64];
+extern RookMoves Rook_Moves[64];
+extern KnightMoves Knight_Moves[64];
+extern QueenMoves Queen_Moves[64];
+extern KingMoves King_Moves[64];
+
 
 
 /*
