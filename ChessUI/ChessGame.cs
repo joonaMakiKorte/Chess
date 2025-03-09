@@ -9,8 +9,11 @@ namespace Chess
 {
     public class ChessGame : IDisposable
     {
-
         private bool isWhiteTurn = true; // White moves first
+        private bool whiteKingside, whiteQueenside, blackKingside, blackQueenside; // Store castling rights
+        private string enPassantTarget; // Store en passant target square using algebraic notation
+        private int halfMoves, fullMoves; // Store move clocks
+
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
 
@@ -58,6 +61,23 @@ namespace Chess
                 }
             }
 
+            // Read turn
+            isWhiteTurn = sections[1] == "w";
+
+            // Read castling rights
+            whiteKingside = sections[2].Contains("K");
+            whiteQueenside = sections[2].Contains("Q");
+            blackKingside = sections[2].Contains("k");
+            blackQueenside = sections[2].Contains("q");
+
+            // Read en passant target square
+            enPassantTarget = sections[3].ToString();
+
+            // Read half moves
+            halfMoves = int.Parse(sections[4]);
+
+            // Read full moves
+            fullMoves = int.Parse(sections[5]);
         }
 
         // Gives the pieceLocations dict fully
@@ -65,10 +85,6 @@ namespace Chess
 
         // Get turn
         public bool IsWhiteTURN() => isWhiteTurn;
-
-        // Switch turn
-        public void SwitchTurn() => isWhiteTurn = !isWhiteTurn;
-
 
         // Moves the piece
         public bool MovePiece(string move)
@@ -82,15 +98,12 @@ namespace Chess
 
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, move);
-            string message = ChessEngineInterop.GetDebugMessageString(board);
-            Console.WriteLine(message);
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
             Console.WriteLine(fen);
 
-            SwitchTurn(); // Change turn
             return true;
         }
 

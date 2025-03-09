@@ -90,8 +90,7 @@ std::string ChessBoard::GetBoardState() {
     fen += board->getCastlingRightsString();
 
     // 4. En Passant Target Square
-    std::string enPassant = board->getEnPassantString();
-    fen += " " + (enPassant.empty() ? "-" : enPassant);
+    fen += " " + board->getEnPassantString();
 
     // 5. Half-Move Clock
     fen += " " + std::to_string(board->getHalfMoveClock());

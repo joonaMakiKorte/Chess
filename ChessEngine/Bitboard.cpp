@@ -66,7 +66,7 @@ std::string Bitboard::getEnPassantString() const {
 		square = squareToString(en_passant_target); // Transform to algebraic notation
 	}
 	else {
-		square = "- "; // Represent as dash if none
+		square = "-"; // Represent as dash if none
 	}
 	return square;
 }
@@ -118,10 +118,13 @@ void Bitboard::applyMove(int source, int target) {
 	// Before applying move check if target is an empty square
 	bool empty = target_piece == '\0';
 
+	++half_moves; // Increment half moves
+	++full_moves; // Increment full moves
+
 	// Call movePiece depending which turn ongoing
 	switch (tolower(source_piece))
 	{
-	case 'p': white ? movePiece(white_pawns) : movePiece(black_pawns); break;
+	case 'p': white ? movePiece(white_pawns) : movePiece(black_pawns); half_moves = 0; break; // Resets halfmove-clock
 	case 'n': white ? movePiece(white_knights) : movePiece(black_knights); break;
 	case 'b': white ? movePiece(white_bishops) : movePiece(black_bishops); break;
 	case 'r': white ? movePiece(white_rooks) : movePiece(black_rooks); break;
@@ -149,6 +152,7 @@ void Bitboard::applyMove(int source, int target) {
 	case 'k': white ? capturePiece(black_king) : capturePiece(white_king); break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
+	half_moves = 0; // Captures reset halfmove-clock
 }
 
 uint64_t Bitboard::whitePieces() {
