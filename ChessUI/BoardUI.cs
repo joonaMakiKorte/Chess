@@ -69,13 +69,13 @@ namespace Chess
 
         public void UpdateBoard(string[,] boardState)
         {
-            Console.WriteLine("Updating board...");
+            //Console.WriteLine("Updating board...");
             for (int row = 0; row < 8; row++)
             {
                 for (int col = 0; col < 8; col++)
                 {
 
-                    Console.WriteLine($"Row {row}, Col {col}: {boardState[row, col]}");
+                    //Console.WriteLine($"Row {row}, Col {col}: {boardState[row, col]}");
                     string piece = boardState[row, col]; // Get piece at square
                     // Image for each piece
                     pieceImages[row, col].Source = images.GetPieceImage(piece);

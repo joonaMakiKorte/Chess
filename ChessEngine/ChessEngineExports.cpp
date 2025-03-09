@@ -18,6 +18,12 @@ extern "C" CHESSENGINE_API bool ValidateMove(void* board, const char* move) {
     return b->ValidateMove(move); // Return move validity
 }
 
+extern "C" CHESSENGINE_API void MakeMove(void* board, const char* move) {
+    if (!board || !move) return; // Prevent crashes
+    ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
+    b->MovePiece(move); // Apply move 
+}
+
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {
     if (!board) return; // Prevent crashes if the board is null
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* back to ChessBoard*

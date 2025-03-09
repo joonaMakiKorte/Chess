@@ -43,6 +43,8 @@ public:
     // Get player turn
     bool isWhite(); 
 
+    void switchTurn();
+
     // Helper to get the piece type at a given square
     char getPieceType(int square) const;
 
@@ -62,6 +64,11 @@ public:
     // Takes the source square as the parameter
     uint64_t getLegalMoves(int from);
 
+    // Apply move by updating bitboards
+    // Takes the source and target as parameters
+    // Move is applied only after making sure its legal, meaning no need to check for validity
+    void applyMove(int source, int target);
+
 private:
     // Get locations of white or black pieces (bitboard)
      // Uses bitwise OR operation to combine occupancy of all pieces of same color
@@ -77,11 +84,11 @@ private:
     * TODO: Implement the rest after creating the corresponding movetables
     */
     uint64_t getPawnMoves(int pawn);
-    uint64_t getKnightMoves(uint64_t knight);
-    uint64_t getBishopMoves(uint64_t bishop);
-    uint64_t getRookMoves(uint64_t rook);
-    uint64_t getQueenMoves(uint64_t queen);
-    uint64_t getKingMoves(uint64_t king);
+    uint64_t getKnightMoves(int knight);
+    uint64_t getBishopMoves(int bishop);
+    uint64_t getRookMoves(int rook);
+    uint64_t getQueenMoves(int queen);
+    uint64_t getKingMoves(int king);
 };
 
 #endif CHESSLOGIC_H

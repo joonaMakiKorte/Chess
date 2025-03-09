@@ -22,9 +22,6 @@ struct RookMoves {
 	uint64_t left; // moving left
 };
 
-
-
-
 struct KnightMoves {
 	uint64_t moves;
 };
@@ -50,10 +47,10 @@ struct KingMoves {
 extern PawnMoves WHITE_PAWN_MOVES[64];
 extern PawnMoves BLACK_PAWN_MOVES[64];
 extern BishopMoves BISHOP_MOVES[64];
-extern RookMoves Rook_Moves[64];
-extern KnightMoves Knight_Moves[64];
-extern QueenMoves Queen_Moves[64];
-extern KingMoves King_Moves[64];
+extern RookMoves ROOK_MOVES[64];
+extern KnightMoves KNIGHT_MOVES[64];
+extern QueenMoves QUEEN_MOVES[64];
+extern KingMoves KING_MOVES[64];
 
 
 

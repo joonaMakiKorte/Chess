@@ -19,6 +19,10 @@ extern "C" {
     // Takes a void pointer to the board and the move as a const char pointer as params
     CHESSENGINE_API bool ValidateMove(void* board, const char* move);
 
+    // Make move in bitboard
+    // Takes a void pointer to the board and the move as a const char pointer
+    CHESSENGINE_API void MakeMove(void* board, const char* move);
+
     // Retrieve the current state of the chessboard and return it as a FEN string
     // Takes a void pointer to the board, pointer to char array to store the state (output buffer)
     // and size of the output buffer

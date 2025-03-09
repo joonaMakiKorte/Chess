@@ -29,6 +29,10 @@ bool Bitboard::isWhite() {
 	return white;
 }
 
+void Bitboard::switchTurn() {
+	white = !white;
+}
+
 char Bitboard::getPieceType(int square_int) const {
 	uint64_t square = 1ULL << square_int; // Cast to bitboard
 
@@ -82,21 +86,72 @@ uint64_t Bitboard::getLegalMoves(int from) {
 	char piece = getPieceType(from); // Get piece type at square
 
 	uint64_t legal_moves = 0ULL;
-	switch (tolower(piece)) // Convert to lowercase, we use turn flag to determine if white or not
+	switch (tolower(piece)) // Convert to lowercase
 	{
 	case 'p': legal_moves = getPawnMoves(from); break;
-	/*
-	* TODO: IMPLEMENT THE REST
-	*/
-	case 'n': break;
-	case 'b': break;
-	case 'r': break;
-	case 'q': break;
-	case 'k': break;
+	case 'n': legal_moves = getKnightMoves(from); break;
+	case 'b': legal_moves = getBishopMoves(from); break;
+	case 'r': legal_moves = getRookMoves(from); break;
+	case 'q': legal_moves = getQueenMoves(from); break;
+	case 'k': legal_moves = getKingMoves(from); break;
+	default: throw std::invalid_argument("Invalid piece type");
+	}
+	return legal_moves;
+}
+
+void Bitboard::applyMove(int source, int target) {
+	uint64_t source_square = 1ULL << source; // Convert source to bitboard
+	uint64_t target_square = 1ULL << target; // Convert target
+
+	// Get piece types at squares
+	char source_piece = getPieceType(source);
+	char target_piece = getPieceType(target);
+
+	// Update the bitboard of the piece moved
+	// Clears source square using bitwise AND with the negation source_square
+	// Sets the target using bitwise OR with target_square
+
+	// Create lambda for the moving operations
+	auto movePiece = [source_square, target_square](uint64_t& piece_bitboard) {
+		piece_bitboard &= ~source_square; // Clear source square
+		piece_bitboard |= target_square; // Set target square
+	};
+
+	// Before applying move check if target is an empty square
+	// Use bitwise AND to check if target is occupied
+	bool empty = !(target_square & (whitePieces() | blackPieces()));
+
+	// Call movePiece depending which turn ongoing
+	switch (tolower(source_piece))
+	{
+	case 'p': white ? movePiece(white_pawns) : movePiece(black_pawns); break;
+	case 'n': white ? movePiece(white_knights) : movePiece(black_knights); break;
+	case 'b': white ? movePiece(white_bishops) : movePiece(black_bishops); break;
+	case 'r': white ? movePiece(white_rooks) : movePiece(black_rooks); break;
+	case 'q': white ? movePiece(white_queen) : movePiece(black_queen); break;
+	case 'k': white ? movePiece(white_king) : movePiece(black_king); break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
 
-	return legal_moves;
+	// Early exit if piece was moved to an empty square
+	if (empty) return;
+
+	// Lambda for capturing operation
+	auto capturePiece = [target_square](uint64_t& piece_bitboard) {
+		piece_bitboard &= ~target_square; // Clear captured square
+	};
+
+	// Call capturePiece depending which turn ongoing
+	switch (tolower(target_piece))
+	{
+	case 'p': white ? capturePiece(black_pawns) : capturePiece(white_pawns); break;
+	case 'n': white ? capturePiece(black_knights) : capturePiece(white_knights); break;
+	case 'b': white ? capturePiece(black_bishops) : capturePiece(white_bishops); break;
+	case 'r': white ? capturePiece(black_rooks) : capturePiece(white_rooks); break;
+	case 'q': white ? capturePiece(black_queen) : capturePiece(white_queen); break;
+	case 'k': white ? capturePiece(black_king) : capturePiece(white_king); break;
+	default: throw std::invalid_argument("Invalid piece type");
+	}
 }
 
 uint64_t Bitboard::whitePieces() {
@@ -123,7 +178,7 @@ uint64_t Bitboard::getPawnMoves(int square) {
 
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces;
+	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
 	if (white_pawns & pawn_bitboard) { // White pawn
 		uint64_t singlePush = WHITE_PAWN_MOVES[square].single_push & ~occupied;
@@ -143,8 +198,7 @@ uint64_t Bitboard::getPawnMoves(int square) {
 	return 0ULL; // Should never reach here
 }
 
-uint64_t Bitboard::getKnightMoves(uint64_t square)
-{
+uint64_t Bitboard::getKnightMoves(int square) {
 	uint64_t knight_bitboard = 1ULL << square; // Convert index to bitboard
 	if ((white_knights & knight_bitboard) == 0 && (black_knights & knight_bitboard) == 0) {
 		return 0ULL; // No knight exists at this square
@@ -154,7 +208,7 @@ uint64_t Bitboard::getKnightMoves(uint64_t square)
 	uint64_t black_pieces = blackPieces();
 	uint64_t occupied = white_pieces | black_pieces;
 
-	uint64_t moves = Knight_Moves[square].moves & ~occupied; // Remove occupied squares
+	uint64_t moves = KNIGHT_MOVES[square].moves & ~occupied; // Remove occupied squares
 
 	if (white_knights & knight_bitboard) {
 		moves &= ~white_pieces; // White knight can't move onto white pieces
@@ -166,8 +220,7 @@ uint64_t Bitboard::getKnightMoves(uint64_t square)
 	return moves;
 }
 
-uint64_t Bitboard::getBishopMoves(uint64_t square)
-{
+uint64_t Bitboard::getBishopMoves(int square) {
 	uint64_t bishop_bitboard = 1ULL << square; // Convert index to bitboard
 	if ((white_bishops & bishop_bitboard) == 0 && (black_bishops & bishop_bitboard) == 0) {
 		return 0ULL; // No bishop exists at this square
@@ -192,8 +245,7 @@ uint64_t Bitboard::getBishopMoves(uint64_t square)
 	return moves;
 }
 
-uint64_t Bitboard::getRookMoves(uint64_t square)
-{
+uint64_t Bitboard::getRookMoves(int square) {
 	uint64_t rook_bitboard = 1ULL << square; // Convert index to bitboard
 	if ((white_rooks & rook_bitboard) == 0 && (black_rooks & rook_bitboard) == 0) {
 		return 0ULL; // No rook exists at this square
@@ -203,10 +255,10 @@ uint64_t Bitboard::getRookMoves(uint64_t square)
 	uint64_t black_pieces = blackPieces();
 	uint64_t occupied = white_pieces | black_pieces;
 
-	uint64_t moves = (Rook_Moves[square].upwards & ~occupied |
-		Rook_Moves[square].downwards & ~occupied |
-		Rook_Moves[square].right & ~occupied |
-		Rook_Moves[square].left & ~occupied);
+	uint64_t moves = (ROOK_MOVES[square].upwards & ~occupied |
+		ROOK_MOVES[square].downwards & ~occupied |
+		ROOK_MOVES[square].right & ~occupied |
+		ROOK_MOVES[square].left & ~occupied);
 
 	if (white_rooks & rook_bitboard) {
 		moves &= ~white_pieces; // White rook can't move onto white pieces
@@ -218,8 +270,7 @@ uint64_t Bitboard::getRookMoves(uint64_t square)
 	return moves;
 }
 
-uint64_t Bitboard::getQueenMoves(uint64_t square)
-{
+uint64_t Bitboard::getQueenMoves(int square) {
 	uint64_t queen_bitboard = 1ULL << square; // Convert index to bitboard
 	if ((white_queen & queen_bitboard) == 0 && (black_queen & queen_bitboard) == 0) {
 		return 0ULL; // No queen exists at this square
@@ -233,25 +284,25 @@ uint64_t Bitboard::getQueenMoves(uint64_t square)
 
 	if (white_queen & queen_bitboard) { // White queen
 		// For white queen, combine all possible moves (top, bottom, left, right, etc.)
-		moves |= (Queen_Moves[square].top & ~occupied);
-		moves |= (Queen_Moves[square].bottom & ~occupied);
-		moves |= (Queen_Moves[square].left & ~occupied);
-		moves |= (Queen_Moves[square].right & ~occupied);
-		moves |= (Queen_Moves[square].top_left & ~occupied);
-		moves |= (Queen_Moves[square].top_right & ~occupied);
-		moves |= (Queen_Moves[square].bottom_left & ~occupied);
-		moves |= (Queen_Moves[square].bottom_right & ~occupied);
+		moves |= (QUEEN_MOVES[square].top & ~occupied);
+		moves |= (QUEEN_MOVES[square].bottom & ~occupied);
+		moves |= (QUEEN_MOVES[square].left & ~occupied);
+		moves |= (QUEEN_MOVES[square].right & ~occupied);
+		moves |= (QUEEN_MOVES[square].top_left & ~occupied);
+		moves |= (QUEEN_MOVES[square].top_right & ~occupied);
+		moves |= (QUEEN_MOVES[square].bottom_left & ~occupied);
+		moves |= (QUEEN_MOVES[square].bottom_right & ~occupied);
 	}
 	else if (black_queen & queen_bitboard) { // Black queen
 		// For black queen, combine all possible moves (top, bottom, left, right, etc.)
-		moves |= (Queen_Moves[square].top & ~occupied);
-		moves |= (Queen_Moves[square].bottom & ~occupied);
-		moves |= (Queen_Moves[square].left & ~occupied);
-		moves |= (Queen_Moves[square].right & ~occupied);
-		moves |= (Queen_Moves[square].top_left & ~occupied);
-		moves |= (Queen_Moves[square].top_right & ~occupied);
-		moves |= (Queen_Moves[square].bottom_left & ~occupied);
-		moves |= (Queen_Moves[square].bottom_right & ~occupied);
+		moves |= (QUEEN_MOVES[square].top & ~occupied);
+		moves |= (QUEEN_MOVES[square].bottom & ~occupied);
+		moves |= (QUEEN_MOVES[square].left & ~occupied);
+		moves |= (QUEEN_MOVES[square].right & ~occupied);
+		moves |= (QUEEN_MOVES[square].top_left & ~occupied);
+		moves |= (QUEEN_MOVES[square].top_right & ~occupied);
+		moves |= (QUEEN_MOVES[square].bottom_left & ~occupied);
+		moves |= (QUEEN_MOVES[square].bottom_right & ~occupied);
 	}
 
 	return moves;
@@ -259,8 +310,7 @@ uint64_t Bitboard::getQueenMoves(uint64_t square)
 
 
 
-uint64_t Bitboard::getKingMoves(uint64_t square)
-{
+uint64_t Bitboard::getKingMoves(int square) {
 	uint64_t king_bitboard = 1ULL << square; // Convert index to bitboard
 	if ((white_king & king_bitboard) == 0 && (black_king & king_bitboard) == 0) {
 		return 0ULL; // No king exists at this square
@@ -270,7 +320,7 @@ uint64_t Bitboard::getKingMoves(uint64_t square)
 	uint64_t black_pieces = blackPieces();
 	uint64_t occupied = white_pieces | black_pieces;
 
-	uint64_t moves = King_Moves[square].moves & ~occupied; // Remove occupied squares
+	uint64_t moves = KING_MOVES[square].moves & ~occupied; // Remove occupied squares
 
 	if (white_king & king_bitboard) {
 		moves &= ~white_pieces; // White king can't move onto white pieces
@@ -281,9 +331,3 @@ uint64_t Bitboard::getKingMoves(uint64_t square)
 
 	return moves;
 }
-
-
-
-
-
-

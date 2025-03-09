@@ -17,6 +17,9 @@ namespace Chess
         public static extern bool ValidateMove(IntPtr board, [MarshalAs(UnmanagedType.LPStr)] string move);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void MakeMove(IntPtr board, [MarshalAs(UnmanagedType.LPStr)] string move);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void GetBoardState(IntPtr board, IntPtr output, int size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

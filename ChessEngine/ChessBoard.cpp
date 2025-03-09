@@ -15,7 +15,7 @@ bool ChessBoard::ValidateMove(const char* move) {
     char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
     char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
 
-    // Get source and target as bitboards
+    // Get source and target square indexes
     int source = SquareToInt(source_square);
     int target = SquareToInt(target_square);
 
@@ -29,6 +29,20 @@ bool ChessBoard::ValidateMove(const char* move) {
     // Bitwise AND operation to check if target is in legal moves
     // Returns bool indicating if result is non-zero, meaning target exists in moves
     return (target_bitb & legal_moves) != 0;
+}
+
+void ChessBoard::MovePiece(const char* move) {
+    // Extract source and target squares
+    char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
+    char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
+
+    // Get source and target square indexes
+    int source = SquareToInt(source_square);
+    int target = SquareToInt(target_square);
+
+    // Apply move in bitboard
+    board->applyMove(source, target);
+    board->switchTurn(); 
 }
 
 std::string ChessBoard::GetBoardState() {

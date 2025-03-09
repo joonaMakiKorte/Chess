@@ -83,9 +83,8 @@ namespace Chess
                 return false;
             }
 
-            // TODO!!!
             // Apply move in the native engine
-            //ChessEngineInterop.MakeMove(board, move);
+            ChessEngineInterop.MakeMove(board, move);
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);

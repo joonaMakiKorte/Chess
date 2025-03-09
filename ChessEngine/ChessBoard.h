@@ -19,6 +19,11 @@ public:
     // Takes the move as const char pointer parameter
     bool ValidateMove(const char* move);
 
+    // Move a chessboard piece according to given parameter
+    // Update chessboard status accordingly
+    // Is called in C# if validating move successful
+    void MovePiece(const char* move);
+
     // Return board state as a FEN string (Forsyth-Edwards Notation)
     // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     // Explanation:

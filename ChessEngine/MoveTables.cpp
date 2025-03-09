@@ -6,7 +6,10 @@
 PawnMoves WHITE_PAWN_MOVES[64];
 PawnMoves BLACK_PAWN_MOVES[64];
 BishopMoves BISHOP_MOVES[64];
-
+RookMoves ROOK_MOVES[64];
+KnightMoves KNIGHT_MOVES[64];
+QueenMoves QUEEN_MOVES[64];
+KingMoves KING_MOVES[64];
 
 void initWhitePawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
@@ -127,7 +130,7 @@ void initRookMoves(int square) {
 	}
 
 	// Store the calculated moves for this square
-	Rook_Moves[square] = { upwards, downwards, right, left };
+	ROOK_MOVES[square] = { upwards, downwards, right, left };
 }
 
 
@@ -148,7 +151,7 @@ void initKnightMoves(int square) {
 	}
 
 	// Store the calculated moves for this square
-	Knight_Moves[square] = { moves };
+	KNIGHT_MOVES[square] = { moves };
 }
 
 
@@ -203,7 +206,7 @@ void initQueenMoves(int square) {
 	}
 
 	// Store the calculated moves for this square
-	Queen_Moves[square] = { top, bottom, left, right, top_left, top_right, bottom_left, bottom_right };
+	QUEEN_MOVES[square] = { top, bottom, left, right, top_left, top_right, bottom_left, bottom_right };
 }
 
 void initKingMoves(int square) {
@@ -236,10 +239,8 @@ void initKingMoves(int square) {
 	}
 
 	// Store the calculated moves for this square
-	King_Moves[square] = { moves };
+	KING_MOVES[square] = { moves };
 }
-
-
 
 
 void initMoveTables() {
@@ -249,13 +250,12 @@ void initMoveTables() {
 	initialized = true;
 
 	for (int square = 0; square < 64; square++) {
-
 		initWhitePawnMoves(square);
 		initBlackPawnMoves(square);
 		initBishopMoves(square);
 		initRookMoves(square);
 		initKnightMoves(square);
 		initQueenMoves(square);
-
+		initKingMoves(square);
 	}
 }
