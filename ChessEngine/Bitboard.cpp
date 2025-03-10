@@ -221,20 +221,53 @@ uint64_t Bitboard::getBishopMoves(int square) {
 		return 0ULL; // No bishop exists at this square
 	}
 
-	// Combine moves
-	uint64_t moves = (BISHOP_MOVES[square].top_left |
-		BISHOP_MOVES[square].top_right |
-		BISHOP_MOVES[square].bottom_left |
-		BISHOP_MOVES[square].bottom_right);
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
+
+	// Initialize moves
+	uint64_t moves = 0ULL;
+
+	// Directions: top-left, top-right, bottom-left, bottom-right
+	int directions[4][2] = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1} };
+
+	// Implement blocking logic
+	for (const auto& dir : directions) {
+		int dx = dir[0];
+		int dy = dir[1];
+		int x = square % 8; // Current file (column)
+		int y = square / 8; // Current rank (row)
+
+		while (true) {
+			x += dx;
+			y += dy;
+
+			// Check if the new position is off the board
+			if (x < 0 || x >= 8 || y < 0 || y >= 8) {
+				break;
+			}
+
+			int target_square = y * 8 + x;
+			uint64_t target_bitboard = 1ULL << target_square;
+
+			// Add the target square to moves
+			moves |= target_bitboard;
+
+			// If the target square is occupied, stop sliding in this direction
+			if (occupied & target_bitboard) {
+				break;
+			}
+		}
+	}
 
 	if (white_bishops & bishop_bitboard) {
-		return moves &= ~whitePieces(); // White bishop can't move onto white pieces
+		moves &= ~white_pieces; // White bishop can't move onto white pieces
 	}
 	else if (black_bishops & bishop_bitboard) {
-		return moves &= ~blackPieces(); // Black bishop can't move onto black pieces
+		moves &= ~black_pieces; // Black bishop can't move onto black pieces
 	}
 
-	return 0ULL; // Should never reach here
+	return moves; 
 }
 
 uint64_t Bitboard::getRookMoves(int square) {
@@ -243,20 +276,53 @@ uint64_t Bitboard::getRookMoves(int square) {
 		return 0ULL; // No rook exists at this square
 	}
 
-	// Combine moves
-	uint64_t moves = (ROOK_MOVES[square].top |
-		ROOK_MOVES[square].bottom |
-		ROOK_MOVES[square].left |
-		ROOK_MOVES[square].right);
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
+
+	// Initialize moves
+	uint64_t moves = 0ULL;
+
+	// Directions: upwards, downwards, left, right
+	int directions[4][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
+
+	// Implement blocking logic
+	for (const auto& dir : directions) {
+		int dx = dir[0];
+		int dy = dir[1];
+		int x = square % 8; // Current file (column)
+		int y = square / 8; // Current rank (row)
+
+		while (true) {
+			x += dx;
+			y += dy;
+
+			// Check if the new position is off the board
+			if (x < 0 || x >= 8 || y < 0 || y >= 8) {
+				break;
+			}
+
+			int target_square = y * 8 + x;
+			uint64_t target_bitboard = 1ULL << target_square;
+
+			// Add the target square to moves
+			moves |= target_bitboard;
+
+			// If the target square is occupied, stop sliding in this direction
+			if (occupied & target_bitboard) {
+				break;
+			}
+		}
+	}
 
 	if (white_rooks & rook_bitboard) {
-		return moves &= ~whitePieces(); // White rook can't move onto white pieces
+		moves &= ~white_pieces; // White rook can't move onto white pieces
 	}
 	else if (black_rooks & rook_bitboard) {
-		return moves &= ~blackPieces(); // Black rook can't move onto black pieces
+		moves &= ~black_pieces; // Black rook can't move onto black pieces
 	}
 
-	return 0ULL; // Should never reach here
+	return moves;
 }
 
 uint64_t Bitboard::getQueenMoves(int square) {
@@ -265,24 +331,54 @@ uint64_t Bitboard::getQueenMoves(int square) {
 		return 0ULL; // No queen exists at this square
 	}
 
-	// Combine moves
-	uint64_t moves = (QUEEN_MOVES[square].top |
-		QUEEN_MOVES[square].bottom |
-		QUEEN_MOVES[square].left |
-		QUEEN_MOVES[square].right |
-		QUEEN_MOVES[square].top_left |
-		QUEEN_MOVES[square].top_right |
-		QUEEN_MOVES[square].bottom_left |
-		QUEEN_MOVES[square].bottom_right);
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
+
+	// Initialize moves
+	uint64_t moves = 0ULL;
+
+	// Directions: top-left, top-right, bottom-left, bottom-right,
+	// upwards, downwards, left, right
+	int directions[8][2] = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
+
+	// Implement blocking logic
+	for (const auto& dir : directions) {
+		int dx = dir[0];
+		int dy = dir[1];
+		int x = square % 8; // Current file (column)
+		int y = square / 8; // Current rank (row)
+
+		while (true) {
+			x += dx;
+			y += dy;
+
+			// Check if the new position is off the board
+			if (x < 0 || x >= 8 || y < 0 || y >= 8) {
+				break;
+			}
+
+			int target_square = y * 8 + x;
+			uint64_t target_bitboard = 1ULL << target_square;
+
+			// Add the target square to moves
+			moves |= target_bitboard;
+
+			// If the target square is occupied, stop sliding in this direction
+			if (occupied & target_bitboard) {
+				break;
+			}
+		}
+	}
 
 	if (white_queen & queen_bitboard) { // White queen
-		return moves &= ~whitePieces();
+		moves &= ~white_pieces;
 	}
 	else if (black_queen & queen_bitboard) { // Black queen
-		return moves &= ~blackPieces();
+		moves &= ~black_pieces;
 	}
 
-	return 0ULL; // Should never reach here
+	return moves; 
 }
 
 uint64_t Bitboard::getKingMoves(int square) {
@@ -291,12 +387,18 @@ uint64_t Bitboard::getKingMoves(int square) {
 		return 0ULL; // No king exists at this square
 	}
 
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+
+	// Initialize moves
+	uint64_t moves = KING_MOVES[square].moves;
+
 	if (white_king & king_bitboard) {
-		return KING_MOVES[square].moves &= ~whitePieces(); // White king can't move onto white pieces
+		moves &= ~white_pieces; // White king can't move onto white pieces
 	}
 	else if (black_king & king_bitboard) {
-		return KING_MOVES[square].moves &= ~blackPieces(); // Black king can't move onto black pieces
+		moves &= ~black_pieces; // Black king can't move onto black pieces
 	}
 
-	return 0ULL; // Should never reach here
+	return moves; 
 }

@@ -51,7 +51,7 @@ void initBishopMoves(int square) {
 	uint64_t bottom_left = 0ULL;
 	uint64_t bottom_right = 0ULL;
 
-	int directions[] = { 7, 9, -9, -7 };  // Top-left, top-right, bottom-left, bottom-right
+	int directions[4] = { 7, 9, -9, -7 };  // Top-left, top-right, bottom-left, bottom-right
 
 
 	// next we iterate over the diagonal directions
@@ -96,7 +96,7 @@ void initRookMoves(int square) {
 	uint64_t right = 0ULL;
 	uint64_t left = 0ULL;
 
-	int directions[] = { 8, -8, -1, 1 }; // Up, Down, Left, Right
+	int directions[4] = { 8, -8, -1, 1 }; // Up, Down, Left, Right
 
 	// Iterate over the rook directions
 	for (int direction : directions) {
@@ -136,7 +136,7 @@ void initKnightMoves(int square) {
 	uint64_t moves = 0ULL;
 
 	// Possible knight jumps (relative shifts)
-	int jumps[] = { 6, 10, 15, 17, -6, -10, -15, -17 };
+	int jumps[8] = { 6, 10, 15, 17, -6, -10, -15, -17 };
 	// Left-top, right-top, top-left, top-right, right-bottom, left-bottom, bottom-right, bottom-left
 
 	for (int jump : jumps) {
@@ -175,7 +175,7 @@ void initQueenMoves(int square) {
 	uint64_t bottom_right = 0ULL;
 
 	// Directions for queen (rook + bishop)
-	int directions[] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
+	int directions[8] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
 
 	// Iterate over all 8 possible queen move directions
 	for (int direction : directions) {
@@ -222,7 +222,7 @@ void initKingMoves(int square) {
 	uint64_t moves = 0ULL;
 
 	// Directions for king (one step in all 8 directions)
-	int directions[] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
+	int directions[8] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
 
 	for (int direction : directions) {
 		// Check for board edges to prevent wrapping
