@@ -86,10 +86,16 @@ namespace Chess
         // Get turn
         public bool IsWhiteTURN() => isWhiteTurn;
 
+
+        
+
         // Moves the piece
         public bool MovePiece(string move)
+
         {
+            
             Console.WriteLine(move); // Debug
+
             if (!ChessEngineInterop.ValidateMove(board,move))
             {
                 Console.WriteLine($"Invalid move: {move}");
@@ -103,6 +109,7 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
             Console.WriteLine(fen);
+
 
             return true;
         }

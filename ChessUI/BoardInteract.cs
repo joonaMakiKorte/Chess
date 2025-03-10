@@ -30,7 +30,6 @@ namespace Chess
 
         public void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
             Point position = e.GetPosition(pieceGrid);
             double cellWidth = pieceGrid.ActualWidth / 8;
             double cellHeight = pieceGrid.ActualHeight / 8;
@@ -38,10 +37,13 @@ namespace Chess
             int col = (int)(position.X / cellWidth);
             int row = (int)(position.Y / cellHeight);
 
+            string[,] boardState = chessGame.GetBoardState();
+            string piece = boardState[row, col];
+
+            // If no piece is selected, attempt to select one
             if (selectedPiece == null)
             {
-                string piece = chessGame.GetBoardState()[row, col];
-                if (!string.IsNullOrEmpty(piece))
+                if (!string.IsNullOrEmpty(piece)) // Ensure it's not an empty square
                 {
                     if ((chessGame.IsWhiteTURN() && Char.IsUpper(piece[0])) ||
                         (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))
@@ -49,23 +51,34 @@ namespace Chess
                         selectedPiece = (row, col);
                         boardUi.HighlightSquare(row, col, Brushes.LightBlue);
                     }
-
                 }
-                
             }
             else
             {
-                // Convert selected squares to "e4e3" for example
                 (int fromRow, int fromCol) = selectedPiece.Value;
+
+                // If clicking the same square again, deselect it
+                if (fromRow == row && fromCol == col)
+                {
+                    Console.WriteLine("Deselected piece");
+                    selectedPiece = null;
+                    boardUi.ClearHighlights();
+                    return;
+                }
+
+                
+                // Convert selected squares to "e2e4" format
                 string move = $"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}";
-                // Apply move in dll
+
+                // Try making a move
                 if (chessGame.MovePiece(move))
                 {
                     boardUi.UpdateBoard(chessGame.GetBoardState());
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-                    boardUi.ClearHighlights();
-                    selectedPiece = null; // Deselect
                 }
+
+                boardUi.ClearHighlights();
+                selectedPiece = null; // Deselect after move
             }
         }
     }
