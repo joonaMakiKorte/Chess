@@ -15,7 +15,7 @@ KingMoves KING_MOVES[64];
 void initWhitePawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
 
-	uint64_t single_push = ((bitboard & RANK_8) ? (bitboard << 8) : 0ULL);  // Single step, not beyond last rank
+	uint64_t single_push = bitboard << 8; // Single step
 	uint64_t double_push = ((bitboard & RANK_2) ? (bitboard << 16) : 0ULL); // Double step only from rank 2
 
 	uint64_t captures = 0ULL;
@@ -30,7 +30,7 @@ void initWhitePawnMoves(int square) {
 void initBlackPawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
 
-	uint64_t single_push = ((bitboard & RANK_1) ? (bitboard >> 8) : 0ULL);  // Single step, not beyond last rank
+	uint64_t single_push = bitboard >> 8; // Single step
 	uint64_t double_push = ((bitboard & RANK_7) ? (bitboard >> 16) : 0ULL); // Double step only from rank 7
 
 	uint64_t captures = 0ULL;
