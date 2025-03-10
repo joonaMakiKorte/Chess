@@ -133,7 +133,6 @@ namespace Chess
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
-            Console.WriteLine(fen);
         }
 
         // Destroy board

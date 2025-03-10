@@ -15,7 +15,7 @@ KingMoves KING_MOVES[64];
 void initWhitePawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
 
-	uint64_t single_push = (bitboard << 8);  // Single step
+	uint64_t single_push = ((bitboard & RANK_8) ? (bitboard << 8) : 0ULL);  // Single step, not beyond last rank
 	uint64_t double_push = ((bitboard & RANK_2) ? (bitboard << 16) : 0ULL); // Double step only from rank 2
 
 	uint64_t captures = 0ULL;
@@ -30,13 +30,13 @@ void initWhitePawnMoves(int square) {
 void initBlackPawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
 
-	uint64_t single_push = (bitboard >> 8);  // Single step
+	uint64_t single_push = ((bitboard & RANK_1) ? (bitboard >> 8) : 0ULL);  // Single step, not beyond last rank
 	uint64_t double_push = ((bitboard & RANK_7) ? (bitboard >> 16) : 0ULL); // Double step only from rank 7
 
 	uint64_t captures = 0ULL;
 	// Ensure that only bits that are not on the border files can shift left/right
-	if (!(bitboard & FILE_A)) captures |= (bitboard >> 7); // SW attack
-	if (!(bitboard & FILE_H)) captures |= (bitboard >> 9); // SE attack
+	if (!(bitboard & FILE_A)) captures |= (bitboard >> 9); // SW attack
+	if (!(bitboard & FILE_H)) captures |= (bitboard >> 7); // SE attack
 
 	// Insert moveset at square
 	BLACK_PAWN_MOVES[square] = { single_push, double_push, captures };
@@ -51,7 +51,7 @@ void initBishopMoves(int square) {
 	uint64_t bottom_left = 0ULL;
 	uint64_t bottom_right = 0ULL;
 
-	int directions[] = { -7, 7, -9, 9 };  // Top-left, bottom-left, top-right, bottom-right
+	int directions[] = { 7, 9, -9, -7 };  // Top-left, top-right, bottom-left, bottom-right
 
 
 	// next we iterate over the diagonal directions
@@ -60,21 +60,25 @@ void initBishopMoves(int square) {
 
 		// loop and explore the bitboard in the current direction
 		while (true) {
+			// Check for wraparound using masks
+			if (((direction == 7 || direction == -9) && (current_square & FILE_A)) ||  // Left-border
+				((direction == 9 || direction == -7) && (current_square & FILE_H)) ||  // Right-border
+				((direction == 7 || direction == 9) && (current_square & RANK_8)) ||   // Top-border
+				((direction == -9 || direction == -7) && (current_square & RANK_1))) { // Bottom-border
+				break;
+			}
+
 			// Shift in the given direction
 			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
 
 			// Ensure square remains on the board
 			if (current_square == 0) break;
 
-			// Check for wraparound using file masks
-			if ((direction == -7 || direction == 9) && (current_square & FILE_A)) break;
-			if ((direction == -9 || direction == 7) && (current_square & FILE_H)) break;
-
 			// Store in corresponding move bitboard
-			if (direction == -7) top_left |= current_square;
-			else if (direction == 7) bottom_right |= current_square;
-			else if (direction == -9) top_right |= current_square;
-			else if (direction == 9) bottom_left |= current_square;
+			if (direction == 7) top_left |= current_square;
+			else if (direction == 9) top_right |= current_square;
+			else if (direction == -9) bottom_left |= current_square;
+			else if (direction == -7) bottom_right |= current_square;
 		}
 	}
 
@@ -87,12 +91,12 @@ void initRookMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
 
 	// Different rook routes
-	uint64_t upwards = 0ULL;
-	uint64_t downwards = 0ULL;
+	uint64_t top = 0ULL;
+	uint64_t bottom = 0ULL;
 	uint64_t right = 0ULL;
 	uint64_t left = 0ULL;
 
-	int directions[] = { 8, -8, 1, -1 }; // Up, Down, Right, Left
+	int directions[] = { 8, -8, -1, 1 }; // Up, Down, Left, Right
 
 	// Iterate over the rook directions
 	for (int direction : directions) {
@@ -101,28 +105,29 @@ void initRookMoves(int square) {
 		// Loop and explore the bitboard in the current direction
 		while (true) {
 			// Check if the move has gone beyond the edge of the board
-			if ((direction == 1 && (current_square & FILE_H)) || // Prevent left wrap
-				(direction == -1 && (current_square & FILE_A))) { // Preven right wrap
+			if ((direction == 1 && (current_square & FILE_H)) ||  // Prevent left wrap
+				(direction == -1 && (current_square & FILE_A)) || // Prevent right wrap
+				(direction == 8 && (current_square & RANK_8)) ||  // Prevent bottom wrap
+				(direction == -8 && (current_square & RANK_1))) { // Prevent top wrap
 				break;
 			}
-
+				
 			// Shift in the given direction
 			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
 
 			// Ensure square remains on the board
 			if (current_square == 0) break;
 
-
 			// Add the current square to the corresponding move bitboard
-			if (direction == 8) upwards |= current_square;
-			else if (direction == -8) downwards |= current_square;
-			else if (direction == 1) right |= current_square;
+			if (direction == 8) top |= current_square;
+			else if (direction == -8) bottom |= current_square;
 			else if (direction == -1) left |= current_square;
+			else if (direction == 1) right |= current_square;
 		}
 	}
 
 	// Store the calculated moves for this square
-	ROOK_MOVES[square] = { upwards, downwards, right, left };
+	ROOK_MOVES[square] = { top, bottom, left, right };
 }
 
 
@@ -132,14 +137,23 @@ void initKnightMoves(int square) {
 
 	// Possible knight jumps (relative shifts)
 	int jumps[] = { 6, 10, 15, 17, -6, -10, -15, -17 };
+	// Left-top, right-top, top-left, top-right, right-bottom, left-bottom, bottom-right, bottom-left
 
 	for (int jump : jumps) {
-		uint64_t move = (jump > 0) ? (bitboard << jump) : (bitboard >> -jump);
-
-		// Ensure move is still on the board
-		if (move != 0) {
-			moves |= move;
+		// Prevent wrapping
+		if (((jump == 15 || jump == -17 || jump == 6 || jump == -10) && (bitboard & FILE_A)) ||
+			((jump == 6 || jump == -10) && (bitboard & FILE_B)) ||
+			((jump == 10 || jump == -6) && (bitboard & FILE_G)) ||
+			((jump == 17 || jump == -15 || jump == 10 || jump == -6) && (bitboard & FILE_H)) ||
+			((jump == -10 || jump == -6 || jump == -17 || jump == -15) && (bitboard & RANK_1)) ||
+			((jump == -17 || jump == -15) && (bitboard & RANK_2)) ||
+			((jump == 15 || jump == 17) && (bitboard & RANK_7)) ||
+			((jump == 6 || jump == 10 || jump == 15 || jump == 17) && (bitboard & RANK_8))) {
+			continue;
 		}
+
+		// Shift correctly depending on direction
+		moves |= (jump < 0) ? (bitboard >> -jump) : (bitboard << jump);
 	}
 
 	// Store the calculated moves for this square
@@ -161,7 +175,7 @@ void initQueenMoves(int square) {
 	uint64_t bottom_right = 0ULL;
 
 	// Directions for queen (rook + bishop)
-	int directions[] = { -8, 8, -1, 1, -7, 7, -9, 9 };
+	int directions[] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
 
 	// Iterate over all 8 possible queen move directions
 	for (int direction : directions) {
@@ -169,37 +183,33 @@ void initQueenMoves(int square) {
 
 		while (true) {
 			// Check for board edges to prevent wrapping
-			if ((direction == -1 && (current_square & FILE_A)) || // Left edge
-				(direction == 1 && (current_square & FILE_H)) ||  // Right edge
-				(direction == -8 && (current_square & RANK_8)) ||  // Top edge
-				(direction == 8 && (current_square & RANK_1)) ||  // Bottom edge
-				(direction == -7 && (current_square & (FILE_A | RANK_8))) || // Up-left edge
-				(direction == 7 && (current_square & (FILE_H | RANK_1))) || // Down-right edge
-				(direction == -9 && (current_square & (FILE_H | RANK_8))) || // Up-right edge
-				(direction == 9 && (current_square & (FILE_A | RANK_1)))) {  // Down-left edge
-				continue;
+			if (((direction == 7 || direction == -9) && (current_square & FILE_A)) ||  // Left-border
+				((direction == 9 || direction == -7) && (current_square & FILE_H)) ||  // Right-border
+				((direction == 7 || direction == 9) && (current_square & RANK_8)) ||   // Top-border
+				((direction == -9 || direction == -7) && (current_square & RANK_1)) || // Bottom-border
+				((direction == 1 && (current_square & FILE_H)) ||					   // Prevent left wrap
+				(direction == -1 && (current_square & FILE_A)) ||                      // Prevent right wrap
+				(direction == 8 && (current_square & RANK_8)) ||                       // Prevent bottom wrap
+				(direction == -8 && (current_square & RANK_1)))) {                     // Prevent top wrap
+				break;
 			}
 
+
 			// Shift in the given direction
-			if (direction < 0) {
-				current_square >>= -direction;
-			}
-			else {
-				current_square <<= direction;
-			}
+			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
 
 			// Ensure square remains on the board
 			if (current_square == 0) break;
 
 			// Add the current square to the appropriate direction bitboard
-			if (direction == -8) top |= current_square;
-			else if (direction == 8) bottom |= current_square;
+			if (direction == 8) top |= current_square;
+			else if (direction == -8) bottom |= current_square;
 			else if (direction == -1) left |= current_square;
 			else if (direction == 1) right |= current_square;
-			else if (direction == -7) top_left |= current_square;
-			else if (direction == 7) bottom_right |= current_square;
-			else if (direction == -9) top_right |= current_square;
-			else if (direction == 9) bottom_left |= current_square;
+			else if (direction == 7) top_left |= current_square;
+			else if (direction == 9) top_right |= current_square;
+			else if (direction == -9) bottom_left |= current_square;
+			else if (direction == -7) bottom_right |= current_square;
 		}
 	}
 
@@ -212,16 +222,18 @@ void initKingMoves(int square) {
 	uint64_t moves = 0ULL;
 
 	// Directions for king (one step in all 8 directions)
-	int directions[] = { -8, 8, -1, 1, -7, 7, -9, 9 };
+	int directions[] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
 
 	for (int direction : directions) {
-		// Skip if moving off the board
-		if ((direction == -1 && (bitboard & FILE_A)) ||
-			(direction == 1 && (bitboard & FILE_H)) ||
-			(direction == -7 && (bitboard & FILE_H)) ||
-			(direction == 7 && (bitboard & FILE_A)) ||
-			(direction == -9 && (bitboard & FILE_A)) || 
-			(direction == 9 && (bitboard & FILE_H))) { 
+		// Check for board edges to prevent wrapping
+		if (((direction == 7 || direction == -9) && (bitboard & FILE_A)) ||  // Left-border
+			((direction == 9 || direction == -7) && (bitboard & FILE_H)) ||  // Right-border
+			((direction == 7 || direction == 9) && (bitboard & RANK_8)) ||   // Top-border
+			((direction == -9 || direction == -7) && (bitboard & RANK_1)) || // Bottom-border
+			((direction == 1 && (bitboard & FILE_H)) ||					     // Prevent left wrap
+		    (direction == -1 && (bitboard & FILE_A)) ||                      // Prevent right wrap
+			(direction == 8 && (bitboard & RANK_8)) ||                       // Prevent bottom wrap
+			(direction == -8 && (bitboard & RANK_1)))) {                     // Prevent top wrap
 			continue;
 		}
 

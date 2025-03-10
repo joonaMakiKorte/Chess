@@ -67,7 +67,7 @@ namespace Chess
                 }
               
                 // Print move in algebraic notation for debugging purposes
-                Console.WriteLine($"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}");
+                Console.WriteLine($"{(char)('a' + fromCol)}{8 - fromRow} -> {(char)('a' + col)}{8 - row}");
 
                 // Convert squares to their little-endian ranking indexes
                 int source = fromCol + 8 * (7 - fromRow);

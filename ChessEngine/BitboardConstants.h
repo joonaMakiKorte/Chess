@@ -5,6 +5,8 @@
 
 // File masks
 constexpr uint64_t FILE_A = 0x0101010101010101ULL;
+constexpr uint64_t FILE_B = 0x0202020202020202ULL;
+constexpr uint64_t FILE_G = 0x4040404040404040ULL;
 constexpr uint64_t FILE_H = 0x8080808080808080ULL;
 
 // Rank masks

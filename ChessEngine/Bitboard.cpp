@@ -244,10 +244,10 @@ uint64_t Bitboard::getRookMoves(int square) {
 	}
 
 	// Combine moves
-	uint64_t moves = (ROOK_MOVES[square].upwards |
-		ROOK_MOVES[square].downwards |
-		ROOK_MOVES[square].right |
-		ROOK_MOVES[square].left);
+	uint64_t moves = (ROOK_MOVES[square].top |
+		ROOK_MOVES[square].bottom |
+		ROOK_MOVES[square].left |
+		ROOK_MOVES[square].right);
 
 	if (white_rooks & rook_bitboard) {
 		return moves &= ~whitePieces(); // White rook can't move onto white pieces

@@ -3,23 +3,23 @@
 
 // Define move tables for pieces
 struct PawnMoves {
-	uint64_t single_push; // Single forward move
-	uint64_t double_push; // Double forward move (only from rank 2 or 4)
-	uint64_t captures;    // Both diagonal captures
+	uint64_t single_push;  // Single forward move
+	uint64_t double_push;  // Double forward move (only from rank 2 or 4)
+	uint64_t captures;     // Both diagonal captures
 };
 
 struct BishopMoves {
-	uint64_t top_left;    // Diagonal top-left direction
-	uint64_t top_right;   // Diagonal top-right direction
-	uint64_t bottom_left; // Diagonal bottom-left direction
+	uint64_t top_left;     // Diagonal top-left direction
+	uint64_t top_right;    // Diagonal top-right direction
+	uint64_t bottom_left;  // Diagonal bottom-left direction
 	uint64_t bottom_right; // Diagonal bottom-right direction
 };
 
 struct RookMoves {
-	uint64_t upwards;    // moving upwards
-	uint64_t downwards;   // moving downwards
-	uint64_t right; // moving right
-	uint64_t left; // moving left
+	uint64_t top;          // Moving upwards
+	uint64_t bottom;       // Moving downwards
+	uint64_t left;         // Moving left
+	uint64_t right;        // Moving right
 };
 
 struct KnightMoves {
