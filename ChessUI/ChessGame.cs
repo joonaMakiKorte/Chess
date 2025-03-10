@@ -80,38 +80,60 @@ namespace Chess
             fullMoves = int.Parse(sections[5]);
         }
 
+        // Function to convert a bitboard to algebraic notation
+        static string BitboardToAlgebraic(ulong bitboard)
+        {
+            List<string> moves = new List<string>();
+
+            for (int square = 0; square < 64; square++)
+            {
+                if ((bitboard & (1UL << square)) != 0) // Check if bit is set
+                {
+                    moves.Add(SquareToAlgebraic(square));
+                }
+            }
+
+            return string.Join(", ", moves);
+        }
+
+        // Converts a square index (0-63) to algebraic notation (e.g., "e4")
+        static string SquareToAlgebraic(int square)
+        {
+            int file = square % 8;  // Column (0 = 'a', 1 = 'b', ..., 7 = 'h')
+            int rank = square / 8;  // Row (0 = rank 1, 7 = rank 8)
+
+            char fileChar = (char)('a' + file);
+            char rankChar = (char)('1' + rank);
+
+            return $"{fileChar}{rankChar}";
+        }
+
         // Gives the pieceLocations dict fully
         public string[,] GetBoardState() => pieceLocations;
 
         // Get turn
         public bool IsWhiteTURN() => isWhiteTurn;
 
-
-        
+        // Get all valid moves from the square as a bitboard
+        public ulong GetValidMoves(int square)
+        {
+            ulong validMoves =  ChessEngineInterop.ValidMoves(board, square);
+            Console.WriteLine("Valid Moves: " + BitboardToAlgebraic(validMoves));
+            return validMoves;
+        }
 
         // Moves the piece
-        public bool MovePiece(string move)
+        // Activated only after move is validated
+        public void MovePiece(int source, int target)
 
         {
-            
-            Console.WriteLine(move); // Debug
-
-            if (!ChessEngineInterop.ValidateMove(board,move))
-            {
-                Console.WriteLine($"Invalid move: {move}");
-                return false;
-            }
-
             // Apply move in the native engine
-            ChessEngineInterop.MakeMove(board, move);
+            ChessEngineInterop.MakeMove(board, source, target);
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
             Console.WriteLine(fen);
-
-
-            return true;
         }
 
         // Destroy board

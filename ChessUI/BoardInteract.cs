@@ -65,14 +65,23 @@ namespace Chess
                     boardUi.ClearHighlights();
                     return;
                 }
+              
+                // Print move in algebraic notation for debugging purposes
+                Console.WriteLine($"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}");
 
-                
-                // Convert selected squares to "e2e4" format
-                string move = $"{(char)('a' + fromCol)}{8 - fromRow}{(char)('a' + col)}{8 - row}";
+                // Convert squares to their little-endian ranking indexes
+                int source = fromCol + 8 * (7 - fromRow);
+                int target = col + 8 * (7 - row);
 
-                // Try making a move
-                if (chessGame.MovePiece(move))
+                // Validate move by getting valid moves from source square as a bitboard
+                // and comparing target square with valid moves with bitwise OR
+                ulong validMoves = chessGame.GetValidMoves(source);
+                bool isValid = (validMoves & (1UL << target)) != 0;
+
+                // Make a move if valid
+                if (isValid)
                 {
+                    chessGame.MovePiece(source, target);
                     boardUi.UpdateBoard(chessGame.GetBoardState());
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
                 }

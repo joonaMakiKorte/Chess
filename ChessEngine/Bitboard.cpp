@@ -276,7 +276,7 @@ uint64_t Bitboard::getQueenMoves(int square) {
 		QUEEN_MOVES[square].bottom_right);
 
 	if (white_queen & queen_bitboard) { // White queen
-		return moves &= ~whitePieces(); 
+		return moves &= ~whitePieces();
 	}
 	else if (black_queen & queen_bitboard) { // Black queen
 		return moves &= ~blackPieces();

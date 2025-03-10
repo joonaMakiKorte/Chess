@@ -5,37 +5,17 @@ ChessBoard::ChessBoard()
     : board(std::make_unique<Bitboard>()), debugMessage("Initial debug message")
 {}
 
-bool ChessBoard::ValidateMove(const char* move) {
+uint64_t ChessBoard::LegalMoves(int square) {
     // Validate move notation
-    if (strlen(move) != 4) {
-        return false;
-    }
-
-    // Extract source and target squares
-    char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
-    char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
-
-    // Get source and target square indexes
-    int source = SquareToInt(source_square);
-    int target = SquareToInt(target_square);
+    if (!(0 <= square <= 63)) return 0ULL;
 
     // Get all legal moves from the source square
-    uint64_t legal_moves = board->getLegalMoves(source);
-    uint64_t target_bitb = 1ULL << target; // Convert target to bitboard
-
-    // Bitwise AND operation to check if target is in legal moves
-    // Returns bool indicating if result is non-zero, meaning target exists in moves
-    return (target_bitb & legal_moves) != 0;
+    return board->getLegalMoves(square);
 }
 
-void ChessBoard::MovePiece(const char* move) {
-    // Extract source and target squares
-    char source_square[3] = { move[0], move[1], '\0' }; // First 2 chars + null terminator
-    char target_square[3] = { move[2], move[3], '\0' }; // Next 2 chars + null terminator
-
-    // Get source and target square indexes
-    int source = SquareToInt(source_square);
-    int target = SquareToInt(target_square);
+void ChessBoard::MovePiece(int source, int target) {
+    // Validate move notations
+    if (!(0 <= source <= 63) || !(0 <= target <= 63)) return;
 
     // Apply move in bitboard
     board->applyMove(source, target);
@@ -107,33 +87,4 @@ void ChessBoard::UpdateDebugMessage(const std::string& message) {
 
 std::string ChessBoard::GetDebugMessage() const {
     return debugMessage;
-}
-
-int ChessBoard::SquareToInt(const char* square) {
-    // Validate square notation
-    if (strlen(square) != 2) {
-        throw std::invalid_argument("Invalid square notation");
-    }
-
-    // Extract file and rank from the square string
-    // File=col, rank=row
-    char file_char = square[0]; // File (a-h)
-    char rank_char = square[1]; // Rank (1-8)
-
-    // Convert file to 0-based index (a=0, b=1, ..., h=7)
-    int file = tolower(file_char) - 'a';
-    if (file < 0 || file > 7) {
-        throw std::invalid_argument("Invalid file in square notation");
-    }
-
-    // Convert rank to 0-based index (1=0, 2=1, ..., 8=7)
-    int rank = rank_char - '1';
-    if (rank < 0 || rank > 7) {
-        throw std::invalid_argument("Invalid rank in square notation");
-    }
-
-    // Calculate the square index (0-63)
-    int square_index = rank * 8 + file;
-
-    return square_index;
 }

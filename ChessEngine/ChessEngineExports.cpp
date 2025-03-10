@@ -12,16 +12,16 @@ extern "C" CHESSENGINE_API void DestroyBoard(void* board) {
     }
 }
 
-extern "C" CHESSENGINE_API bool ValidateMove(void* board, const char* move) {
-    if (!board || !move) return false; // Prevent crashes
+extern "C" CHESSENGINE_API uint64_t ValidMoves(void* board, int square) {
+    if (!board) return 0ULL; // Prevent crashes
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-    return b->ValidateMove(move); // Return move validity
+    return b->LegalMoves(square); // Return moves
 }
 
-extern "C" CHESSENGINE_API void MakeMove(void* board, const char* move) {
-    if (!board || !move) return; // Prevent crashes
+extern "C" CHESSENGINE_API void MakeMove(void* board, int source, int target) {
+    if (!board) return; // Prevent crashes
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-    b->MovePiece(move); // Apply move 
+    b->MovePiece(source, target); // Apply move 
 }
 
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {

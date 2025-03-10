@@ -14,15 +14,13 @@ public:
     // Initialize the chessboard
     ChessBoard();
 
-    // Return bool indicating if move is valid
-    // If valid, update board accordingly
-    // Takes the move as const char pointer parameter
-    bool ValidateMove(const char* move);
+    // Get legal moves from the parameter square as a bitboard
+    uint64_t LegalMoves(int square);
 
     // Move a chessboard piece according to given parameter
     // Update chessboard status accordingly
     // Is called in C# if validating move successful
-    void MovePiece(const char* move);
+    void MovePiece(int source, int target);
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
     // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
@@ -38,17 +36,12 @@ public:
     // '1' = full move number
     std::string GetBoardState();
 
-    // Set debug messages dynamically
-    void UpdateDebugMessage(const std::string& message);
-
     // Get debug message
     std::string GetDebugMessage() const;
 
 private:
-    // Converts a square to its integer representation
-    // Uses little-endian rank-file mapping (LSM = a1, MSB = h8)
-    // Takes a C-style string of the square as the param
-    int SquareToInt(const char* square);
+    // Set debug messages dynamically
+    void UpdateDebugMessage(const std::string& message);
 };
 
 

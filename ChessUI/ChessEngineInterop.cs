@@ -14,10 +14,10 @@ namespace Chess
         public static extern void DestroyBoard(IntPtr board);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool ValidateMove(IntPtr board, [MarshalAs(UnmanagedType.LPStr)] string move);
+        public static extern ulong ValidMoves(IntPtr board, int square);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MakeMove(IntPtr board, [MarshalAs(UnmanagedType.LPStr)] string move);
+        public static extern void MakeMove(IntPtr board, int source, int target);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void GetBoardState(IntPtr board, IntPtr output, int size);

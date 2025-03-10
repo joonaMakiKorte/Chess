@@ -147,7 +147,6 @@ void initKnightMoves(int square) {
 }
 
 
-
 void initQueenMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
 
@@ -170,17 +169,24 @@ void initQueenMoves(int square) {
 
 		while (true) {
 			// Check for board edges to prevent wrapping
-			if ((direction == -1 && (current_square & FILE_A)) ||
-				(direction == 1 && (current_square & FILE_H)) ||
-				(direction == -7 && (current_square & FILE_A)) ||
-				(direction == 7 && (current_square & FILE_H)) ||
-				(direction == -9 && (current_square & FILE_H)) ||
-				(direction == 9 && (current_square & FILE_A))) {
-				break;
+			if ((direction == -1 && (current_square & FILE_A)) || // Left edge
+				(direction == 1 && (current_square & FILE_H)) ||  // Right edge
+				(direction == -8 && (current_square & RANK_8)) ||  // Top edge
+				(direction == 8 && (current_square & RANK_1)) ||  // Bottom edge
+				(direction == -7 && (current_square & (FILE_A | RANK_8))) || // Up-left edge
+				(direction == 7 && (current_square & (FILE_H | RANK_1))) || // Down-right edge
+				(direction == -9 && (current_square & (FILE_H | RANK_8))) || // Up-right edge
+				(direction == 9 && (current_square & (FILE_A | RANK_1)))) {  // Down-left edge
+				continue;
 			}
 
 			// Shift in the given direction
-			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
+			if (direction < 0) {
+				current_square >>= -direction;
+			}
+			else {
+				current_square <<= direction;
+			}
 
 			// Ensure square remains on the board
 			if (current_square == 0) break;
@@ -202,35 +208,27 @@ void initQueenMoves(int square) {
 }
 
 void initKingMoves(int square) {
-	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
+	uint64_t bitboard = 1ULL << square; // Convert square index to bitboard
 	uint64_t moves = 0ULL;
 
 	// Directions for king (one step in all 8 directions)
 	int directions[] = { -8, 8, -1, 1, -7, 7, -9, 9 };
 
 	for (int direction : directions) {
-		uint64_t current_square = bitboard;
-
-		// Prevent wrapping on edges
-		if ((direction == -1 && (current_square & FILE_A)) ||
-			(direction == 1 && (current_square & FILE_H)) ||
-			(direction == -7 && (current_square & FILE_A)) ||
-			(direction == 7 && (current_square & FILE_H)) ||
-			(direction == -9 && (current_square & FILE_H)) ||
-			(direction == 9 && (current_square & FILE_A))) {
+		// Skip if moving off the board
+		if ((direction == -1 && (bitboard & FILE_A)) ||
+			(direction == 1 && (bitboard & FILE_H)) ||
+			(direction == -7 && (bitboard & FILE_H)) ||
+			(direction == 7 && (bitboard & FILE_A)) ||
+			(direction == -9 && (bitboard & FILE_A)) || 
+			(direction == 9 && (bitboard & FILE_H))) { 
 			continue;
 		}
 
-		// Shift once in the given direction
-		current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
-
-		// Ensure square remains on the board
-		if (current_square != 0) {
-			moves |= current_square;
-		}
+		// Shift correctly depending on direction
+		moves |= (direction < 0) ? (bitboard >> -direction) : (bitboard << direction);
 	}
 
-	// Store the calculated moves for this square
 	KING_MOVES[square] = { moves };
 }
 

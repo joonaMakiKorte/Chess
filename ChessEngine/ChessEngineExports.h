@@ -15,13 +15,13 @@ extern "C" {
     // Takes a void pointer to the board as parameter
     CHESSENGINE_API void DestroyBoard(void* board);
 
-    // Validate moves and returns a boolean
-    // Takes a void pointer to the board and the move as a const char pointer as params
-    CHESSENGINE_API bool ValidateMove(void* board, const char* move);
+    // Get valid moves from a square as a bitboard
+    // Takes a void pointer to the board and the source as a square index
+    CHESSENGINE_API uint64_t ValidMoves(void* board, int square);
 
     // Make move in bitboard
-    // Takes a void pointer to the board and the move as a const char pointer
-    CHESSENGINE_API void MakeMove(void* board, const char* move);
+    // Takes a void pointer to the board and the source and target as sqwuare indexes
+    CHESSENGINE_API void MakeMove(void* board, int source, int target);
 
     // Retrieve the current state of the chessboard and return it as a FEN string
     // Takes a void pointer to the board, pointer to char array to store the state (output buffer)
