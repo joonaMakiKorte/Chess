@@ -41,7 +41,8 @@ namespace Chess
             boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, images);
             boardUI.UpdateBoard(chessGame.GetBoardState());
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-            boardUI.UpdateHalfMoveDisplay(chessGame.GetHalfMoveClock()); 
+            chessGame.OnHalfMoveUpdated += boardUI.UpdateHalfMoveCount;
+
 
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);         
