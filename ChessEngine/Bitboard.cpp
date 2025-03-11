@@ -217,6 +217,7 @@ uint64_t Bitboard::getKnightMoves(int square) {
 
 uint64_t Bitboard::getBishopMoves(int square) {
 	uint64_t bishop_bitboard = 1ULL << square; // Convert index to bitboard
+
 	if ((white_bishops & bishop_bitboard) == 0 && (black_bishops & bishop_bitboard) == 0) {
 		return 0ULL; // No bishop exists at this square
 	}
@@ -225,49 +226,37 @@ uint64_t Bitboard::getBishopMoves(int square) {
 	uint64_t black_pieces = blackPieces();
 	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
+	// Determine which color we are moving, can't move onto same color
+	uint64_t same_pieces = (white_bishops & bishop_bitboard) ? white_pieces : black_pieces;
+
 	// Initialize moves
 	uint64_t moves = 0ULL;
 
-	// Directions: top-left, top-right, bottom-left, bottom-right
-	int directions[4][2] = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1} };
+	// Process each diagonal direction
+	auto calculateDirectionMoves = [&](uint64_t direction_mask) -> uint64_t {
+		uint64_t valid_moves = direction_mask; // Start with full precomputed moves
+		uint64_t blockers = direction_mask & occupied; // Find blocking pieces
 
-	// Implement blocking logic
-	for (const auto& dir : directions) {
-		int dx = dir[0];
-		int dy = dir[1];
-		int x = square % 8; // Current file (column)
-		int y = square / 8; // Current rank (row)
-
-		while (true) {
-			x += dx;
-			y += dy;
-
-			// Check if the new position is off the board
-			if (x < 0 || x >= 8 || y < 0 || y >= 8) {
-				break;
-			}
-
-			int target_square = y * 8 + x;
-			uint64_t target_bitboard = 1ULL << target_square;
-
-			// Add the target square to moves
-			moves |= target_bitboard;
-
-			// If the target square is occupied, stop sliding in this direction
-			if (occupied & target_bitboard) {
-				break;
-			}
+		if (blockers) {
+			int blocker_square =findFirstSetBit(blockers); // Find first blocker
+			valid_moves &= ~(BISHOP_MOVES[blocker_square].top_left |
+				BISHOP_MOVES[blocker_square].top_right |
+				BISHOP_MOVES[blocker_square].bottom_left |
+				BISHOP_MOVES[blocker_square].bottom_right);
 		}
-	}
 
-	if (white_bishops & bishop_bitboard) {
-		moves &= ~white_pieces; // White bishop can't move onto white pieces
-	}
-	else if (black_bishops & bishop_bitboard) {
-		moves &= ~black_pieces; // Black bishop can't move onto black pieces
-	}
+		return valid_moves;
+		};
 
-	return moves; 
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].top_left);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].top_right);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].bottom_left);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].bottom_right);
+
+	// Remove squares occupied by the same color
+	moves &= ~same_pieces;
+
+	return moves;
 }
 
 uint64_t Bitboard::getRookMoves(int square) {
@@ -276,53 +265,20 @@ uint64_t Bitboard::getRookMoves(int square) {
 		return 0ULL; // No rook exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
-
-	// Initialize moves
-	uint64_t moves = 0ULL;
-
-	// Directions: upwards, downwards, left, right
-	int directions[4][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
-
-	// Implement blocking logic
-	for (const auto& dir : directions) {
-		int dx = dir[0];
-		int dy = dir[1];
-		int x = square % 8; // Current file (column)
-		int y = square / 8; // Current rank (row)
-
-		while (true) {
-			x += dx;
-			y += dy;
-
-			// Check if the new position is off the board
-			if (x < 0 || x >= 8 || y < 0 || y >= 8) {
-				break;
-			}
-
-			int target_square = y * 8 + x;
-			uint64_t target_bitboard = 1ULL << target_square;
-
-			// Add the target square to moves
-			moves |= target_bitboard;
-
-			// If the target square is occupied, stop sliding in this direction
-			if (occupied & target_bitboard) {
-				break;
-			}
-		}
-	}
+	// Combine moves
+	uint64_t moves = (ROOK_MOVES[square].top |
+		ROOK_MOVES[square].bottom |
+		ROOK_MOVES[square].left |
+		ROOK_MOVES[square].right);
 
 	if (white_rooks & rook_bitboard) {
-		moves &= ~white_pieces; // White rook can't move onto white pieces
+		return moves &= ~whitePieces(); // White rook can't move onto white pieces
 	}
 	else if (black_rooks & rook_bitboard) {
-		moves &= ~black_pieces; // Black rook can't move onto black pieces
+		return moves &= ~blackPieces(); // Black rook can't move onto black pieces
 	}
 
-	return moves;
+	return 0ULL; // Should never reach here
 }
 
 uint64_t Bitboard::getQueenMoves(int square) {
@@ -331,54 +287,24 @@ uint64_t Bitboard::getQueenMoves(int square) {
 		return 0ULL; // No queen exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
-
-	// Initialize moves
-	uint64_t moves = 0ULL;
-
-	// Directions: top-left, top-right, bottom-left, bottom-right,
-	// upwards, downwards, left, right
-	int directions[8][2] = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
-
-	// Implement blocking logic
-	for (const auto& dir : directions) {
-		int dx = dir[0];
-		int dy = dir[1];
-		int x = square % 8; // Current file (column)
-		int y = square / 8; // Current rank (row)
-
-		while (true) {
-			x += dx;
-			y += dy;
-
-			// Check if the new position is off the board
-			if (x < 0 || x >= 8 || y < 0 || y >= 8) {
-				break;
-			}
-
-			int target_square = y * 8 + x;
-			uint64_t target_bitboard = 1ULL << target_square;
-
-			// Add the target square to moves
-			moves |= target_bitboard;
-
-			// If the target square is occupied, stop sliding in this direction
-			if (occupied & target_bitboard) {
-				break;
-			}
-		}
-	}
+	// Combine moves
+	uint64_t moves = (QUEEN_MOVES[square].top |
+		QUEEN_MOVES[square].bottom |
+		QUEEN_MOVES[square].left |
+		QUEEN_MOVES[square].right |
+		QUEEN_MOVES[square].top_left |
+		QUEEN_MOVES[square].top_right |
+		QUEEN_MOVES[square].bottom_left |
+		QUEEN_MOVES[square].bottom_right);
 
 	if (white_queen & queen_bitboard) { // White queen
-		moves &= ~white_pieces;
+		return moves &= ~whitePieces();
 	}
 	else if (black_queen & queen_bitboard) { // Black queen
-		moves &= ~black_pieces;
+		return moves &= ~blackPieces();
 	}
 
-	return moves; 
+	return 0ULL; // Should never reach here
 }
 
 uint64_t Bitboard::getKingMoves(int square) {
@@ -401,4 +327,12 @@ uint64_t Bitboard::getKingMoves(int square) {
 	}
 
 	return moves; 
+}
+
+int Bitboard::findFirstSetBit(uint64_t value) {
+	unsigned long index;
+	if (_BitScanForward64(&index, value)) {
+		return static_cast<int>(index);
+	}
+	return -1; // No bits are set
 }

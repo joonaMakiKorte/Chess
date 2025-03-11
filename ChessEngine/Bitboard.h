@@ -80,15 +80,15 @@ private:
     std::string squareToString(int square) const;
 
     // Helper functions to create legal moves for different piece types
-    /*
-    * TODO: Implement the rest after creating the corresponding movetables
-    */
     uint64_t getPawnMoves(int pawn);
     uint64_t getKnightMoves(int knight);
     uint64_t getBishopMoves(int bishop);
     uint64_t getRookMoves(int rook);
     uint64_t getQueenMoves(int queen);
     uint64_t getKingMoves(int king);
+
+    // Helper function to find the index of the least significant set bit
+    int findFirstSetBit(uint64_t value);
 };
 
 #endif CHESSLOGIC_H
