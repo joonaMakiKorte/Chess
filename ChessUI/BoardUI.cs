@@ -26,7 +26,7 @@ namespace Chess
             this.turnLabel = turnLabel;
             InitializeBoard();
         }
-            
+
         public void InitializeBoard()
         {
             pieceGrid.Children.Clear(); // Clear older images
@@ -69,6 +69,10 @@ namespace Chess
 
         public void UpdateBoard(string[,] boardState)
         {
+
+            ClearValidMoveHighlights(); // Deletes former highlights
+
+
             //Console.WriteLine("Updating board...");
             for (int row = 0; row < 8; row++)
             {
@@ -104,6 +108,34 @@ namespace Chess
                 pieceBorders[row, col].Background = Brushes.Transparent;
                 highlightedSquare = null;
             }
+        }
+
+        public void HighlightValidMoves(ulong validMoves)
+        {
+
+            ClearValidMoveHighlights();
+            for (int square = 0; square < 64; square++)
+            {
+                if ((validMoves & (1UL << square)) != 0) // Check if bit is set
+                {
+                    int row = 7 - (square / 8);
+                    int col = square % 8;
+                    HighlightSquare(row, col, Brushes.LightGreen);
+                }
+            }
+        }
+
+
+        public void ClearValidMoveHighlights()
+        {
+            for (int row = 0; row < 8; row++)
+            {
+                for (int col = 0; col < 8; col++)
+                {
+                    pieceBorders[row, col].Background = Brushes.Transparent;
+                }
+            }
+            highlightedSquare = null; // null so it doesn't remain in memory
         }
     }
 }
