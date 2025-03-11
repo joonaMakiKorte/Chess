@@ -133,26 +133,51 @@ void Bitboard::applyMove(int source, int target) {
 	default: throw std::invalid_argument("Invalid piece type");
 	}
 
+	// Check if the move was a pawn double push
+	// If so, set en passant target square
+	if (tolower(source_piece) == 'p' && abs(source - target) == 16) {
+		// Set en passant depending on which color moved
+		en_passant_target = white ? (source + 8) : (target + 8);
+	}
+	else if (!(tolower(source_piece) == 'p' && target == en_passant_target)) { // Reset if was not a pawn moved to en passant
+		en_passant_target = UNASSIGNED; 
+	}
+
 	// Early exit if piece was moved to an empty square
-	if (empty) return;
+	// Except if it was moved to an en passant target square
+	if (empty && target != en_passant_target) return;
 
-	// Lambda for capturing operation
-	auto capturePiece = [target_square](uint64_t& piece_bitboard) {
-		piece_bitboard &= ~target_square; // Clear captured square
-	};
+	// Separate normal capturing logic and en passant capturing
+	if (!empty) { 
+		// Lambda for capturing operation
+		auto capturePiece = [target_square](uint64_t& piece_bitboard) {
+			piece_bitboard &= ~target_square; // Clear captured square
+		};
 
-	// Call capturePiece depending which turn ongoing
-	switch (tolower(target_piece))
-	{
-	case 'p': white ? capturePiece(black_pawns) : capturePiece(white_pawns); break;
-	case 'n': white ? capturePiece(black_knights) : capturePiece(white_knights); break;
-	case 'b': white ? capturePiece(black_bishops) : capturePiece(white_bishops); break;
-	case 'r': white ? capturePiece(black_rooks) : capturePiece(white_rooks); break;
-	case 'q': white ? capturePiece(black_queen) : capturePiece(white_queen); break;
-	case 'k': white ? capturePiece(black_king) : capturePiece(white_king); break;
-	default: throw std::invalid_argument("Invalid piece type");
+		// Call capturePiece depending on which turn ongoing
+		switch (tolower(target_piece))
+		{
+		case 'p': white ? capturePiece(black_pawns) : capturePiece(white_pawns); break;
+		case 'n': white ? capturePiece(black_knights) : capturePiece(white_knights); break;
+		case 'b': white ? capturePiece(black_bishops) : capturePiece(white_bishops); break;
+		case 'r': white ? capturePiece(black_rooks) : capturePiece(white_rooks); break;
+		case 'q': white ? capturePiece(black_queen) : capturePiece(white_queen); break;
+		case 'k': white ? capturePiece(black_king) : capturePiece(white_king); break;
+		default: throw std::invalid_argument("Invalid piece type");
+		}
+	}
+	else if (tolower(source_piece) == 'p' && target == en_passant_target) { // Case where we capture a pawn by en passant
+		// Captured pawn is one rank behind the target square
+		uint64_t en_passant_pawn = white ? (1ULL << (target - 8)) : (1ULL << (target + 8));
+		if (white) {
+			black_pawns &= ~en_passant_pawn; // Capture black pawn
+		}
+		else {
+			white_pawns &= ~en_passant_pawn; // Capture white pawn
+		}
 	}
 	half_moves = 0; // Captures reset halfmove-clock
+	en_passant_target = UNASSIGNED; // Reset en passant; 
 }
 
 uint64_t Bitboard::whitePieces() {
@@ -181,22 +206,29 @@ uint64_t Bitboard::getPawnMoves(int square) {
 	uint64_t black_pieces = blackPieces();
 	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
-	if (white_pawns & pawn_bitboard) { // White pawn
-		uint64_t singlePush = WHITE_PAWN_MOVES[square].single_push & ~occupied;
-		uint64_t doublePush = WHITE_PAWN_MOVES[square].double_push & ~occupied & (singlePush << 8); // Ensure single step is free
-		uint64_t captures = WHITE_PAWN_MOVES[square].captures & black_pieces; // Capture only black pieces
+	// Initialize moves
+	uint64_t singlePush = 0ULL;
+	uint64_t doublePush = 0ULL;
+	uint64_t captures = 0ULL;
 
-		return singlePush | doublePush | captures;
+	if (white_pawns & pawn_bitboard) { // White pawn
+		singlePush = WHITE_PAWN_MOVES[square].single_push & ~occupied;
+		doublePush = WHITE_PAWN_MOVES[square].double_push & ~occupied & (singlePush << 8); // Ensure single step is free
+		captures = WHITE_PAWN_MOVES[square].captures & black_pieces; // Capture only black pieces
 	}
 	else if (black_pawns & pawn_bitboard) { // Black pawn
-		uint64_t singlePush = BLACK_PAWN_MOVES[square].single_push & ~occupied;
-		uint64_t doublePush = BLACK_PAWN_MOVES[square].double_push & ~occupied & (singlePush >> 8);
-		uint64_t captures = BLACK_PAWN_MOVES[square].captures & white_pieces; // Capture only white pieces
-
-		return singlePush | doublePush | captures;
+		singlePush = BLACK_PAWN_MOVES[square].single_push & ~occupied;
+		doublePush = BLACK_PAWN_MOVES[square].double_push & ~occupied & (singlePush >> 8);
+		captures = BLACK_PAWN_MOVES[square].captures & white_pieces; // Capture only white pieces
 	}
 
-	return 0ULL; // Should never reach here
+	// Check if en passant is available and in capture moves of the current moved piece
+	if ((en_passant_target != UNASSIGNED) &&
+		((white ? WHITE_PAWN_MOVES[square].captures : BLACK_PAWN_MOVES[square].captures) & (1ULL << en_passant_target))) {
+		captures |= 1ULL << en_passant_target;
+	}
+
+	return singlePush | doublePush | captures;
 }
 
 uint64_t Bitboard::getKnightMoves(int square) {
@@ -313,7 +345,7 @@ uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse) {
 		if (same_color & next_square) break; // Stop if a same-color piece is encountered
 		valid_moves |= next_square; // Add the square to valid moves
 		if (occupied & next_square) break; // Stop if a piece is encountered (opposite color, capture)
-		direction_moves ^= next_square; // Remove the processed square
+		direction_moves ^= next_square; // Remove the processed square with bitwise XOR
 	}
 	return valid_moves;
 }

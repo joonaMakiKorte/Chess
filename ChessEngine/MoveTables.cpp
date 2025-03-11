@@ -84,6 +84,12 @@ void initBishopMoves(int square) {
 
 	// Store the calculated moves for this square
 	BISHOP_MOVES[square] = { top_left, top_right, bottom_left, bottom_right };
+
+	// Also update for queen
+	QUEEN_MOVES[square].top_left = top_left;
+	QUEEN_MOVES[square].top_right = top_right;
+	QUEEN_MOVES[square].bottom_left = bottom_left;
+	QUEEN_MOVES[square].bottom_right = bottom_right;
 }
 
 
@@ -128,8 +134,13 @@ void initRookMoves(int square) {
 
 	// Store the calculated moves for this square
 	ROOK_MOVES[square] = { top, bottom, left, right };
-}
 
+	// Also update for Queen
+	QUEEN_MOVES[square].top = top;
+	QUEEN_MOVES[square].bottom = bottom;
+	QUEEN_MOVES[square].left = left;
+	QUEEN_MOVES[square].right = right;
+}
 
 void initKnightMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Place knight on the square
@@ -158,63 +169,6 @@ void initKnightMoves(int square) {
 
 	// Store the calculated moves for this square
 	KNIGHT_MOVES[square] = { moves };
-}
-
-
-void initQueenMoves(int square) {
-	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
-
-	// Different queen routes (combining rook and bishop moves)
-	uint64_t top = 0ULL;
-	uint64_t bottom = 0ULL;
-	uint64_t left = 0ULL;
-	uint64_t right = 0ULL;
-	uint64_t top_left = 0ULL;
-	uint64_t top_right = 0ULL;
-	uint64_t bottom_left = 0ULL;
-	uint64_t bottom_right = 0ULL;
-
-	// Directions for queen (rook + bishop)
-	int directions[8] = { 8, -8, -1, 1, 7, 9, -9, -7 }; // Top, bottom, left, right, top-left, top-right, bottom-left, bottom-right
-
-	// Iterate over all 8 possible queen move directions
-	for (int direction : directions) {
-		uint64_t current_square = bitboard;
-
-		while (true) {
-			// Check for board edges to prevent wrapping
-			if (((direction == 7 || direction == -9) && (current_square & FILE_A)) ||  // Left-border
-				((direction == 9 || direction == -7) && (current_square & FILE_H)) ||  // Right-border
-				((direction == 7 || direction == 9) && (current_square & RANK_8)) ||   // Top-border
-				((direction == -9 || direction == -7) && (current_square & RANK_1)) || // Bottom-border
-				((direction == 1 && (current_square & FILE_H)) ||					   // Prevent left wrap
-				(direction == -1 && (current_square & FILE_A)) ||                      // Prevent right wrap
-				(direction == 8 && (current_square & RANK_8)) ||                       // Prevent bottom wrap
-				(direction == -8 && (current_square & RANK_1)))) {                     // Prevent top wrap
-				break;
-			}
-
-
-			// Shift in the given direction
-			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
-
-			// Ensure square remains on the board
-			if (current_square == 0) break;
-
-			// Add the current square to the appropriate direction bitboard
-			if (direction == 8) top |= current_square;
-			else if (direction == -8) bottom |= current_square;
-			else if (direction == -1) left |= current_square;
-			else if (direction == 1) right |= current_square;
-			else if (direction == 7) top_left |= current_square;
-			else if (direction == 9) top_right |= current_square;
-			else if (direction == -9) bottom_left |= current_square;
-			else if (direction == -7) bottom_right |= current_square;
-		}
-	}
-
-	// Store the calculated moves for this square
-	QUEEN_MOVES[square] = { top, bottom, left, right, top_left, top_right, bottom_left, bottom_right };
 }
 
 void initKingMoves(int square) {
@@ -257,7 +211,6 @@ void initMoveTables() {
 		initBishopMoves(square);
 		initRookMoves(square);
 		initKnightMoves(square);
-		initQueenMoves(square);
 		initKingMoves(square);
 	}
 }

@@ -23,11 +23,13 @@ struct RookMoves {
 };
 
 struct KnightMoves {
-	uint64_t moves;
+	uint64_t moves;        // All possible jumps combined into one for simplicity
 };
 
 struct QueenMoves {
-	uint64_t top;
+	// Has the combined moves of Rook and Bishop
+	// Doesn't require it's own init function
+	uint64_t top;         
 	uint64_t bottom;
 	uint64_t left;
 	uint64_t right;
@@ -38,7 +40,7 @@ struct QueenMoves {
 };
 
 struct KingMoves {
-	uint64_t moves;
+	uint64_t moves;         // Can move one step in each direction
 };
 
 
@@ -56,4 +58,4 @@ extern KingMoves KING_MOVES[64];
 // Calls every individual init function of each piece
 void initMoveTables();
 
-#endif // ATTACKTABLES_H
+#endif // MOVETABLES_H
