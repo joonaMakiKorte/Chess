@@ -7,11 +7,11 @@ constexpr int MAX_MOVES = 32; // Max number of legal moves for a piece, in theor
 
 // Masks for castling rights
 constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)
-constexpr uint64_t WHITE_QUEENSIDE_CASTLE_SQUARES = (1ULL << 1) | (1ULL << 3); // (b1, c1, d1)
+constexpr uint64_t WHITE_QUEENSIDE_CASTLE_SQUARES = (1ULL << 1) | (1ULL << 2) | (1ULL << 3); // (b1, c1, d1)
 constexpr uint64_t BLACK_KINGSIDE_CASTLE_SQUARES = (1ULL << 61) | (1ULL << 62); // (f8, g8)
-constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 59); // (b8, c8, d8)
-constexpr uint64_t WHITE_KING = 1ULL << 4; // (e1)
-constexpr uint64_t BLACK_KING = 1ULL << 60; // (e8)
+constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) | (1ULL << 59); // (b8, c8, d8)
+constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
+constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
 
 class Bitboard {
 private:
