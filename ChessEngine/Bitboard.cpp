@@ -526,6 +526,12 @@ uint64_t Bitboard::getCastlingMoves() {
 	uint64_t occupied = whitePieces() | blackPieces();
 	uint64_t attack_squares = getAttackSquares();
 
+	uint64_t king_square = white ? WHITE_KING : BLACK_KING;
+	if (attack_squares & king_square) {
+		// King is in check, cannot castle
+		return 0ULL;
+	}
+
 	uint64_t critical_squares;
 	// Depending on player turn and castling availability add available castling moves
 	if (white) {
@@ -538,7 +544,7 @@ uint64_t Bitboard::getCastlingMoves() {
 				// Now compare with opponents attack squares and make sure no squares alignt (bitwise AND)
 				// // Ensure the king does not move thorught or into check
 				// If castling available, add to moves
-				if (!(critical_squares & attack_squares) && !(attack_squares & (1ULL << 6))) {
+				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 6; // King moves to g1
 				}
 			}
@@ -546,7 +552,7 @@ uint64_t Bitboard::getCastlingMoves() {
 		if (castling_rights & 0x02) { // White Queenside
 			if ((occupied & WHITE_QUEENSIDE_CASTLE_SQUARES) == 0) { // b1, c1 and d1 must be free
 				critical_squares = WHITE_KING | WHITE_QUEENSIDE_CASTLE_SQUARES;
-				if (!(critical_squares & attack_squares) && !(attack_squares & (1ULL << 2))) {
+				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 2; // King moves to c1
 				}
 			}
@@ -556,7 +562,7 @@ uint64_t Bitboard::getCastlingMoves() {
 		if (castling_rights & 0x04) { // Black Kingside
 			if ((occupied & BLACK_KINGSIDE_CASTLE_SQUARES) == 0) { // f8 and g8 must be free
 				critical_squares = BLACK_KING | BLACK_KINGSIDE_CASTLE_SQUARES; // e8, f8, g8
-				if (!(critical_squares & attack_squares) && !(attack_squares & (1ULL << 62))) {
+				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 62; // King moves to g8
 				}
 			}
@@ -564,7 +570,7 @@ uint64_t Bitboard::getCastlingMoves() {
 		if (castling_rights & 0x08) { // Black Queenside
 			if ((occupied & BLACK_QUEENSIDE_CASTLE_SQUARES) == 0) { // c8 and d8 must be free
 				critical_squares = BLACK_KING | BLACK_QUEENSIDE_CASTLE_SQUARES; // e8, d8, c8
-				if (!(critical_squares & attack_squares) && !(attack_squares & (1ULL << 58))) {
+				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 58; // King moves to c8
 				}
 			}
@@ -582,6 +588,10 @@ uint64_t Bitboard::getAttackSquares() {
 	// Done by isolating FSB, processing the piece type at square, and removing the processed square (XOR)
 	// At each occupied square we get the moves and combine in the attack squares (OR)
 	uint64_t opponent = white ? blackPieces() : whitePieces();
+	// Bruteforce the turn flag to get the correct attack squares
+	// This is done because the getMoves() functions use the flag to determine which pieces we can move onto
+	// And since we discover the opponents moves, we must tell the functions that it would be the opponent moving
+	white = !white;
 	while (opponent != 0) { 
 		int current_square = findFirstSetBit(opponent); // Isolate FSB and get as index
 		char piece_type = getPieceType(current_square); // Get piece type
@@ -598,6 +608,7 @@ uint64_t Bitboard::getAttackSquares() {
 		}
 		opponent ^= 1ULL << current_square; // Remove the processed square
 	}
+	white = !white; // Force the correct turn back
 	return attack_squares;
 }
 
