@@ -168,7 +168,14 @@ uint64_t Bitboard::getLegalMoves(int from) {
 	case 'b': legal_moves = getBishopMoves(from); break;
 	case 'r': legal_moves = getRookMoves(from); break;
 	case 'q': legal_moves = getQueenMoves(from); break;
-	case 'k': legal_moves = getKingMoves(from); break;
+	case 'k': 
+		legal_moves = getKingMoves(from);
+		
+		// Add castling moves if the king is on its starting square
+		if ((piece == 'K' && from == 4) || piece == 'k' && from == 60) {
+			legal_moves |= getCastlingMoves();
+		}
+		break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
 	return legal_moves;
@@ -204,30 +211,10 @@ void Bitboard::applyMove(int source, int target) {
 	case 'p': white ? movePiece(white_pawns) : movePiece(black_pawns); half_moves = 0; break; // Resets halfmove-clock
 	case 'n': white ? movePiece(white_knights) : movePiece(black_knights); break;
 	case 'b': white ? movePiece(white_bishops) : movePiece(black_bishops); break;
-	case 'r': white ? movePiece(white_rooks) : movePiece(black_rooks); break;
 	case 'q': white ? movePiece(white_queen) : movePiece(black_queen); break;
-	case 'k': white ? movePiece(white_king) : movePiece(black_king); break;
-	default: throw std::invalid_argument("Invalid piece type");
-	}
-
-	// Check if the move was a pawn double push
-	// If so, set en passant target square
-	if (tolower(source_piece) == 'p' && abs(source - target) == 16) {
-		// Set en passant depending on which color moved
-		en_passant_target = white ? (source + 8) : (target + 8);
-	}
-	else if (!(tolower(source_piece) == 'p' && target == en_passant_target)) { // Reset if was not a pawn moved to en passant
-		en_passant_target = UNASSIGNED; 
-	}
-
-	// Update castling if rights left and moved piece was king or rook
-	if (castling_rights != 0 && (tolower(source_piece) == 'k' || tolower(source_piece) == 'r')) {
-		// If king was moved, remove all castling rights from the active side
-		if (tolower(source_piece) == 'k') {
-			castling_rights &= ~(white ? 0x03 : 0x0C); // (0x03 = white, 0x0C black)
-		}
-		else if (tolower(source_piece) == 'r') {
-			// Update Queen/Kingside castling depending on which rook moved
+	case 'r': white ? movePiece(white_rooks) : movePiece(black_rooks);
+		// Update Queen/Kingside castling depending on which rook moved
+		if (castling_rights != 0) {
 			if (white && (castling_rights & 0x01 || castling_rights & 0x02)) {
 				if (source % 8 == 0) { // Queenside
 					castling_rights &= ~0x02;
@@ -245,6 +232,55 @@ void Bitboard::applyMove(int source, int target) {
 				}
 			}
 		}
+		break;
+	case 'k': white ? movePiece(white_king) : movePiece(black_king);
+		// Update castling rights
+		if (castling_rights != 0) {
+			castling_rights &= ~(white ? 0x03 : 0x0C); // (0x03 = white, 0x0C black)
+		}
+		// Check if move was castling
+		// If so, move the correct rook also
+		if (abs(source - target) == 2) {
+			uint64_t rook;
+			if (white) {
+				// White castling: Kingside (h1 -> f1), Queenside (a1 -> d1)
+				if (target == 6) { // Kingside castling (g1)
+					rook = (1ULL << 7); // White rook on h1
+					white_rooks &= ~rook; // Remove rook from h1
+					white_rooks |= (rook >> 2); // Move rook to f1
+				}
+				else if (target == 2) { // Queenside castling (c1)
+					rook = (1ULL << 0); // White rook on a1
+					white_rooks &= ~rook; // Remove rook from a1
+					white_rooks |= (rook << 3); // Move rook to d1
+				}
+			}
+			else {
+				// Black castling: Kingside (h8 -> f8), Queenside (a8 -> d8)
+				if (target == 62) { // Kingside castling (g8)
+					rook = (1ULL << 63); // Black rook on h8
+					black_rooks &= ~rook; // Remove rook from h8
+					black_rooks |= (rook >> 2); // Move rook to f8
+				}
+				else if (target == 58) { // Queenside castling (c8)
+					rook = (1ULL << 56); // Black rook on a8
+					black_rooks &= ~rook; // Remove rook from a8
+					black_rooks |= (rook << 3); // Move rook to d8
+				}
+			}
+		}
+		break;
+	default: throw std::invalid_argument("Invalid piece type");
+	}
+
+	// Check if the move was a pawn double push
+	// If so, set en passant target square
+	if (tolower(source_piece) == 'p' && abs(source - target) == 16) {
+		// Set en passant depending on which color moved
+		en_passant_target = white ? (source + 8) : (target + 8);
+	}
+	else if (!(tolower(source_piece) == 'p' && target == en_passant_target)) { // Reset if was not a pawn moved to en passant
+		en_passant_target = UNASSIGNED; 
 	}
 
 	// Early exit if piece was moved to an empty square
@@ -463,11 +499,6 @@ uint64_t Bitboard::getKingMoves(int square) {
 	return moves; 
 }
 
-
-
-
-
-
 uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse) {
 	uint64_t same_color = white ? whitePieces() : blackPieces(); // Determine which color is being moved
 	uint64_t occupied = whitePieces() | blackPieces(); // All occupied squares
@@ -487,6 +518,51 @@ uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse) {
 		direction_moves ^= next_square; // Remove the processed square with bitwise XOR
 	}
 	return valid_moves;
+}
+
+uint64_t Bitboard::getCastlingMoves() {
+	// Initialize castling moves
+	uint64_t castling_moves = 0ULL;
+	uint64_t occupied = whitePieces() | blackPieces();
+	uint64_t attack_squares = getAttackSquares();
+
+	uint64_t critical_squares;
+	// Depending on player turn and castling availability add available castling moves
+	if (white) {
+		if (castling_rights & 0x01) { // White Kingside
+			if ((occupied & WHITE_KINGSIDE_CASTLE_SQUARES) == 0) { // f1 and g1 must be free
+				// King cannot castle out of throught, or into check
+				// Get squares that can't be under attack
+				critical_squares = WHITE_KING | WHITE_KINGSIDE_CASTLE_SQUARES;
+
+				// Now compare with opponents attack squares and make sure no squares alignt (bitwise AND)
+				// If castling available, add to moves
+				if (!(critical_squares & attack_squares)) castling_moves |= 1ULL << 6;
+			}
+		}
+		if (castling_rights & 0x02) { // White Queenside
+			if ((occupied & WHITE_QUEENSIDE_CASTLE_SQUARES) == 0) { // b1, c1 and d1 must be free
+				critical_squares = WHITE_KING | WHITE_QUEENSIDE_CASTLE_SQUARES;
+				if (!(critical_squares & attack_squares)) castling_moves |= 1ULL << 2;
+			}
+		}
+	}
+	else {
+		if (castling_rights & 0x04) { // Black Kingside
+			if ((occupied & BLACK_KINGSIDE_CASTLE_SQUARES) == 0) { // f8 and g8 must be free
+				critical_squares = BLACK_KING | BLACK_KINGSIDE_CASTLE_SQUARES; // e8, f8, g8
+				if (!(critical_squares & attack_squares)) castling_moves |= 1ULL << 62; // King moves to g8
+			}
+		}
+		if (castling_rights & 0x08) { // Black Queenside
+			if ((occupied & BLACK_QUEENSIDE_CASTLE_SQUARES) == 0) { // c8 and d8 must be free
+				critical_squares = BLACK_KING | BLACK_QUEENSIDE_CASTLE_SQUARES; // e8, d8, c8
+				if (!(critical_squares & attack_squares)) castling_moves |= 1ULL << 58; // King moves to c8
+			}
+		}
+	}
+
+	return castling_moves;
 }
 
 uint64_t Bitboard::getAttackSquares() {

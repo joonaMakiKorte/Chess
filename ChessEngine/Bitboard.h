@@ -5,6 +5,14 @@
 constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
 constexpr int MAX_MOVES = 32; // Max number of legal moves for a piece, in theory max would be 28 (for queen) but we use 32 for alignment and placement
 
+// Masks for castling rights
+constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)
+constexpr uint64_t WHITE_QUEENSIDE_CASTLE_SQUARES = (1ULL << 1) | (1ULL << 3); // (b1, c1, d1)
+constexpr uint64_t BLACK_KINGSIDE_CASTLE_SQUARES = (1ULL << 61) | (1ULL << 62); // (f8, g8)
+constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 59); // (b8, c8, d8)
+constexpr uint64_t WHITE_KING = 1ULL << 4; // (e1)
+constexpr uint64_t BLACK_KING = 1ULL << 60; // (e8)
+
 class Bitboard {
 private:
     // Represent each piece type as a bitboard
@@ -99,6 +107,9 @@ private:
     // Used for Bishop, Rook and Queen, since can't leap over other pieces
     // Uses LSB/FSB to isolate the occupied bit depending on move direction
     uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse);
+
+    // Helper to get castling moves for a king
+    uint64_t getCastlingMoves();
 
     // Helper to get all the attack squares of opponent (squares that are possible to attack)
     // If white turn, we get all the squares black could attack, and vice versa
