@@ -222,104 +222,35 @@ uint64_t Bitboard::getBishopMoves(int square) {
 		return 0ULL; // No bishop exists at this square
 	}
 
-	uint64_t white_pieces = whitePieces();
-	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
+	// Initialize moves
+	uint64_t moves = 0ULL;
 
-	// White bishop
-	if (white_bishops & bishop_bitboard) {
-		moves &= ~whitePieces(); // White bishop can't move onto white pieces
-
-		// Prevent moving through or behind other white pieces
-		if (BISHOP_MOVES[square].top_left & white_bishops) {
-			moves &= ~BISHOP_MOVES[square].top_left; // Don't move past other white pieces on the top-left diagonal
-		}
-		if (BISHOP_MOVES[square].top_right & white_bishops) {
-			moves &= ~BISHOP_MOVES[square].top_right; // Don't move past other white pieces on the top-right diagonal
-		}
-		if (BISHOP_MOVES[square].bottom_left & white_bishops) {
-			moves &= ~BISHOP_MOVES[square].bottom_left; // Don't move past other white pieces on the bottom-left diagonal
-		}
-		if (BISHOP_MOVES[square].bottom_right & white_bishops) {
-			moves &= ~BISHOP_MOVES[square].bottom_right; // Don't move past other white pieces on the bottom-right diagonal
-		}
-	}
-	// Black bishop
-	else if (black_bishops & bishop_bitboard) {
-		moves &= ~blackPieces(); // Black bishop can't move onto black pieces
-
-		// Prevent moving through or behind other black pieces
-		if (BISHOP_MOVES[square].top_left & black_bishops) {
-			moves &= ~BISHOP_MOVES[square].top_left; // Don't move past other black pieces on the top-left diagonal
-		}
-		if (BISHOP_MOVES[square].top_right & black_bishops) {
-			moves &= ~BISHOP_MOVES[square].top_right; // Don't move past other black pieces on the top-right diagonal
-		}
-		if (BISHOP_MOVES[square].bottom_left & black_bishops) {
-			moves &= ~BISHOP_MOVES[square].bottom_left; // Don't move past other black pieces on the bottom-left diagonal
-		}
-		if (BISHOP_MOVES[square].bottom_right & black_bishops) {
-			moves &= ~BISHOP_MOVES[square].bottom_right; // Don't move past other black pieces on the bottom-right diagonal
-		}
-	}
+	// Combine legal moves
+	moves |= getSlidingMoves(BISHOP_MOVES[square].top_left, true);
+	moves |= getSlidingMoves(BISHOP_MOVES[square].top_right, true);
+	moves |= getSlidingMoves(BISHOP_MOVES[square].bottom_left, false);
+	moves |= getSlidingMoves(BISHOP_MOVES[square].bottom_right, false);
 
 	return moves;
 }
 
 uint64_t Bitboard::getRookMoves(int square) {
 	uint64_t rook_bitboard = 1ULL << square; // Convert index to bitboard
+
 	if ((white_rooks & rook_bitboard) == 0 && (black_rooks & rook_bitboard) == 0) {
 		return 0ULL; // No rook exists at this square
 	}
 
-	// Combine moves
-	uint64_t moves = (ROOK_MOVES[square].top |
-		ROOK_MOVES[square].bottom |
-		ROOK_MOVES[square].left |
-		ROOK_MOVES[square].right);
+	// Initialize moves
+	uint64_t moves = 0ULL;
 
-	// White rook
-	if (white_rooks & rook_bitboard) {
-		moves &= ~whitePieces(); // White rook can't move onto white pieces
+	// Combine legal moves
+	moves |= getSlidingMoves(ROOK_MOVES[square].top, true);
+	moves |= getSlidingMoves(ROOK_MOVES[square].bottom, false);
+	moves |= getSlidingMoves(ROOK_MOVES[square].left, false);
+	moves |= getSlidingMoves(ROOK_MOVES[square].right, true);
 
-		// Prevent moving through or behind other white pieces
-		if (ROOK_MOVES[square].top & white_rooks) {
-			moves &= ~ROOK_MOVES[square].top; // Don't move past other white pieces in the top direction
-		}
-		if (ROOK_MOVES[square].bottom & white_rooks) {
-			moves &= ~ROOK_MOVES[square].bottom; // Don't move past other white pieces in the bottom direction
-		}
-		if (ROOK_MOVES[square].left & white_rooks) {
-			moves &= ~ROOK_MOVES[square].left; // Don't move past other white pieces on the left
-		}
-		if (ROOK_MOVES[square].right & white_rooks) {
-			moves &= ~ROOK_MOVES[square].right; // Don't move past other white pieces on the right
-		}
-	}
-	// Black rook
-	else if (black_rooks & rook_bitboard) {
-		moves &= ~blackPieces(); // Black rook can't move onto black pieces
-
-		// Prevent moving through or behind other black pieces
-		if (ROOK_MOVES[square].top & black_rooks) {
-			moves &= ~ROOK_MOVES[square].top; // Don't move past other black pieces in the top direction
-		}
-		if (ROOK_MOVES[square].bottom & black_rooks) {
-			moves &= ~ROOK_MOVES[square].bottom; // Don't move past other black pieces in the bottom direction
-		}
-		if (ROOK_MOVES[square].left & black_rooks) {
-			moves &= ~ROOK_MOVES[square].left; // Don't move past other black pieces on the left
-		}
-		if (ROOK_MOVES[square].right & black_rooks) {
-			moves &= ~ROOK_MOVES[square].right; // Don't move past other black pieces on the right
-		}
-	}
-
-
-
-
-
-	return 0ULL; // Should never reach here
+	return moves;
 }
 
 uint64_t Bitboard::getQueenMoves(int square) {
@@ -328,78 +259,20 @@ uint64_t Bitboard::getQueenMoves(int square) {
 		return 0ULL; // No queen exists at this square
 	}
 
-	// Combine moves
-	uint64_t moves = (QUEEN_MOVES[square].top |
-		QUEEN_MOVES[square].bottom |
-		QUEEN_MOVES[square].left |
-		QUEEN_MOVES[square].right |
-		QUEEN_MOVES[square].top_left |
-		QUEEN_MOVES[square].top_right |
-		QUEEN_MOVES[square].bottom_left |
-		QUEEN_MOVES[square].bottom_right);
+	// Initialize moves
+	uint64_t moves = 0ULL;
 
-	// White queen
-	if (white_queen & queen_bitboard) {
-		moves &= ~whitePieces(); // White queen can't move onto white pieces
+	// Combine legal moves
+	moves |= getSlidingMoves(QUEEN_MOVES[square].top, true);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].bottom, false);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].left, false);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].right, true);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].top_left, true);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].top_right, true);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].bottom_left, false);
+	moves |= getSlidingMoves(QUEEN_MOVES[square].bottom_right, false);
 
-		// Prevent moving through or behind other white pieces
-		if (QUEEN_MOVES[square].top & white_queen) {
-			moves &= ~QUEEN_MOVES[square].top; // Don't move past other white pieces in the top direction
-		}
-		if (QUEEN_MOVES[square].bottom & white_queen) {
-			moves &= ~QUEEN_MOVES[square].bottom; // Don't move past other white pieces in the bottom direction
-		}
-		if (QUEEN_MOVES[square].left & white_queen) {
-			moves &= ~QUEEN_MOVES[square].left; // Don't move past other white pieces on the left
-		}
-		if (QUEEN_MOVES[square].right & white_queen) {
-			moves &= ~QUEEN_MOVES[square].right; // Don't move past other white pieces on the right
-		}
-		if (QUEEN_MOVES[square].top_left & white_queen) {
-			moves &= ~QUEEN_MOVES[square].top_left; // Don't move past other white pieces on the top-left diagonal
-		}
-		if (QUEEN_MOVES[square].top_right & white_queen) {
-			moves &= ~QUEEN_MOVES[square].top_right; // Don't move past other white pieces on the top-right diagonal
-		}
-		if (QUEEN_MOVES[square].bottom_left & white_queen) {
-			moves &= ~QUEEN_MOVES[square].bottom_left; // Don't move past other white pieces on the bottom-left diagonal
-		}
-		if (QUEEN_MOVES[square].bottom_right & white_queen) {
-			moves &= ~QUEEN_MOVES[square].bottom_right; // Don't move past other white pieces on the bottom-right diagonal
-		}
-	}
-	// Black queen
-	else if (black_queen & queen_bitboard) {
-		moves &= ~blackPieces(); // Black queen can't move onto black pieces
-
-		// Prevent moving through or behind other black pieces
-		if (QUEEN_MOVES[square].top & black_queen) {
-			moves &= ~QUEEN_MOVES[square].top; // Don't move past other black pieces in the top direction
-		}
-		if (QUEEN_MOVES[square].bottom & black_queen) {
-			moves &= ~QUEEN_MOVES[square].bottom; // Don't move past other black pieces in the bottom direction
-		}
-		if (QUEEN_MOVES[square].left & black_queen) {
-			moves &= ~QUEEN_MOVES[square].left; // Don't move past other black pieces on the left
-		}
-		if (QUEEN_MOVES[square].right & black_queen) {
-			moves &= ~QUEEN_MOVES[square].right; // Don't move past other black pieces on the right
-		}
-		if (QUEEN_MOVES[square].top_left & black_queen) {
-			moves &= ~QUEEN_MOVES[square].top_left; // Don't move past other black pieces on the top-left diagonal
-		}
-		if (QUEEN_MOVES[square].top_right & black_queen) {
-			moves &= ~QUEEN_MOVES[square].top_right; // Don't move past other black pieces on the top-right diagonal
-		}
-		if (QUEEN_MOVES[square].bottom_left & black_queen) {
-			moves &= ~QUEEN_MOVES[square].bottom_left; // Don't move past other black pieces on the bottom-left diagonal
-		}
-		if (QUEEN_MOVES[square].bottom_right & black_queen) {
-			moves &= ~QUEEN_MOVES[square].bottom_right; // Don't move past other black pieces on the bottom-right diagonal
-		}
-	}
-
-	return 0ULL; // Should never reach here
+	return moves;
 }
 
 uint64_t Bitboard::getKingMoves(int square) {
@@ -424,12 +297,37 @@ uint64_t Bitboard::getKingMoves(int square) {
 	return moves; 
 }
 
+uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse) {
+	uint64_t same_color = white ? whitePieces() : blackPieces(); // Determine which color is being moved
+	uint64_t occupied = whitePieces() | blackPieces(); // All occupied squares
+
+	uint64_t valid_moves = 0ULL; // Initialize moves
+	while (direction_moves) {
+		uint64_t next_square = 0ULL;
+		if (reverse) {
+			next_square = 1ULL << findFirstSetBit(direction_moves); // Isolate FSB
+		}
+		else {
+			next_square = 1ULL << findLastSetBit(direction_moves); // Isolate LSB
+		}
+		if (same_color & next_square) break; // Stop if a same-color piece is encountered
+		valid_moves |= next_square; // Add the square to valid moves
+		if (occupied & next_square) break; // Stop if a piece is encountered (opposite color, capture)
+		direction_moves ^= next_square; // Remove the processed square
+	}
+	return valid_moves;
+}
+
 int Bitboard::findFirstSetBit(uint64_t value) {
+#if defined(_MSC_VER) // MSVC
 	unsigned long index;
 	if (_BitScanForward64(&index, value)) {
 		return static_cast<int>(index);
 	}
 	return -1; // No bits are set
+#else // GCC and Clang
+	return value ? __builtin_ctzll(value) : -1;
+#endif
 }
 
 int Bitboard::findLastSetBit(uint64_t value) {
