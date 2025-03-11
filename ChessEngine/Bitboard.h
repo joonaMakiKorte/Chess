@@ -95,11 +95,6 @@ private:
     uint64_t getQueenMoves(int queen);
     uint64_t getKingMoves(int king);
 
-
-
-
-
-
     // Helper to get the sliding moves of a movetable
     // Used for Bishop, Rook and Queen, since can't leap over other pieces
     // Uses LSB/FSB to isolate the occupied bit depending on move direction
