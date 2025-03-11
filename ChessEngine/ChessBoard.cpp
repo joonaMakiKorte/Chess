@@ -13,6 +13,20 @@ uint64_t ChessBoard::LegalMoves(int square) {
     return board->getLegalMoves(square);
 }
 
+
+bool ChessBoard::isInCheck() {
+
+    // Get all legal moves from the source square
+    return board->isInCheck();
+}
+
+bool ChessBoard::isCheckmate() {
+
+    // Get all legal moves from the source square
+    return board->isCheckmate();
+}
+
+
 void ChessBoard::MovePiece(int source, int target) {
     // Validate move notations
     if (!(0 <= source <= 63) || !(0 <= target <= 63)) return;
@@ -80,6 +94,8 @@ std::string ChessBoard::GetBoardState() {
 
     return fen;
 }
+
+
 
 void ChessBoard::UpdateDebugMessage(const std::string& message) {
     debugMessage = message;

@@ -27,6 +27,8 @@ namespace Chess
             InitializeBoard();
         }
 
+
+        
         public void InitializeBoard()
         {
             pieceGrid.Children.Clear(); // Clear older images
@@ -91,8 +93,11 @@ namespace Chess
             }
         }
 
-        public void UpdateTurnDisplay(bool isWhiteturn) => turnLabel.Content = isWhiteturn ? "White's Turn" : "Black's Turn";
-
+        public void UpdateTurnDisplay( bool isWhiteTurn)
+        {
+            string turnText = isWhiteTurn ? "White's Turn" : "Black's Turn";
+            turnLabel.Content = turnText;
+        }
         public void HighlightSquare(int row, int col, Brush color)
         {
             highlightedSquare = (row, col);

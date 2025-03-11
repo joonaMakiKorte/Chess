@@ -17,6 +17,10 @@ public:
     // Get legal moves from the parameter square as a bitboard
     uint64_t LegalMoves(int square);
 
+    bool isInCheck();
+
+    bool isCheckmate();
+
     // Move a chessboard piece according to given parameter
     // Update chessboard status accordingly
     // Is called in C# if validating move successful
@@ -35,6 +39,10 @@ public:
     // '0' = half move clock
     // '1' = full move number
     std::string GetBoardState();
+
+
+
+ 
 
     // Get debug message
     std::string GetDebugMessage() const;

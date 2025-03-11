@@ -23,6 +23,7 @@ namespace Chess
         private static extern void GetBoardState(IntPtr board, IntPtr output, int size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+
         private static extern IntPtr GetDebugMessage(IntPtr board, IntPtr output, int size);
 
         // Helper method to get board state as a string
@@ -38,6 +39,13 @@ namespace Chess
 
             return fen;
         }
+
+        // New functions for isInCheck and isCheckmate
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool isInCheck(IntPtr board);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool isCheckmate(IntPtr board);
 
         // Helper to get debug messages as string
         public static string GetDebugMessageString(IntPtr board)

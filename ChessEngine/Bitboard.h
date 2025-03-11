@@ -54,6 +54,13 @@ public:
     // Get en passant target square as a string
     std::string getEnPassantString() const;
 
+
+    // checks for checks
+    bool isInCheck();
+
+    // checks checkmates
+    bool isCheckmate();
+
     // Get half moves
     int getHalfMoveClock() const;
 
@@ -86,6 +93,11 @@ private:
     uint64_t getRookMoves(int rook);
     uint64_t getQueenMoves(int queen);
     uint64_t getKingMoves(int king);
+
+
+
+
+
 
     // Helper to get the sliding moves of a movetable
     // Used for Bishop, Rook and Queen, since can't leap over other pieces

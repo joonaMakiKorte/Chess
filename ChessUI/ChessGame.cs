@@ -122,6 +122,10 @@ namespace Chess
             return validMoves;
         }
 
+
+        
+
+        
         // Moves the piece
         // Activated only after move is validated
         public void MovePiece(int source, int target)
@@ -134,6 +138,11 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             Console.WriteLine(fen);
             LoadFromFEN(fen);
+
+            bool mate = ChessEngineInterop.isCheckmate(board);
+            bool check =  ChessEngineInterop.isInCheck(board);
+            Console.WriteLine("Checkmate: " + mate + ", In Check: " + check);
+
         }
 
         // Destroy board

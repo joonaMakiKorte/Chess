@@ -37,3 +37,16 @@ extern "C" CHESSENGINE_API void GetDebugMessage(void* board, char* output, int s
     std::string debug_message = b->GetDebugMessage(); // Store the debug message in a static variable
     strncpy_s(output, size, debug_message.c_str(), _TRUNCATE); // Copy into the output buffer
 }
+
+
+extern "C" CHESSENGINE_API bool isInCheck(void* board) {
+    if (!board) return false;
+    ChessBoard* b = static_cast<ChessBoard*>(board);
+    return b->isInCheck();
+}
+
+extern "C" CHESSENGINE_API bool isCheckmate(void* board) {
+    if (!board) return false;
+    ChessBoard* b = static_cast<ChessBoard*>(board);
+    return b->isCheckmate();
+}
