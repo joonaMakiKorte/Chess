@@ -18,6 +18,8 @@ namespace Chess
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
 
+
+
         
 
         public ChessGame()
@@ -34,6 +36,9 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
         }
+
+        // this is to move halfmove updates
+        public event Action<int> OnHalfMoveUpdated;
 
         // Parse data from FEN representation of the board status
         private void LoadFromFEN(string fen)
@@ -52,7 +57,7 @@ namespace Chess
                     {
                         int emptyCount = c - '0';
                         //Iterate accoding to c
-                        for (int i=0; i<emptyCount; i++)
+                        for (int i = 0; i < emptyCount; i++)
                         {
                             // Add nothing to every part
                             pieceLocations[row, col++] = "";
@@ -77,23 +82,21 @@ namespace Chess
 
             // Read en passant target square
             enPassantTarget = sections[3].ToString();
-            
-            
 
 
 
             // Read half moves
             halfMoves = int.Parse(sections[4]);
             Console.WriteLine(halfMoves);
-
-            // ei toimi vittu ei hajuakaan vittu
-            //BoardUI.UpdateHalfMoveDisplay(halfMoves);
+            OnHalfMoveUpdated?.Invoke(halfMoves); // Notify UI
 
             // Read full moves
             fullMoves = int.Parse(sections[5]);
         }
 
-        public int GetHalfMoveClock() => halfMoves;
+
+
+
 
         // Function to convert a bitboard to algebraic notation
         public static string BitboardToAlgebraic(ulong bitboard)
@@ -157,6 +160,9 @@ namespace Chess
             bool mate = ChessEngineInterop.isCheckmate(board);
             bool check =  ChessEngineInterop.isInCheck(board);
             Console.WriteLine("Checkmate: " + mate + ", In Check: " + check);
+
+
+            
 
         }
 
