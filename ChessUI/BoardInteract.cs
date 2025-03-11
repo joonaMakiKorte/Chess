@@ -50,6 +50,12 @@ namespace Chess
                     {
                         selectedPiece = (row, col);
                         boardUi.HighlightSquare(row, col, Brushes.LightBlue);
+
+
+                        // Highlight valid moves
+                        int source = col + 8 * (7 - row);
+                        ulong validMoves = chessGame.GetValidMoves(source);
+                        boardUi.HighlightValidMoves(validMoves);
                     }
                 }
             }
@@ -63,6 +69,7 @@ namespace Chess
                     Console.WriteLine("Deselected piece");
                     selectedPiece = null;
                     boardUi.ClearHighlights();
+                    boardUi.ClearValidMoveHighlights(); // Clear valid move highlights as well
                     return;
                 }
               
