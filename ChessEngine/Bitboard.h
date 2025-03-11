@@ -81,6 +81,7 @@ private:
 
     // Helper functions to create legal moves for different piece types
     uint64_t getPawnMoves(int pawn);
+    uint64_t getPawnCaptures(int pawn); // Used for attack squares
     uint64_t getKnightMoves(int knight);
     uint64_t getBishopMoves(int bishop);
     uint64_t getRookMoves(int rook);
@@ -92,11 +93,15 @@ private:
     // Uses LSB/FSB to isolate the occupied bit depending on move direction
     uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse);
 
-    // Helper function to find the index of the least significant set bit
-    int findFirstSetBit(uint64_t value);
+    // Helper to get all the attack squares of opponent (squares that are possible to attack)
+    // If white turn, we get all the squares black could attack, and vice versa
+    // Gets all the possible squares as a bitboard
+    uint64_t getAttackSquares();
 
-    // Helper function to find the index of the most significant bit
-    int findLastSetBit(uint64_t value);
+    // Helper function to find the index of first set bit and last set bit
+    // Use inline to avoid function call overhead
+    inline int findFirstSetBit(uint64_t value);
+    inline int findLastSetBit(uint64_t value);
 };
 
 #endif CHESSLOGIC_H

@@ -258,6 +258,36 @@ uint64_t Bitboard::getPawnMoves(int square) {
 	return singlePush | doublePush | captures;
 }
 
+uint64_t Bitboard::getPawnCaptures(int square) {
+	uint64_t pawn_bitboard = 1ULL << square; // Convert index to bitboard
+	if ((white_pawns & pawn_bitboard) == 0 && (black_pawns & pawn_bitboard) == 0) {
+		return 0ULL; // No pawn exists at this square
+	}
+
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
+
+	// Initialize captures
+	uint64_t captures = 0ULL;
+
+	if (white_pawns & pawn_bitboard) { // White pawn
+		captures = WHITE_PAWN_MOVES[square].captures & black_pieces; // Capture only black pieces
+	}
+	else if (black_pawns & pawn_bitboard) { // Black pawn
+		captures = BLACK_PAWN_MOVES[square].captures & white_pieces; // Capture only white pieces
+	}
+
+	// Check if en passant is available and in capture moves of the current moved piece
+	if ((en_passant_target != UNASSIGNED) &&
+		((white ? WHITE_PAWN_MOVES[square].captures : BLACK_PAWN_MOVES[square].captures) & (1ULL << en_passant_target))) {
+		captures |= 1ULL << en_passant_target;
+	}
+
+	return captures;
+}
+
+
 uint64_t Bitboard::getKnightMoves(int square) {
 	uint64_t knight_bitboard = 1ULL << square; // Convert index to bitboard
 	if ((white_knights & knight_bitboard) == 0 && (black_knights & knight_bitboard) == 0) {
@@ -377,7 +407,34 @@ uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse) {
 	return valid_moves;
 }
 
-int Bitboard::findFirstSetBit(uint64_t value) {
+uint64_t Bitboard::getAttackSquares() {
+	// Initialize squares
+	uint64_t attack_squares = 0ULL;
+
+	// Iterate over opponent pieces
+	// Done by isolating FSB, processing the piece type at square, and removing the processed square (XOR)
+	// At each occupied square we get the moves and combine in the attack squares (OR)
+	uint64_t opponent = white ? blackPieces() : whitePieces();
+	while (opponent != 0) { 
+		int current_square = findFirstSetBit(opponent); // Isolate FSB and get as index
+		char piece_type = getPieceType(current_square); // Get piece type
+		// Get moves depending on the piece type
+		switch (tolower(piece_type))
+		{
+		case 'p': attack_squares |= getPawnCaptures(current_square); break;
+		case 'n': attack_squares |= getKnightMoves(current_square); break;
+		case 'b': attack_squares |= getBishopMoves(current_square); break;
+		case 'r': attack_squares |= getRookMoves(current_square); break;
+		case 'q': attack_squares |= getQueenMoves(current_square); break;
+		case 'k': attack_squares |= getKingMoves(current_square); break;
+		default: throw std::invalid_argument("Invalid piece type");
+		}
+		opponent ^= 1ULL << current_square; // Remove the processed square
+	}
+	return attack_squares;
+}
+
+inline int Bitboard::findFirstSetBit(uint64_t value) {
 #if defined(_MSC_VER) // MSVC
 	unsigned long index;
 	if (_BitScanForward64(&index, value)) {
@@ -389,7 +446,7 @@ int Bitboard::findFirstSetBit(uint64_t value) {
 #endif
 }
 
-int Bitboard::findLastSetBit(uint64_t value) {
+inline int Bitboard::findLastSetBit(uint64_t value) {
 #if defined(_MSC_VER) // MSVC
 	unsigned long index;
 	if (_BitScanReverse64(&index, value)) {
