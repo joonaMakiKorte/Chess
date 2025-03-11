@@ -89,6 +89,9 @@ private:
 
     // Helper function to find the index of the least significant set bit
     int findFirstSetBit(uint64_t value);
+
+    // Helper function to find the index of the most significant bit
+    int findLastSetBit(uint64_t value);
 };
 
 #endif CHESSLOGIC_H

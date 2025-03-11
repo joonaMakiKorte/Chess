@@ -233,25 +233,28 @@ uint64_t Bitboard::getBishopMoves(int square) {
 	uint64_t moves = 0ULL;
 
 	// Process each diagonal direction
-	auto calculateDirectionMoves = [&](uint64_t direction_mask) -> uint64_t {
+	auto calculateDirectionMoves = [&](uint64_t direction_mask, bool reverse) -> uint64_t {
 		uint64_t valid_moves = direction_mask; // Start with full precomputed moves
 		uint64_t blockers = direction_mask & occupied; // Find blocking pieces
 
 		if (blockers) {
-			int blocker_square =findFirstSetBit(blockers); // Find first blocker
+			int blocker_square = reverse ? findLastSetBit(blockers) : findFirstSetBit(blockers); // Find first blocker
+			uint64_t blocker_bitboard = 1ULL << blocker_square;
+
+			// Mask out moves beyond the first blocker
 			valid_moves &= ~(BISHOP_MOVES[blocker_square].top_left |
-				BISHOP_MOVES[blocker_square].top_right |
-				BISHOP_MOVES[blocker_square].bottom_left |
-				BISHOP_MOVES[blocker_square].bottom_right);
+							BISHOP_MOVES[blocker_square].top_right |
+							BISHOP_MOVES[blocker_square].bottom_left |
+							BISHOP_MOVES[blocker_square].bottom_right);
 		}
 
 		return valid_moves;
-		};
+	};
 
-	moves |= calculateDirectionMoves(BISHOP_MOVES[square].top_left);
-	moves |= calculateDirectionMoves(BISHOP_MOVES[square].top_right);
-	moves |= calculateDirectionMoves(BISHOP_MOVES[square].bottom_left);
-	moves |= calculateDirectionMoves(BISHOP_MOVES[square].bottom_right);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].top_left, true);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].top_right, true);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].bottom_left, false);
+	moves |= calculateDirectionMoves(BISHOP_MOVES[square].bottom_right, false);
 
 	// Remove squares occupied by the same color
 	moves &= ~same_pieces;
@@ -335,4 +338,16 @@ int Bitboard::findFirstSetBit(uint64_t value) {
 		return static_cast<int>(index);
 	}
 	return -1; // No bits are set
+}
+
+int Bitboard::findLastSetBit(uint64_t value) {
+#if defined(_MSC_VER) // MSVC
+	unsigned long index;
+	if (_BitScanReverse64(&index, value)) {
+		return static_cast<int>(index);
+	}
+	return -1;
+#else // GCC and Clang
+	return value ? (63 - __builtin_clzll(value)) : -1;
+#endif
 }
