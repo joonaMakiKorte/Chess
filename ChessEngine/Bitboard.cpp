@@ -19,10 +19,10 @@ Bitboard::Bitboard():
 	black_knights = 0x4200000000000000;    // b8, g8
 	white_bishops = 0x0000000000000024;    // c1, f1
 	black_bishops = 0x2400000000000000;    // c8, f8
-	white_queen = 0x0000000000000010;      // d1
-	black_queen = 0x1000000000000000;      // d8
-	white_king = 0x0000000000000008;       // e1
-	black_king = 0x0800000000000000;       // e8
+	white_queen = 0x0000000000000008;      // d1
+	black_queen = 0x0800000000000000;      // d8
+	white_king = 0x0000000000000010;       // e1
+	black_king = 0x1000000000000000;       // e8
 }
 
 bool Bitboard::isWhite() {
@@ -141,6 +141,33 @@ void Bitboard::applyMove(int source, int target) {
 	}
 	else if (!(tolower(source_piece) == 'p' && target == en_passant_target)) { // Reset if was not a pawn moved to en passant
 		en_passant_target = UNASSIGNED; 
+	}
+
+	// Update castling if rights left and moved piece was king or rook
+	if (castling_rights != 0 && (tolower(source_piece) == 'k' || tolower(source_piece) == 'r')) {
+		// If king was moved, remove all castling rights from the active side
+		if (tolower(source_piece) == 'k') {
+			castling_rights &= ~(white ? 0x03 : 0x0C); // (0x03 = white, 0x0C black)
+		}
+		else if (tolower(source_piece) == 'r') {
+			// Update Queen/Kingside castling depending on which rook moved
+			if (white && (castling_rights & 0x01 || castling_rights & 0x02)) {
+				if (source % 8 == 0) { // Queenside
+					castling_rights &= ~0x02;
+				}
+				else if (source % 7 == 0) { // Kingside
+					castling_rights &= ~0x01;
+				}
+			}
+			else if (!white && (castling_rights & 0x04 || castling_rights & 0x08)) {
+				if (source % 8 == 0) { // Queenside
+					castling_rights &= ~0x08;
+				}
+				else if (source % 8 == 7) { // Kingside
+					castling_rights &= ~0x04;
+				}
+			}
+		}
 	}
 
 	// Early exit if piece was moved to an empty square
