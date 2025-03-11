@@ -27,7 +27,7 @@ namespace Chess
     {      
         private ChessGame chessGame = new ChessGame();
         private Images images = new Images();
-        private BoardUI boardUi;
+        private BoardUI boardUI;
         private BoardInteract boardInteract;
 
         public MainWindow()
@@ -38,12 +38,13 @@ namespace Chess
             chessGame = new ChessGame();
 
             // Init UI
-            boardUi = new BoardUI(PieceGrid, TurnLabel, images);
-            boardUi.UpdateBoard(chessGame.GetBoardState());
-            boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, images);
+            boardUI.UpdateBoard(chessGame.GetBoardState());
+            boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+            boardUI.UpdateHalfMoveDisplay(chessGame.GetHalfMoveClock()); 
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUi);         
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);         
         }
 
     }
