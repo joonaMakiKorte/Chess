@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
 using System.Diagnostics;
+using System.Windows.Media.Animation;
 
 namespace Chess
 {
@@ -17,16 +18,22 @@ namespace Chess
         private readonly Image[,] pieceImages = new Image[8, 8];
         private Images images;
         private readonly Label turnLabel;
+
+        private readonly Label halfMoveLabel;
+
         private (int row, int col)? highlightedSquare = null;
 
-        public BoardUI(Grid grid, Label turnLabel, Images images)
+        public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel, Images images)
         {
             this.pieceGrid = grid;
             this.images = images;
             this.turnLabel = turnLabel;
+            this.halfMoveLabel = halfMoveLabel;
             InitializeBoard();
         }
 
+
+        
         public void InitializeBoard()
         {
             pieceGrid.Children.Clear(); // Clear older images
@@ -67,6 +74,10 @@ namespace Chess
             }
         }
 
+        public void UpdateHalfMoveDisplay(int halfMoves)
+        {
+            halfMoveLabel.Content = $"Halfmoves: {halfMoves}";
+        }
         public void UpdateBoard(string[,] boardState)
         {
 
@@ -91,8 +102,11 @@ namespace Chess
             }
         }
 
-        public void UpdateTurnDisplay(bool isWhiteturn) => turnLabel.Content = isWhiteturn ? "White's Turn" : "Black's Turn";
-
+        public void UpdateTurnDisplay( bool isWhiteTurn)
+        {
+            string turnText = isWhiteTurn ? "White's Turn" : "Black's Turn";
+            turnLabel.Content = turnText;
+        }
         public void HighlightSquare(int row, int col, Brush color)
         {
             highlightedSquare = (row, col);
@@ -110,20 +124,59 @@ namespace Chess
             }
         }
 
+
+        public static ulong EnPassantToBitboard(string enPassantSquare)
+        {
+            // Ensure the enPassantSquare is valid, e.g., "e6"
+            if (enPassantSquare.Length != 2)
+                throw new ArgumentException("Invalid en passant square notation.");
+
+            char file = enPassantSquare[0]; // e.g., 'e'
+            char rank = enPassantSquare[1]; // e.g., '6'
+
+            // Convert the file (e.g., 'a' -> 0, 'b' -> 1, ..., 'h' -> 7)
+            int fileIndex = file - 'a';
+
+            // Convert the rank (e.g., '8' -> 0, '7' -> 1, ..., '1' -> 7)
+            int rankIndex = 8 - (rank - '0');
+
+            // Calculate the index on the bitboard
+            int bitboardIndex = rankIndex * 8 + fileIndex;
+
+            // Return the corresponding bitboard (1UL << bitboardIndex)
+            return 1UL << bitboardIndex;
+        }
+
+
         public void HighlightValidMoves(ulong validMoves)
         {
 
+            
             ClearValidMoveHighlights();
+
+
+            // make a string to check for enpassant
+            string valids = ChessGame.BitboardToAlgebraic(validMoves);
+            Console.WriteLine(valids);
+            
+
+
             for (int square = 0; square < 64; square++)
             {
                 if ((validMoves & (1UL << square)) != 0) // Check if bit is set
                 {
+
+
                     int row = 7 - (square / 8);
                     int col = square % 8;
+
                     HighlightSquare(row, col, Brushes.LightGreen);
+                    
                 }
             }
         }
+
+        
 
 
         public void ClearValidMoveHighlights()

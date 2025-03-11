@@ -1,6 +1,12 @@
 #include "pch.h"
 #include "Bitboard.h"
 #include "MoveTables.h"
+#include <iostream>   // For std::cout, std::endl
+#include <string>     // For std::string
+#include <stdexcept>  // For std::invalid_argument
+#include <cstdint>    // For uint64_t and other fixed-width integers
+#include <algorithm>  // For std::tolower
+#include <cmath>      // For std::abs
 
 
 Bitboard::Bitboard():
@@ -69,6 +75,77 @@ std::string Bitboard::getEnPassantString() const {
 		square = "-"; // Represent as dash if none
 	}
 	return square;
+}
+
+
+bool Bitboard::isInCheck() {
+	uint64_t king_bitboard = white ? white_king : black_king;
+	int king_square = findFirstSetBit(king_bitboard); // Find the square of the king
+
+	// Check if any opponent's piece attacks the king
+	uint64_t opponent_pawns = white ? black_pawns : white_pawns;
+	uint64_t opponent_knights = white ? black_knights : white_knights;
+	uint64_t opponent_bishops = white ? black_bishops : white_bishops;
+	uint64_t opponent_rooks = white ? black_rooks : white_rooks;
+	uint64_t opponent_queen = white ? black_queen : white_queen;
+
+	// Check for pawn attacks
+	if (white ? (BLACK_PAWN_MOVES[king_square].captures & opponent_pawns) : (WHITE_PAWN_MOVES[king_square].captures & opponent_pawns)) {
+		return true;
+	}
+
+	// Check for knight attacks
+	if (KNIGHT_MOVES[king_square].moves & opponent_knights) {
+		return true;
+	}
+
+	// Check for bishop and queen diagonal attacks
+	uint64_t bishop_queen_attacks = getBishopMoves(king_square) & (opponent_bishops | opponent_queen);
+	if (bishop_queen_attacks) {
+		
+		return true;
+	}
+
+	// Check for rook and queen straight attacks
+	uint64_t rook_queen_attacks = getRookMoves(king_square) & (opponent_rooks | opponent_queen);
+	if (rook_queen_attacks) {
+		return true;
+	}
+
+	return false; // King is not in check
+}
+
+
+
+bool Bitboard::isCheckmate() {
+	if (!isInCheck()) {
+		return false; // Not in check, so not checkmate
+	}
+
+	// Get the current player's pieces
+	uint64_t current_pieces = white ? whitePieces() : blackPieces();
+
+	// Iterate over all pieces of the current player
+	for (int square = 0; square < 64; ++square) {
+		if (current_pieces & (1ULL << square)) {
+			uint64_t legal_moves = getLegalMoves(square);
+			while (legal_moves) {
+				int target_square = findFirstSetBit(legal_moves);
+				legal_moves ^= (1ULL << target_square); // Remove the processed move
+
+				// Make a copy of the board to simulate the move
+				Bitboard temp_board = *this;
+				temp_board.applyMove(square, target_square);
+
+				// Check if the king is still in check after the move
+				if (!temp_board.isInCheck()) {
+					return false; // Found a move that gets the king out of check
+				}
+			}
+		}
+	}
+
+	return true; // No legal moves to get out of check, so it's checkmate
 }
 
 int Bitboard::getHalfMoveClock() const {
@@ -385,6 +462,11 @@ uint64_t Bitboard::getKingMoves(int square) {
 
 	return moves; 
 }
+
+
+
+
+
 
 uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse) {
 	uint64_t same_color = white ? whitePieces() : blackPieces(); // Determine which color is being moved

@@ -28,6 +28,8 @@ namespace Chess
             this.pieceGrid.MouseDown += PieceGrid_MouseDown;
         }
 
+
+        
         public void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Point position = e.GetPosition(pieceGrid);
@@ -90,6 +92,8 @@ namespace Chess
                 {
                     chessGame.MovePiece(source, target);
                     boardUi.UpdateBoard(chessGame.GetBoardState());
+
+                    
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
                 }
 

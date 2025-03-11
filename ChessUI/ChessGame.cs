@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace Chess
 {
@@ -17,8 +18,12 @@ namespace Chess
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
 
+        
+
         public ChessGame()
         {
+           
+
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
             {
@@ -72,16 +77,26 @@ namespace Chess
 
             // Read en passant target square
             enPassantTarget = sections[3].ToString();
+            
+            
+
+
 
             // Read half moves
             halfMoves = int.Parse(sections[4]);
+            Console.WriteLine(halfMoves);
+
+            // ei toimi vittu ei hajuakaan vittu
+            //BoardUI.UpdateHalfMoveDisplay(halfMoves);
 
             // Read full moves
             fullMoves = int.Parse(sections[5]);
         }
 
+        public int GetHalfMoveClock() => halfMoves;
+
         // Function to convert a bitboard to algebraic notation
-        static string BitboardToAlgebraic(ulong bitboard)
+        public static string BitboardToAlgebraic(ulong bitboard)
         {
             List<string> moves = new List<string>();
 
@@ -122,6 +137,10 @@ namespace Chess
             return validMoves;
         }
 
+
+        
+
+        
         // Moves the piece
         // Activated only after move is validated
         public void MovePiece(int source, int target)
@@ -134,6 +153,11 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             Console.WriteLine(fen);
             LoadFromFEN(fen);
+
+            bool mate = ChessEngineInterop.isCheckmate(board);
+            bool check =  ChessEngineInterop.isInCheck(board);
+            Console.WriteLine("Checkmate: " + mate + ", In Check: " + check);
+
         }
 
         // Destroy board
