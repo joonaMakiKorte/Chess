@@ -20,6 +20,7 @@ namespace Chess
         private readonly Label turnLabel;
 
         private readonly Label halfMoveLabel;
+        private ChessGame chessGame;
 
         private (int row, int col)? highlightedSquare = null;
 
@@ -74,10 +75,10 @@ namespace Chess
             }
         }
 
-        public void UpdateHalfMoveDisplay(int halfMoves)
-        {
-            halfMoveLabel.Content = $"Halfmoves: {halfMoves}";
-        }
+        
+
+
+
         public void UpdateBoard(string[,] boardState)
         {
 
@@ -176,8 +177,11 @@ namespace Chess
             }
         }
 
-        
 
+        public void UpdateHalfMoveCount(int halfMoveCount)
+        {
+            halfMoveLabel.Content = "Halfmoves: " + halfMoveCount;
+        }
 
         public void ClearValidMoveHighlights()
         {
