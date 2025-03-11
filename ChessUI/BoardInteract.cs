@@ -94,6 +94,7 @@ namespace Chess
                 }
 
                 boardUi.ClearHighlights();
+                boardUi.ClearValidMoveHighlights();
                 selectedPiece = null; // Deselect after move
             }
         }
