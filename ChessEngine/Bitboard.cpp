@@ -84,42 +84,22 @@ bool Bitboard::isInCheck() {
 }
 
 
-
-
 bool Bitboard::isCheckmate() {
 	if (!isInCheck()) {
 		return false; // Not in check, so not checkmate
 
 	}
-	uint64_t king_bitboard = white ? white_king : black_king;
-	
+
 	// Get currently possible king moves
+	uint64_t king_bitboard = white ? white_king : black_king;
 	int king_square = findFirstSetBit(king_bitboard);
 	uint64_t king_moves = getKingMoves(king_square);
-
-	// Possible squares where enemy could attack
-	uint64_t enemy_attacks = getAttackSquares();
-
-	// Possible squares where own pieces could move (except king)
-	uint64_t own_attacks = getDefenceSquares();
+	uint64_t enemy_attacks = getAttackSquares(); // Squares attacked by enemy
 
 	// Check if the king can escape (moves to a non-attacked square)
-	uint64_t safe_moves = king_moves & ~enemy_attacks; // Moves not under attack
-	if (safe_moves != 0) return false;
+	if (king_moves & ~enemy_attacks) return false;
 
-	// Check if any own pieces can block the attack
-	uint64_t blockable_squares = own_attacks & enemy_attacks;
-	if (blockable_squares != 0) {
-		return false; // An own piece can block the check, so it's not checkmate
-	}
-
-	// Check if any own pieces can capture the attacking piece
-	uint64_t capturable_squares = getAttackSquares() & enemy_attacks;
-	if (capturable_squares != 0) {
-		return false; // An own piece can capture the attacking piece, so it's not checkmate
-	}
-
-	return true; // No legal moves to get out of check, so it's checkmate
+	return true;
 }
 
 int Bitboard::getHalfMoveClock() const {
@@ -584,33 +564,6 @@ uint64_t Bitboard::getAttackSquares() {
 	}
 	white = !white; // Force the correct turn back
 	return attack_squares;
-}
-
-uint64_t Bitboard::getDefenceSquares() {
-	// Initialize squares
-	uint64_t defence_squares = 0ULL;
-
-	// Iterate over friendly pieces
-	// Done by isolating FSB, processing the piece type at square, and removing the processed square (XOR)
-	// At each occupied square we get the moves and combine in the defence squares (OR)
-	uint64_t friendly = white ? whitePieces() : blackPieces();
-	while(friendly != 0) {
-		int current_square = findFirstSetBit(friendly); // Isolate FSB and get as index
-		char piece_type = getPieceType(current_square); // Get piece type
-		// Get moves depending on the piece type
-		switch (tolower(piece_type))
-		{
-		case 'p': defence_squares |= getPawnMoves(current_square); break;
-		case 'n': defence_squares |= getKnightMoves(current_square); break;
-		case 'b': defence_squares |= getBishopMoves(current_square); break;
-		case 'r': defence_squares |= getRookMoves(current_square); break;
-		case 'q': defence_squares |= getQueenMoves(current_square); break;
-		case 'k': break; // Exclude king
-		default: throw std::invalid_argument("Invalid piece type");
-		}
-		friendly ^= 1ULL << current_square; // Remove the processed square
-	}
-	return defence_squares;
 }
 
 inline int Bitboard::findFirstSetBit(uint64_t value) {

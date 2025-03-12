@@ -111,16 +111,14 @@ private:
     // Helper to get castling moves for a king
     uint64_t getCastlingMoves();
 
+public:
     // Helper to get all the attack squares of opponent (squares that are possible to attack)
     // If white turn, we get all the squares black could attack, and vice versa
     // Gets all the possible squares as a bitboard
     uint64_t getAttackSquares();
 
-    // Helper to get all the defence squares of the own pieces (squares that are possible to move to)
-    // Used for checkmate checking, hence excludes king
-    // Gets all the possible squares as a bitboard
-    uint64_t getDefenceSquares();
 
+private:
     // Helper function to find the index of first set bit and last set bit
     // Use inline to avoid function call overhead
     inline int findFirstSetBit(uint64_t value);

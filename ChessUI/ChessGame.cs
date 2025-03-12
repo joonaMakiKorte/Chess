@@ -138,7 +138,7 @@ namespace Chess
         public ulong GetValidMoves(int square)
         {
             ulong validMoves =  ChessEngineInterop.ValidMoves(board, square);
-            Console.WriteLine("Valid Moves: " + BitboardToAlgebraic(validMoves));
+            //Console.WriteLine("Valid Moves: " + BitboardToAlgebraic(validMoves));      
             return validMoves;
         }
 
@@ -156,16 +156,16 @@ namespace Chess
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
-            Console.WriteLine(fen);
+            //Console.WriteLine(fen);
             LoadFromFEN(fen);
 
             bool mate = ChessEngineInterop.isCheckmate(board);
             bool check = ChessEngineInterop.isInCheck(board);
             if (mate)
             {
-                Console.WriteLine("Checkmate! The game is over.");
+               Console.WriteLine("Checkmate! The game is over.");
             }
-            else if (check)
+            if (check)
             {
                 Console.WriteLine("You are in check! Protect your king.");
             }
