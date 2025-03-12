@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+
 
 namespace Chess
 {
@@ -141,9 +143,9 @@ namespace Chess
         }
 
 
-        
 
-        
+
+
         // Moves the piece
         // Activated only after move is validated
         public void MovePiece(int source, int target)
@@ -158,11 +160,19 @@ namespace Chess
             LoadFromFEN(fen);
 
             bool mate = ChessEngineInterop.isCheckmate(board);
-            bool check =  ChessEngineInterop.isInCheck(board);
-            Console.WriteLine("Checkmate: " + mate + ", In Check: " + check);
-
-
-            
+            bool check = ChessEngineInterop.isInCheck(board);
+            if (mate)
+            {
+                Console.WriteLine("Checkmate! The game is over.");
+            }
+            else if (check)
+            {
+                Console.WriteLine("You are in check! Protect your king.");
+            }
+            else
+            {
+                Console.WriteLine("The game is safe. No check or checkmate.");
+            }
 
         }
 

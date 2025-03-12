@@ -180,7 +180,7 @@ namespace Chess
 
         public void UpdateHalfMoveCount(int halfMoveCount)
         {
-            halfMoveLabel.Content = "Halfmoves: " + halfMoveCount;
+            halfMoveLabel.Content = "Halfmoves(Tie at 50): " + halfMoveCount;
         }
 
         public void ClearValidMoveHighlights()
