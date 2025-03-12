@@ -142,10 +142,6 @@ namespace Chess
             return validMoves;
         }
 
-
-
-
-
         // Moves the piece
         // Activated only after move is validated
         public void MovePiece(int source, int target)

@@ -32,8 +32,7 @@ bool ChessBoard::isCheckmate() {
         return squares;
         };
     uint64_t squares = board->getAttackSquares();
-    uint64_t white_king = board->getKingMoves(4);
-    std::string message = printBitboardAsSquares(squares) + " king: " + printBitboardAsSquares(white_king);
+    std::string message = printBitboardAsSquares(squares);
     UpdateDebugMessage(message);
     return board->isCheckmate();
 }

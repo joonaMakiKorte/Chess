@@ -117,6 +117,16 @@ public:
     // Gets all the possible squares as a bitboard
     uint64_t getAttackSquares();
 
+private:
+    // Helper to get king attackers locations
+    // Returns the attackers as a bitboard
+    uint64_t getAttackers(uint64_t king);
+
+    // Helper for checkmate to determine if an attack can be blocked
+    // We determine the attacker, it's attacking ray to the king,
+    // and then go over friendly pieces and check if any can block the attack 
+    // Returns bool indicating result
+    bool canBlock(uint64_t attacker, uint64_t king);
 
 private:
     // Helper function to find the index of first set bit and last set bit
