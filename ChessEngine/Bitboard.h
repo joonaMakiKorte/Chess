@@ -116,6 +116,11 @@ private:
     // Gets all the possible squares as a bitboard
     uint64_t getAttackSquares();
 
+    // Helper to get all the defence squares of the own pieces (squares that are possible to move to)
+    // Used for checkmate checking, hence excludes king
+    // Gets all the possible squares as a bitboard
+    uint64_t getDefenceSquares();
+
     // Helper function to find the index of first set bit and last set bit
     // Use inline to avoid function call overhead
     inline int findFirstSetBit(uint64_t value);
