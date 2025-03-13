@@ -133,6 +133,7 @@ uint64_t Bitboard::getLegalMoves(int from) {
 	char piece = getPieceType(from); // Get piece type at square
 
 	uint64_t legal_moves = 0ULL;
+	uint64_t enemy_attacks = 0ULL;
 
 	// If in checkmate, no possible moves
 	if (isCheckmate()) return legal_moves;
@@ -154,7 +155,7 @@ uint64_t Bitboard::getLegalMoves(int from) {
 
 		// King can't move into check
 		// Get squares where enemy could attack (results in check)
-		uint64_t enemy_attacks = getAttackSquares();
+		enemy_attacks = getAttackSquares();
 		legal_moves &= ~enemy_attacks;
 
 		break;
