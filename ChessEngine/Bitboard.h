@@ -122,17 +122,28 @@ private:
     // Returns the attackers as a bitboard
     uint64_t getAttackers(uint64_t king);
 
-    // Helper for checkmate to determine if an attack can be blocked
-    // We determine the attacker, it's attacking ray to the king,
-    // and then go over friendly pieces and check if any can block the attack 
+    // Find the ray which must be blocked if the king is in check
+    // If attacker is pawn or knight, returns only the piece location
+    // If rook, bishop or queen, gets the whole attacking ray
+    uint64_t getAttackingRay(int attacker, int king);
+
+    // Helper for calculating the attacking ray between attacker and king
+    // Calculates the square difference of the two pieces and forms the ray on that info
+    uint64_t formAttackingRay(int attacker, int king);
+
+    // Determine if the attacking ray can be blocked by any of the own pieces
     // Returns bool indicating result
-    bool canBlock(uint64_t attacker, uint64_t king);
+    bool canBlock(const uint64_t& attack_ray);
 
 private:
     // Helper function to find the index of first set bit and last set bit
     // Use inline to avoid function call overhead
     inline int findFirstSetBit(uint64_t value);
     inline int findLastSetBit(uint64_t value);
+
+    // Helper to get direction between two squares from their difference
+    // Done by normalizing the movement direction to match one of the 8 possible moving directions
+    inline int get_direction(int diff);
 };
 
 #endif CHESSLOGIC_H
