@@ -31,10 +31,11 @@ bool ChessBoard::isCheckmate() {
         }
         return squares;
         };
-    uint64_t squares = board->getAttackSquares();
-    std::string message = printBitboardAsSquares(squares);
+    uint64_t debug = 0ULL;
+    bool checkmate = board->isCheckmate(debug);
+    std::string message = printBitboardAsSquares(debug);
     UpdateDebugMessage(message);
-    return board->isCheckmate();
+    return checkmate;
 }
 
 

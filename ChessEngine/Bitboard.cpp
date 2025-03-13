@@ -84,7 +84,7 @@ bool Bitboard::isInCheck() {
 }
 
 
-bool Bitboard::isCheckmate() {
+bool Bitboard::isCheckmate(uint64_t& debug) {
 	if (!isInCheck()) {
 		return false; // Not in check, so not checkmate
 
@@ -118,6 +118,7 @@ bool Bitboard::isCheckmate() {
 
 	// Get the attacking ray and determine if can be blocked
 	uint64_t attacking_ray = getAttackingRay(attacker_square, king_square);
+	debug = attacking_ray;
 	if (attacking_ray == 0) return false; // Validate ray
 
 	// We reached the final part of checking for checkmate
@@ -642,9 +643,9 @@ uint64_t Bitboard::getAttackingRay(int attacker, int king) {
 uint64_t Bitboard::formAttackingRay(int attacker, int king) {
 	// Calculate the difference between the attacker and king squares
 	// This determines the direction the king is attacked from
-	// If negative, attacked from left, down, bottom-left or bottom-right
-	// If positive, attacked from right, up, top-left or top-right
-	int diff = attacker - king;
+	// If positive, attacked from left, down, bottom-left or bottom-right
+	// If negative, attacked from right, up, top-left or top-right
+	int diff = king - attacker;
 
 	// If the difference is 0, the attacker and king are on the same square (invalid)
 	if (diff == 0) return 0ULL;
@@ -661,8 +662,8 @@ uint64_t Bitboard::formAttackingRay(int attacker, int king) {
 
 		// Bounds check: Ensure the new square doesn't wrap unexpectedly
 		if (square < 0 || square > 63) break;
-		if ((direction == -1 || direction == 1) && (square % 8 == 0 || (square + 1) % 8 == 0)) break; // Prevent rank wrap
-		//if ((direction == -1 || direction == 1) && (square / 8 != (square - direction) / 8)) break; // If the above doesn't work :DD
+		//if ((direction == -1 || direction == 1) && (square % 8 == 0 || (square + 1) % 8 == 0)) break; // Prevent rank wrap
+		if ((direction == -1 || direction == 1) && (square / 8 != (square - direction) / 8)) break; // If the above doesn't work :DD
 		if (square == king) break; // Stop at king square
 
 		attacking_ray |= (1ULL << square); // Add square to ray

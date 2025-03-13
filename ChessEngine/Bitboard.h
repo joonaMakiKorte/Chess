@@ -67,7 +67,7 @@ public:
     bool isInCheck();
 
     // checks checkmates
-    bool isCheckmate();
+    bool isCheckmate(uint64_t& debug);
 
     // Get half moves
     int getHalfMoveClock() const;

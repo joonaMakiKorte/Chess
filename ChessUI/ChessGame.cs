@@ -156,6 +156,8 @@ namespace Chess
             LoadFromFEN(fen);
 
             bool mate = ChessEngineInterop.isCheckmate(board);
+            string debug = ChessEngineInterop.GetDebugMessageString(board);
+            Console.WriteLine(debug);
             bool check = ChessEngineInterop.isInCheck(board);
             if (mate)
             {
