@@ -150,6 +150,15 @@ uint64_t Bitboard::getLegalMoves(int from) {
 		break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
+
+	// King cannot be captured
+	// Remove from moves if in
+	if (legal_moves & white_king) {
+		legal_moves &= ~white_king;
+	}
+	else if (legal_moves & black_king) {
+		legal_moves &= ~black_king;
+	}
 	return legal_moves;
 }
 
