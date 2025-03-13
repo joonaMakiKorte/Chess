@@ -68,7 +68,7 @@ namespace Chess
                 // If clicking the same square again, deselect it
                 if (fromRow == row && fromCol == col)
                 {
-                    Console.WriteLine("Deselected piece");
+                    //Console.WriteLine("Deselected piece");
                     selectedPiece = null;
                     boardUi.ClearHighlights();
                     boardUi.ClearValidMoveHighlights(); // Clear valid move highlights as well
@@ -76,7 +76,7 @@ namespace Chess
                 }
               
                 // Print move in algebraic notation for debugging purposes
-                Console.WriteLine($"{(char)('a' + fromCol)}{8 - fromRow} -> {(char)('a' + col)}{8 - row}");
+                //Console.WriteLine($"{(char)('a' + fromCol)}{8 - fromRow} -> {(char)('a' + col)}{8 - row}");
 
                 // Convert squares to their little-endian ranking indexes
                 int source = fromCol + 8 * (7 - fromRow);

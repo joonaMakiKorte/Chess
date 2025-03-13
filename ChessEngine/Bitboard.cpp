@@ -133,6 +133,10 @@ uint64_t Bitboard::getLegalMoves(int from) {
 	char piece = getPieceType(from); // Get piece type at square
 
 	uint64_t legal_moves = 0ULL;
+
+	// If in checkmate, no possible moves
+	if (isCheckmate()) return legal_moves;
+
 	switch (tolower(piece)) // Convert to lowercase
 	{
 	case 'p': legal_moves = getPawnMoves(from); break;
@@ -147,6 +151,12 @@ uint64_t Bitboard::getLegalMoves(int from) {
 		if ((piece == 'K' && from == 4) || piece == 'k' && from == 60) {
 			legal_moves |= getCastlingMoves();
 		}
+
+		// King can't move into check
+		// Get squares where enemy could attack (results in check)
+		uint64_t enemy_attacks = getAttackSquares();
+		legal_moves &= ~enemy_attacks;
+
 		break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
@@ -158,6 +168,20 @@ uint64_t Bitboard::getLegalMoves(int from) {
 	}
 	else if (legal_moves & black_king) {
 		legal_moves &= ~black_king;
+	}
+
+	// If king is in check, move must get the king out of check
+	// We have already made sure at this point that the king is not in checkmate,
+	// So there must be moves that get the king out of checkmate
+	// Exclude king from this check, since we have already calculated the pieces where it could move
+	if (isInCheck() && tolower(piece) != 'k') {
+		uint64_t king_bitboard = white ? white_king : black_king;
+		// Legal moves are the ones that overlap with attacking ray
+		uint64_t attackers = getAttackers(king_bitboard);
+		int king_square = findLastSetBit(king_bitboard);
+		int attacker_square = findLastSetBit(attackers);
+		uint64_t attacking_ray = getAttackingRay(attacker_square, king_square);
+		legal_moves &= attacking_ray;
 	}
 	return legal_moves;
 }

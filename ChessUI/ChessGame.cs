@@ -86,7 +86,7 @@ namespace Chess
 
             // Read half moves
             halfMoves = int.Parse(sections[4]);
-            Console.WriteLine(halfMoves);
+            //Console.WriteLine(halfMoves);
             OnHalfMoveUpdated?.Invoke(halfMoves); // Notify UI
 
             // Read full moves
