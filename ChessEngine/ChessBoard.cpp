@@ -19,23 +19,8 @@ bool ChessBoard::isInCheck() {
 }
 
 bool ChessBoard::isCheckmate() {
-    // Debug
-    auto printBitboardAsSquares = [](uint64_t bitboard) {
-        std::string squares;
-        for (int square = 0; square < 64; square++) {
-            if (bitboard & (1ULL << square)) { // Check if the bit at `square` is set
-                char file = 'a' + (square % 8);   // Convert column (file)
-                char rank = '1' + (square / 8);   // Convert row (rank)
-                squares += std::string(1, file) + rank + " ";
-            }
-        }
-        return squares;
-        };
-    uint64_t debug = 0ULL;
-    bool checkmate = board->isCheckmate(debug);
-    std::string message = printBitboardAsSquares(debug);
-    UpdateDebugMessage(message);
-    return checkmate;
+    bool result = board->isCheckmate();
+    return result;
 }
 
 
@@ -111,6 +96,18 @@ std::string ChessBoard::GetBoardState() {
 
 void ChessBoard::UpdateDebugMessage(const std::string& message) {
     debugMessage = message;
+}
+
+std::string ChessBoard::printBitboardAsSquares(uint64_t bitboard) {
+    std::string squares;
+    for (int square = 0; square < 64; square++) {
+        if (bitboard & (1ULL << square)) { // Check if the bit at `square` is set
+            char file = 'a' + (square % 8);   // Convert column (file)
+            char rank = '1' + (square / 8);   // Convert row (rank)
+            squares += std::string(1, file) + rank + " ";
+        }
+    }
+    return squares;
 }
 
 std::string ChessBoard::GetDebugMessage() const {

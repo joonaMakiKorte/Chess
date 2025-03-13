@@ -1,12 +1,7 @@
 #include "pch.h"
 #include "Bitboard.h"
+#include "BitboardConstants.h"
 #include "MoveTables.h"
-#include <iostream>   // For std::cout, std::endl
-#include <string>     // For std::string
-#include <stdexcept>  // For std::invalid_argument
-#include <cstdint>    // For uint64_t and other fixed-width integers
-#include <algorithm>  // For std::tolower
-#include <cmath>      // For std::abs
 
 
 Bitboard::Bitboard():
@@ -84,7 +79,7 @@ bool Bitboard::isInCheck() {
 }
 
 
-bool Bitboard::isCheckmate(uint64_t& debug) {
+bool Bitboard::isCheckmate() {
 	if (!isInCheck()) {
 		return false; // Not in check, so not checkmate
 
@@ -118,7 +113,6 @@ bool Bitboard::isCheckmate(uint64_t& debug) {
 
 	// Get the attacking ray and determine if can be blocked
 	uint64_t attacking_ray = getAttackingRay(attacker_square, king_square);
-	debug = attacking_ray;
 	if (attacking_ray == 0) return false; // Validate ray
 
 	// We reached the final part of checking for checkmate
@@ -357,7 +351,6 @@ uint64_t Bitboard::getPawnCaptures(int square) {
 
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
 	// Initialize captures
 	uint64_t captures = 0ULL;
@@ -385,14 +378,17 @@ uint64_t Bitboard::getKnightMoves(int square) {
 		return 0ULL; // No knight exists at this square
 	}
 
+	// Get the precomputed knight moves for the square
+	uint64_t moves = KNIGHT_MOVES[square].moves;
+
 	if (white_knights & knight_bitboard) {
-		return KNIGHT_MOVES[square].moves &= ~whitePieces(); // White knight can't move onto white pieces
+		moves &= ~whitePieces(); // White knight can't move onto white pieces
 	}
 	else if (black_knights & knight_bitboard) {
-		return KNIGHT_MOVES[square].moves &= ~blackPieces(); // Black knight can't move onto black pieces
+		moves &= ~blackPieces(); // Black knight can't move onto black pieces
 	}
 
-	return 0ULL; // Should never reach here
+	return moves; // Should never reach here
 }
 
 uint64_t Bitboard::getBishopMoves(int square) {
