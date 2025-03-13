@@ -390,10 +390,10 @@ uint64_t Bitboard::getPawnCaptures(int square) {
 	uint64_t captures = 0ULL;
 
 	if (white_pawns & pawn_bitboard) { // White pawn
-		captures = WHITE_PAWN_MOVES[square].captures & black_pieces; // Capture only black pieces
+		captures = WHITE_PAWN_MOVES[square].captures;
 	}
 	else if (black_pawns & pawn_bitboard) { // Black pawn
-		captures = BLACK_PAWN_MOVES[square].captures & white_pieces; // Capture only white pieces
+		captures = BLACK_PAWN_MOVES[square].captures;
 	}
 
 	// Check if en passant is available and in capture moves of the current moved piece
