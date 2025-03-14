@@ -40,16 +40,15 @@ public:
     // '1' = full move number
     std::string GetBoardState();
 
-
-
- 
-
     // Get debug message
     std::string GetDebugMessage() const;
 
 private:
     // Set debug messages dynamically
     void UpdateDebugMessage(const std::string& message);
+
+    // Print bitboard in algebraic notation for debug
+    std::string printBitboardAsSquares(uint64_t bitboard);
 };
 
 

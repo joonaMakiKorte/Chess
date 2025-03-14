@@ -1,12 +1,7 @@
 #include "pch.h"
 #include "Bitboard.h"
+#include "BitboardConstants.h"
 #include "MoveTables.h"
-#include <iostream>   // For std::cout, std::endl
-#include <string>     // For std::string
-#include <stdexcept>  // For std::invalid_argument
-#include <cstdint>    // For uint64_t and other fixed-width integers
-#include <algorithm>  // For std::tolower
-#include <cmath>      // For std::abs
 
 
 Bitboard::Bitboard():
@@ -84,37 +79,45 @@ bool Bitboard::isInCheck() {
 }
 
 
-
-
 bool Bitboard::isCheckmate() {
 	if (!isInCheck()) {
 		return false; // Not in check, so not checkmate
 
 	}
-	uint64_t king_bitboard = white ? white_king : black_king;
-	
 	// Get currently possible king moves
+	uint64_t king_bitboard = white ? white_king : black_king;
 	int king_square = findFirstSetBit(king_bitboard);
 	uint64_t king_moves = getKingMoves(king_square);
-
-	// Possible squares where enemy could attack
-	uint64_t enemy_attacks = getAttackSquares();
-
-	// Possible squares where own pieces could move (except king)
-	uint64_t own_attacks = getDefenceSquares();
+	uint64_t enemy_attacks = getAttackSquares(); // Squares attacked by enemy
 
 	// Check if the king can escape (moves to a non-attacked square)
-	uint64_t safe_moves = king_moves & ~enemy_attacks; // Moves not under attack
-	if (safe_moves != 0) return false;
+	if (king_moves & ~enemy_attacks) return false;
 
-	// Check if any own pieces can block the attack
-	uint64_t blockable_squares = own_attacks & enemy_attacks;
-	if (blockable_squares != 0) {
-		return false; // An own piece can block the check, so it's not checkmate
-	}
+	// Now we must check the direct attacks to king and if those can be blocked
+	// If not possibility to block (with a piece other than king), results in checkmate
+	// 
+	// First we check the possibility of a double check (two or more attackers)
+	// This results in immediate checkmate since cannot be blocked
+	uint64_t attackers = getAttackers(king_bitboard); // Get attackers
+	if (attackers == 0) return false; // Make sure there are attackers
 
-	
-	return true; // No legal moves to get out of check, so it's checkmate
+	// Remove the least significant bit (LSB)
+	attackers &= attackers - 1;
+
+	// If any bits remain, it's a double check
+	if (attackers != 0) return true;
+
+	// Get square index of attacker
+	uint64_t attacker = getAttackers(king_bitboard);
+	int attacker_square = findLastSetBit(attacker);
+
+	// Get the attacking ray and determine if can be blocked
+	uint64_t attacking_ray = getAttackingRay(attacker_square, king_square);
+	if (attacking_ray == 0) return false; // Validate ray
+
+	// We reached the final part of checking for checkmate
+	// If cannot be blocked -> checkmate
+	return !canBlock(attacking_ray);
 }
 
 int Bitboard::getHalfMoveClock() const {
@@ -146,6 +149,15 @@ uint64_t Bitboard::getLegalMoves(int from) {
 		}
 		break;
 	default: throw std::invalid_argument("Invalid piece type");
+	}
+
+	// King cannot be captured
+	// Remove from moves if in
+	if (legal_moves & white_king) {
+		legal_moves &= ~white_king;
+	}
+	else if (legal_moves & black_king) {
+		legal_moves &= ~black_king;
 	}
 	return legal_moves;
 }
@@ -348,7 +360,6 @@ uint64_t Bitboard::getPawnCaptures(int square) {
 
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
-	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
 	// Initialize captures
 	uint64_t captures = 0ULL;
@@ -376,14 +387,17 @@ uint64_t Bitboard::getKnightMoves(int square) {
 		return 0ULL; // No knight exists at this square
 	}
 
+	// Get the precomputed knight moves for the square
+	uint64_t moves = KNIGHT_MOVES[square].moves;
+
 	if (white_knights & knight_bitboard) {
-		return KNIGHT_MOVES[square].moves &= ~whitePieces(); // White knight can't move onto white pieces
+		moves &= ~whitePieces(); // White knight can't move onto white pieces
 	}
 	else if (black_knights & knight_bitboard) {
-		return KNIGHT_MOVES[square].moves &= ~blackPieces(); // Black knight can't move onto black pieces
+		moves &= ~blackPieces(); // Black knight can't move onto black pieces
 	}
 
-	return 0ULL; // Should never reach here
+	return moves; // Should never reach here
 }
 
 uint64_t Bitboard::getBishopMoves(int square) {
@@ -572,7 +586,7 @@ uint64_t Bitboard::getAttackSquares() {
 		case 'b': attack_squares |= getBishopMoves(current_square); break;
 		case 'r': attack_squares |= getRookMoves(current_square); break;
 		case 'q': attack_squares |= getQueenMoves(current_square); break;
-		case 'k': attack_squares |= getKingMoves(current_square); break;
+		case 'k': break;
 		default: throw std::invalid_argument("Invalid piece type");
 		}
 		opponent ^= 1ULL << current_square; // Remove the processed square
@@ -581,31 +595,115 @@ uint64_t Bitboard::getAttackSquares() {
 	return attack_squares;
 }
 
-uint64_t Bitboard::getDefenceSquares() {
+uint64_t Bitboard::getAttackers(uint64_t king) {
 	// Initialize squares
-	uint64_t defence_squares = 0ULL;
+	uint64_t attackers = 0ULL;
 
-	// Iterate over friendly pieces
-	// Done by isolating FSB, processing the piece type at square, and removing the processed square (XOR)
-	// At each occupied square we get the moves and combine in the defence squares (OR)
+	// Determine attacking side
+	uint64_t opponent = white ? blackPieces() : whitePieces();
+	// Iterate over opponent pieces with bitwise OR
+	// We must flip the flag for the duration of processing to get the correct captures
+	white = !white;
+	while(opponent != 0) {
+		int current_square = findFirstSetBit(opponent); // Isolate FSB and get as index
+		char piece_type = getPieceType(current_square);
+		// Get moves of the piece and check if any of the moves land on the king
+		// If true, add current square to attackers as a bitboard
+		switch (tolower(piece_type))
+		{
+		case 'p': if (getPawnCaptures(current_square) & king) attackers |= 1ULL << current_square; break;
+		case 'n': if (getKnightMoves(current_square) & king) attackers |= 1ULL << current_square; break;
+		case 'b': if (getBishopMoves(current_square) & king) attackers |= 1ULL << current_square; break;
+		case 'r': if (getRookMoves(current_square) & king) attackers |= 1ULL << current_square; break;
+		case 'q': if (getQueenMoves(current_square) & king) attackers |= 1ULL << current_square; break;
+		case 'k': break;
+		default: throw std::invalid_argument("Invalid piece type");
+		}
+		opponent ^= 1ULL << current_square; // Remove the processed square
+	}
+	white = !white; // Flip flag
+	return attackers;
+}
+
+uint64_t Bitboard::getAttackingRay(int attacker, int king) {
+	// Find out the piece type attacking king
+	char piece_type = getPieceType(attacker);
+
+	uint64_t attack_ray = 1ULL << attacker; // The attacker itself is included in the ray, for the case if able to capture it
+	// If the attacker is a pawn or knight, the attack can't be blocked, so the attacker must be captured
+	// So in that case we only return the attacker square
+	switch (tolower(piece_type))
+	{
+	case 'p': break; // Must be captured
+	case 'n': break; // Must be captured
+	case 'b': attack_ray |= formAttackingRay(attacker, king); break;
+	case 'r': attack_ray |= formAttackingRay(attacker, king); break;
+	case 'q': attack_ray |= formAttackingRay(attacker, king); break;
+	case 'k': break; // King can't capture another king
+	default: throw std::invalid_argument("Invalid piece type");
+	}
+	return attack_ray;
+}
+
+uint64_t Bitboard::formAttackingRay(int attacker, int king) {
+	// Calculate the difference between the attacker and king squares
+	// This determines the direction the king is attacked from
+	// If positive, attacked from left, down, bottom-left or bottom-right
+	// If negative, attacked from right, up, top-left or top-right
+	int diff = king - attacker;
+
+	// If the difference is 0, the attacker and king are on the same square (invalid)
+	if (diff == 0) return 0ULL;
+
+	// Normalize the difference to get the direction
+	int direction = get_direction(diff);
+	if (direction == 0) return 0ULL; // Validate direction
+
+	// We build the ray starting from attacker and ending in the square next to king
+	uint64_t attacking_ray = 0ULL;
+	int square = attacker;
+	while (true) {
+		square += direction; // Move in the attack direction
+
+		// Bounds check: Ensure the new square doesn't wrap unexpectedly
+		if (square < 0 || square > 63) break;
+		//if ((direction == -1 || direction == 1) && (square % 8 == 0 || (square + 1) % 8 == 0)) break; // Prevent rank wrap
+		if ((direction == -1 || direction == 1) && (square / 8 != (square - direction) / 8)) break; // If the above doesn't work :DD
+		if (square == king) break; // Stop at king square
+
+		attacking_ray |= (1ULL << square); // Add square to ray
+	}
+
+	return attacking_ray;
+}
+
+bool Bitboard::canBlock(const uint64_t& attack_ray) {
+	// Get own pieces depending on the turn
 	uint64_t friendly = white ? whitePieces() : blackPieces();
-	while(friendly != 0) {
-		int current_square = findFirstSetBit(friendly); // Isolate FSB and get as index
-		char piece_type = getPieceType(current_square); // Get piece type
+	friendly &= ~(white ? white_king : black_king); // Exclude own king
+
+	// Loop over own pieces and get their possible attacks at the current square
+	// If the move is able to block the attack ray returns true
+	uint64_t possible_moves = 0ULL;
+	while (friendly != 0) {
+		int current_square = findLastSetBit(friendly); // Isolate LSB and get as index
+		char piece_type = getPieceType(current_square);
 		// Get moves depending on the piece type
 		switch (tolower(piece_type))
 		{
-		case 'p': defence_squares |= getPawnMoves(current_square); break;
-		case 'n': defence_squares |= getKnightMoves(current_square); break;
-		case 'b': defence_squares |= getBishopMoves(current_square); break;
-		case 'r': defence_squares |= getRookMoves(current_square); break;
-		case 'q': defence_squares |= getQueenMoves(current_square); break;
-		case 'k': break; // Exclude king
+		case 'p': possible_moves = getPawnMoves(current_square); break;
+		case 'n': possible_moves = getKnightMoves(current_square); break;
+		case 'b': possible_moves = getBishopMoves(current_square); break;
+		case 'r': possible_moves = getRookMoves(current_square); break;
+		case 'q': possible_moves = getQueenMoves(current_square); break;
 		default: throw std::invalid_argument("Invalid piece type");
 		}
 		friendly ^= 1ULL << current_square; // Remove the processed square
+
+		// Check for ability to block
+		if (possible_moves & attack_ray) return true;
 	}
-	return defence_squares;
+	return false; // No blocks were found
 }
 
 inline int Bitboard::findFirstSetBit(uint64_t value) {
@@ -630,4 +728,13 @@ inline int Bitboard::findLastSetBit(uint64_t value) {
 #else // GCC and Clang
 	return value ? (63 - __builtin_clzll(value)) : -1;
 #endif
+}
+
+inline int Bitboard::get_direction(int diff) {
+	if (diff % 8 == 0) return (diff > 0) ? 8 : -8;  // Vertical
+	if (diff % 7 == 0) return (diff > 0) ? 7 : -7;  // Diagonal
+	if (diff % 9 == 0) return (diff > 0) ? 9 : -9;  // Diagonal
+	if (diff % 1 == 0) return (diff > 0) ? 1 : -1;  // Horizontal
+
+	return 0;  // Invalid (should not happen if called correctly)
 }

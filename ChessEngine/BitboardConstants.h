@@ -17,4 +17,16 @@ constexpr uint64_t RANK_5 = 0x000000FF00000000ULL;
 constexpr uint64_t RANK_7 = 0x00FF000000000000ULL;
 constexpr uint64_t RANK_8 = 0xFF00000000000000ULL;
 
+// Pre-computed variables
+constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
+constexpr int MAX_MOVES = 32; // Max number of legal moves for a piece, in theory max would be 28 (for queen) but we use 32 for alignment and placement
+
+// Masks for castling rights
+constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)
+constexpr uint64_t WHITE_QUEENSIDE_CASTLE_SQUARES = (1ULL << 1) | (1ULL << 2) | (1ULL << 3); // (b1, c1, d1)
+constexpr uint64_t BLACK_KINGSIDE_CASTLE_SQUARES = (1ULL << 61) | (1ULL << 62); // (f8, g8)
+constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) | (1ULL << 59); // (b8, c8, d8)
+constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
+constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
+
 #endif // BITBOARD_CONSTANTS_H

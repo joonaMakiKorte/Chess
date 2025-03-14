@@ -20,10 +20,7 @@ namespace Chess
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
 
-
-
-        
-
+       
         public ChessGame()
         {
            
@@ -137,14 +134,9 @@ namespace Chess
         // Get all valid moves from the square as a bitboard
         public ulong GetValidMoves(int square)
         {
-            ulong validMoves =  ChessEngineInterop.ValidMoves(board, square);
-            Console.WriteLine("Valid Moves: " + BitboardToAlgebraic(validMoves));
+            ulong validMoves =  ChessEngineInterop.ValidMoves(board, square);    
             return validMoves;
         }
-
-
-
-
 
         // Moves the piece
         // Activated only after move is validated
@@ -156,16 +148,15 @@ namespace Chess
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
-            Console.WriteLine(fen);
             LoadFromFEN(fen);
 
             bool mate = ChessEngineInterop.isCheckmate(board);
             bool check = ChessEngineInterop.isInCheck(board);
             if (mate)
             {
-                Console.WriteLine("Checkmate! The game is over.");
+               Console.WriteLine("Checkmate! The game is over.");
             }
-            else if (check)
+            if (check)
             {
                 Console.WriteLine("You are in check! Protect your king.");
             }

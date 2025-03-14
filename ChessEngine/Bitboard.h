@@ -1,18 +1,6 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-// Pre-computed variables
-constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
-constexpr int MAX_MOVES = 32; // Max number of legal moves for a piece, in theory max would be 28 (for queen) but we use 32 for alignment and placement
-
-// Masks for castling rights
-constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)
-constexpr uint64_t WHITE_QUEENSIDE_CASTLE_SQUARES = (1ULL << 1) | (1ULL << 2) | (1ULL << 3); // (b1, c1, d1)
-constexpr uint64_t BLACK_KINGSIDE_CASTLE_SQUARES = (1ULL << 61) | (1ULL << 62); // (f8, g8)
-constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) | (1ULL << 59); // (b8, c8, d8)
-constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
-constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
-
 class Bitboard {
 private:
     // Represent each piece type as a bitboard
@@ -61,7 +49,6 @@ public:
 
     // Get en passant target square as a string
     std::string getEnPassantString() const;
-
 
     // checks for checks
     bool isInCheck();
@@ -116,15 +103,32 @@ private:
     // Gets all the possible squares as a bitboard
     uint64_t getAttackSquares();
 
-    // Helper to get all the defence squares of the own pieces (squares that are possible to move to)
-    // Used for checkmate checking, hence excludes king
-    // Gets all the possible squares as a bitboard
-    uint64_t getDefenceSquares();
+    // Helper to get king attackers locations
+    // Returns the attackers as a bitboard
+    uint64_t getAttackers(uint64_t king);
 
+    // Find the ray which must be blocked if the king is in check
+    // If attacker is pawn or knight, returns only the piece location
+    // If rook, bishop or queen, gets the whole attacking ray
+    uint64_t getAttackingRay(int attacker, int king);
+
+    // Helper for calculating the attacking ray between attacker and king
+    // Calculates the square difference of the two pieces and forms the ray on that info
+    uint64_t formAttackingRay(int attacker, int king);
+
+    // Determine if the attacking ray can be blocked by any of the own pieces
+    // Returns bool indicating result
+    bool canBlock(const uint64_t& attack_ray);
+
+private:
     // Helper function to find the index of first set bit and last set bit
     // Use inline to avoid function call overhead
     inline int findFirstSetBit(uint64_t value);
     inline int findLastSetBit(uint64_t value);
+
+    // Helper to get direction between two squares from their difference
+    // Done by normalizing the movement direction to match one of the 8 possible moving directions
+    inline int get_direction(int diff);
 };
 
 #endif CHESSLOGIC_H
