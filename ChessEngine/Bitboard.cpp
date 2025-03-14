@@ -113,12 +113,7 @@ bool Bitboard::isCheckmate() {
 		return false; // An own piece can block the check, so it's not checkmate
 	}
 
-	// Check if any own pieces can capture the attacking piece
-	uint64_t capturable_squares = getAttackSquares() & enemy_attacks;
-	if (capturable_squares != 0) {
-		return false; // An own piece can capture the attacking piece, so it's not checkmate
-	}
-
+	
 	return true; // No legal moves to get out of check, so it's checkmate
 }
 
