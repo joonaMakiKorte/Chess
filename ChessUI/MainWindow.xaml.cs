@@ -25,17 +25,17 @@ namespace Chess
     /// 
     public partial class MainWindow : Window
     {      
-        private ChessGame chessGame = new ChessGame();
+        private ChessGame chessGame;
         private Images images = new Images();
         private BoardUI boardUI;
         private BoardInteract boardInteract;
 
-        public MainWindow()
+        public MainWindow(string gameMode, string aiDifficulty, string timer)
         {
             InitializeComponent();
 
             // Init chess logic
-            chessGame = new ChessGame();
+            chessGame = new ChessGame(gameMode, aiDifficulty, timer);
 
             // Init UI
             boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, images);
