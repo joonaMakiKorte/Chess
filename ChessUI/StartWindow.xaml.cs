@@ -19,31 +19,18 @@ namespace Chess
     {
 
 
-        private MediaPlayer _mediaPlayer;
+        private AudioPlayer _mediaPlayer;
         private readonly int[] allowedTimes = { 1, 3, 5, 10, 15, 30, 60 };
         public StartWindow()
         {
             InitializeComponent();
+
+            _mediaPlayer = new AudioPlayer();
             this.Loaded += StartWindow_Loaded; // Ensure UI is fully loaded before modifying the slider
-            StartBackgroundMusic();
+            _mediaPlayer.PlayBackgroundMusic("C:\\chessproject\\Chess\\ChessUI\\pics\\Lobbymusic.mp3");
 
         }
 
-        private void StartBackgroundMusic()
-        {
-            // Create a new MediaPlayer instance
-            _mediaPlayer = new MediaPlayer();
-
-            // Open the audio file
-            var uri = new Uri("C:\\chessproject\\Chess\\ChessUI\\pics\\Lobbymusic.mp3");
-            _mediaPlayer.Open(uri);
-
-            // Play the audio file
-            _mediaPlayer.Play();
-
-            // Optionally, set the volume
-            _mediaPlayer.Volume = 0.5; // 50% volume
-        }
 
 
         private void StartWindow_Loaded(object sender, RoutedEventArgs e)

@@ -29,6 +29,7 @@ namespace Chess
         private Images images = new Images();
         private BoardUI boardUI;
         private BoardInteract boardInteract;
+        private AudioPlayer audioPlayer;
 
         public MainWindow(string gameMode, string aiDifficulty, string timer)
         {
@@ -37,8 +38,11 @@ namespace Chess
             // Init chess logic
             chessGame = new ChessGame(gameMode, aiDifficulty, timer);
 
+            // Initialize AudioPlayer
+            audioPlayer = new AudioPlayer();
+
             // Init UI
-            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, images);
+            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, images, audioPlayer);
             boardUI.UpdateBoard(chessGame.GetBoardState());
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
             chessGame.OnHalfMoveUpdated += boardUI.UpdateHalfMoveCount;

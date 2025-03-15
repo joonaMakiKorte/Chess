@@ -13,6 +13,9 @@ namespace Chess
 {
     class BoardUI
     {
+      
+
+
         private readonly Grid pieceGrid;
         private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
         private readonly Image[,] pieceImages = new Image[8, 8];
@@ -22,14 +25,23 @@ namespace Chess
         private readonly Label halfMoveLabel;
         private ChessGame chessGame;
 
+
+        private AudioPlayer _audioPlayer;
+
+        public BoardUI(AudioPlayer audioPlayer)
+        {
+            _audioPlayer = audioPlayer;
+        }
+
         private (int row, int col)? highlightedSquare = null;
 
-        public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel, Images images)
+        public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel, Images images, AudioPlayer audioPlayer)
         {
             this.pieceGrid = grid;
             this.images = images;
             this.turnLabel = turnLabel;
             this.halfMoveLabel = halfMoveLabel;
+            this._audioPlayer = audioPlayer;
             InitializeBoard();
         }
 
@@ -101,6 +113,7 @@ namespace Chess
                     pieceImages[row, col].Stretch = Stretch.UniformToFill;
                 }
             }
+            _audioPlayer.PlayMoveSound();
         }
 
         public void UpdateTurnDisplay( bool isWhiteTurn)
