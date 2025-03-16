@@ -32,11 +32,16 @@ namespace Chess
             if (_mediaPlayer != null)
             {
                 _mediaPlayer.Stop();
+                _mediaPlayer.Close();
+                _mediaPlayer = new MediaPlayer(); // Reset the player
             }
         }
 
         public void PlayMoveSound()
         {
+
+            // Stop any existing music before playing new music
+            StopMusic();
             // Create a new MediaPlayer instance for the move sound
             var moveSoundPlayer = new MediaPlayer();
             var uri = new Uri("C:\\chessproject\\Chess\\ChessUI\\pics\\piecemove.mp3");
