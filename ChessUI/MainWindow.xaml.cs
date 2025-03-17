@@ -42,7 +42,7 @@ namespace Chess
             audioPlayer = new AudioPlayer();
             
             // Init UI
-            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, WhiteTimerLabel, BlackTimerLabel, images, audioPlayer);
+            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, WhiteTimerLabel, BlackTimerLabel, images, audioPlayer, int.Parse(timer));
             boardUI.UpdateBoard(chessGame.GetBoardState());
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
             chessGame.OnHalfMoveUpdated += boardUI.UpdateHalfMoveCount;

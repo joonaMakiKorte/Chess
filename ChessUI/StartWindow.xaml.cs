@@ -81,19 +81,19 @@ namespace Chess
 
         }
 
-        
-
         private void StartGame_Click(object sender, RoutedEventArgs e)
         {
             string gameMode = Button1v1.IsEnabled ? "1v1" : "AI";
             string aiDifficulty = (AIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
-            string timer = TimerSlider.Value.ToString();
+            string timer = TimerSlider.Value.ToString(); // Get the timer value
 
             // Pass these settings to the MainWindow or game logic
             MainWindow mainWindow = new MainWindow(gameMode, aiDifficulty, timer);
             mainWindow.Show();
             this.Close();
         }
+
+        
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {

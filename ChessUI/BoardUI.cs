@@ -42,7 +42,7 @@ namespace Chess
         private (int row, int col)? highlightedSquare = null;
 
         public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel,
-            Label whiteTimerLabel, Label blackTimerLabel, Images images, AudioPlayer audioPlayer)
+            Label whiteTimerLabel, Label blackTimerLabel, Images images, AudioPlayer audioPlayer, int initialtimerMinutes)
         {
             this.pieceGrid = grid;
             this.images = images;
@@ -53,7 +53,7 @@ namespace Chess
             this._audioPlayer = audioPlayer;
             
             InitializeBoard();
-            InitializeTimers();
+            InitializeTimers(initialtimerMinutes);
         }
 
 
@@ -99,11 +99,11 @@ namespace Chess
                 }
             }
         }
-        private void InitializeTimers()
+        private void InitializeTimers(int initialTimerMinutes)
         {
             // Set initial time for both players (e.g., 5 minutes each)
-            whiteTimeRemaining = TimeSpan.FromMinutes(5);
-            blackTimeRemaining = TimeSpan.FromMinutes(5);
+            whiteTimeRemaining = TimeSpan.FromMinutes(initialTimerMinutes);
+            blackTimeRemaining = TimeSpan.FromMinutes(initialTimerMinutes);
 
             whiteTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             blackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
