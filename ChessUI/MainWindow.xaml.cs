@@ -49,7 +49,7 @@ namespace Chess
 
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);         
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);         
         }
 
     }
