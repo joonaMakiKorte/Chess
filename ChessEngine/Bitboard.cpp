@@ -168,17 +168,20 @@ uint64_t Bitboard::getLegalMoves(int from) {
 		// Get potential squares where enemy could attack (results in check)
 		// This also includes the squares where king moves to capture an opposite piece and ends up in check
 
-		// First we get the squares where the enemy could attack with the current board state
+		// Get the squares where enemy could move with the current board state and minus the king
+		// Meaning moves that leap over the king
+		(white ? white_pieces : black_pieces) &= ~(1ULL << from); // Clear king square
 		enemy_attacks = getAttackSquares(white_pieces, black_pieces);
 		
-		// Get the pieces king could capture
+		// Get the king captures that would result in check
 		king_captures = (white ? black_pieces : white_pieces) & legal_moves;
-
-		// Remove these from the opposite pieces
-		(white ? black_pieces : white_pieces) &= ~king_captures;
+		(white ? black_pieces : white_pieces) &= ~king_captures; // Capture possible pieces
+		(white ? white_pieces : black_pieces) |= king_captures; // Move in own sides bitboard
 
 		// Get all the potential enemy attacks after the captures and combine with currently possible attacks
 		enemy_attacks |= getAttackSquares(white_pieces, black_pieces);
+
+
 		legal_moves &= ~enemy_attacks; // Squares left after realistic and potential attacks are where king can move
 
 		break;
