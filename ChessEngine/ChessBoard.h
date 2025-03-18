@@ -17,17 +17,13 @@ public:
     // Get legal moves from the parameter square as a bitboard
     uint64_t LegalMoves(int square);
 
-    bool isInCheck();
-
-    bool isCheckmate();
-
     // Move a chessboard piece according to given parameter
     // Update chessboard status accordingly
     // Is called in C# if validating move successful
     void MovePiece(int source, int target);
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
-    // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+    // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 -
     // Explanation:
     // 8 ranks, '/' separates the ranks
     // 'p'=pawn, 'r'=rook, 'n'=knight, 'b'=bishop, 'q'=queen, 'k'=king
@@ -38,6 +34,7 @@ public:
     // '-' = En Passant Target Square
     // '0' = half move clock
     // '1' = full move number
+    // '-' = Game state (Check/checkmate/stalemate/normal)
     std::string GetBoardState();
 
     // Get debug message

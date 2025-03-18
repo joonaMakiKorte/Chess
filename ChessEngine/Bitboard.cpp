@@ -72,6 +72,23 @@ std::string Bitboard::getEnPassantString() const {
 	return square;
 }
 
+std::string Bitboard::getGameState() {
+	std::string game_state;
+	if (isCheckmate()) {
+		game_state = "M";
+	}
+	else if (isInCheck()) {
+		game_state = "C";
+	}
+	else if (isStalemate()) {
+		game_state = "S";
+	}
+	else {
+		game_state = "-";
+	}
+	return game_state;
+}
+
 
 bool Bitboard::isInCheck() {
 	uint64_t king_bitboard = white ? white_king : black_king;
@@ -94,10 +111,16 @@ bool Bitboard::isCheckmate() {
 
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
+	// Clear location from pieces to also get moves that leap over the king (king can't move to a square that would be attacked)
+	(white ? white_pieces : black_pieces) &= ~king_bitboard;
 	uint64_t enemy_attacks = getAttackSquares(white_pieces, black_pieces); // Squares attacked by enemy
 
 	// Check if the king can escape (moves to a non-attacked square)
 	if (king_moves & ~enemy_attacks) return false;
+
+	// Reset pieces bitboards
+	white_pieces = whitePieces();
+	black_pieces = blackPieces();
 
 	// Now we must check the direct attacks to king and if those can be blocked
 	// If not possibility to block (with a piece other than king), results in checkmate
@@ -126,6 +149,35 @@ bool Bitboard::isCheckmate() {
 	return !canBlock(attacking_ray);
 }
 
+bool Bitboard::isStalemate() {
+	// Loop over each friendly piece and check if there are legal moves
+	// If none of the pieces have legal moves, results in stalemate
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	uint64_t friendly = white ? white_pieces : black_pieces;
+	uint64_t possible_moves = 0ULL;
+	while (friendly != 0) {
+		int current_square = findLastSetBit(friendly); // Isolate LSB and get as index
+		char piece_type = getPieceType(current_square);
+		// Get moves depending on the piece type
+		switch (tolower(piece_type))
+		{
+		case 'p': possible_moves = getPawnMoves(current_square, white_pieces, black_pieces); break;
+		case 'n': possible_moves = getKnightMoves(current_square, white_pieces, black_pieces); break;
+		case 'b': possible_moves = getBishopMoves(current_square, white_pieces, black_pieces); break;
+		case 'r': possible_moves = getRookMoves(current_square, white_pieces, black_pieces); break;
+		case 'q': possible_moves = getQueenMoves(current_square, white_pieces, black_pieces); break;
+		case 'k': possible_moves = getKingMoves(current_square); break;
+		default: throw std::invalid_argument("Invalid piece type");
+		}
+		friendly ^= 1ULL << current_square; // Remove the processed square
+
+		// Check for ability to block
+		if (possible_moves != 0) return false;
+	}
+	return true;
+}
+
 int Bitboard::getHalfMoveClock() const {
 	return half_moves;
 }
@@ -145,9 +197,6 @@ uint64_t Bitboard::getLegalMoves(int from) {
 	// Get both pieces as bitboards
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
-
-	// If in checkmate, no possible moves
-	if (isCheckmate()) return legal_moves;
 
 	switch (tolower(piece)) // Convert to lowercase
 	{

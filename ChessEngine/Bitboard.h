@@ -50,11 +50,8 @@ public:
     // Get en passant target square as a string
     std::string getEnPassantString() const;
 
-    // checks for checks
-    bool isInCheck();
-
-    // checks checkmates
-    bool isCheckmate();
+    // Get game state as a string
+    std::string getGameState();
 
     // Get half moves
     int getHalfMoveClock() const;
@@ -120,6 +117,11 @@ private:
     // Determine if the attacking ray can be blocked by any of the own pieces
     // Returns bool indicating result
     bool canBlock(const uint64_t& attack_ray);
+
+    // Check game state
+    bool isInCheck();
+    bool isCheckmate();
+    bool isStalemate();
 
 private:
     // Helper function to find the index of first set bit and last set bit

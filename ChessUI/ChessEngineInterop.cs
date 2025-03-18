@@ -40,13 +40,6 @@ namespace Chess
             return fen;
         }
 
-        // New functions for isInCheck and isCheckmate
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool isInCheck(IntPtr board);
-
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool isCheckmate(IntPtr board);
-
         // Helper to get debug messages as string
         public static string GetDebugMessageString(IntPtr board)
         {

@@ -16,6 +16,7 @@ namespace Chess
         private bool whiteKingside, whiteQueenside, blackKingside, blackQueenside; // Store castling rights
         private string enPassantTarget; // Store en passant target square using algebraic notation
         private int halfMoves, fullMoves; // Store move clocks
+        private string gameState; // Keep track of game state
 
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
@@ -95,14 +96,15 @@ namespace Chess
             // Read en passant target square
             enPassantTarget = sections[3].ToString();
 
-
-
             // Read half moves
             halfMoves = int.Parse(sections[4]);
             OnHalfMoveUpdated?.Invoke(halfMoves); // Notify UI
 
             // Read full moves
             fullMoves = int.Parse(sections[5]);
+
+            // Read game state
+            gameState = sections[6].ToString();
         }
 
 
@@ -160,17 +162,20 @@ namespace Chess
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
+            Console.WriteLine(fen);
             LoadFromFEN(fen);
 
-            bool mate = ChessEngineInterop.isCheckmate(board);
-            bool check = ChessEngineInterop.isInCheck(board);
-            if (mate)
+            if (gameState == "M")
             {
                Console.WriteLine("Checkmate! The game is over.");
             }
-            if (check)
+            else if (gameState == "C")
             {
                 Console.WriteLine("You are in check! Protect your king.");
+            }
+            else if (gameState == "S")
+            {
+                Console.WriteLine("Stalemate!");
             }
             else
             {
