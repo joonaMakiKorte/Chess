@@ -82,30 +82,31 @@ private:
     std::string squareToString(int square) const;
 
     // Helper functions to create legal moves for different piece types
-    uint64_t getPawnMoves(int pawn);
-    uint64_t getPawnCaptures(int pawn); // Used for attack squares
-    uint64_t getKnightMoves(int knight);
-    uint64_t getBishopMoves(int bishop);
-    uint64_t getRookMoves(int rook);
-    uint64_t getQueenMoves(int queen);
+    uint64_t getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getPawnCaptures(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces); // Used for attack squares
+    uint64_t getKnightMoves(int knight, const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getBishopMoves(int bishop, const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getRookMoves(int rook, const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getQueenMoves(int queen, const uint64_t& white_pieces, const uint64_t& black_pieces);
     uint64_t getKingMoves(int king);
 
     // Helper to get the sliding moves of a movetable
     // Used for Bishop, Rook and Queen, since can't leap over other pieces
     // Uses LSB/FSB to isolate the occupied bit depending on move direction
-    uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse);
+    uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse, const uint64_t& white_pieces, const uint64_t& black_pieces);
 
     // Helper to get castling moves for a king
     uint64_t getCastlingMoves();
 
     // Helper to get all the attack squares of opponent (squares that are possible to attack)
     // If white turn, we get all the squares black could attack, and vice versa
+    // Takes bitboards of both of the pieces as the parameter
     // Gets all the possible squares as a bitboard
-    uint64_t getAttackSquares();
+    uint64_t getAttackSquares(const uint64_t& white_pieces, const uint64_t& black_pieces);
 
     // Helper to get king attackers locations
     // Returns the attackers as a bitboard
-    uint64_t getAttackers(uint64_t king);
+    uint64_t getAttackers(uint64_t king, const uint64_t& white_pieces, const uint64_t& black_pieces);
 
     // Find the ray which must be blocked if the king is in check
     // If attacker is pawn or knight, returns only the piece location
