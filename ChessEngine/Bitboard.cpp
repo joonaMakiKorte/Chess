@@ -167,6 +167,9 @@ uint64_t Bitboard::getLegalMoves(int from) {
 		// King can't move into check
 		// Get potential squares where enemy could attack (results in check)
 		// This also includes the squares where king moves to capture an opposite piece and ends up in check
+
+		// First we get the squares where the enemy could attack with the current board state
+		enemy_attacks = getAttackSquares(white_pieces, black_pieces);
 		
 		// Get the pieces king could capture
 		king_captures = (white ? black_pieces : white_pieces) & legal_moves;
@@ -174,9 +177,9 @@ uint64_t Bitboard::getLegalMoves(int from) {
 		// Remove these from the opposite pieces
 		(white ? black_pieces : white_pieces) &= ~king_captures;
 
-		// Get all the potential enemy attacks after the captures 
-		enemy_attacks = getAttackSquares(white_pieces, black_pieces);
-		legal_moves &= ~enemy_attacks;
+		// Get all the potential enemy attacks after the captures and combine with currently possible attacks
+		enemy_attacks |= getAttackSquares(white_pieces, black_pieces);
+		legal_moves &= ~enemy_attacks; // Squares left after realistic and potential attacks are where king can move
 
 		break;
 	default: throw std::invalid_argument("Invalid piece type");
