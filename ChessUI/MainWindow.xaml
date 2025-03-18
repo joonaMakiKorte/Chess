@@ -17,9 +17,13 @@
             <Grid.RowDefinitions>
                 <!--for label-->
                 <RowDefinition Height="Auto" />
+                <!--for timer-->
+                <RowDefinition Height="Auto"/>
                 <!--for chessboard-->
                 <RowDefinition Height="*"/>
                 <!--for halfmoves-->
+                <RowDefinition Height="Auto" />
+                <!--for button-->
                 <RowDefinition Height="Auto" />
                 
             </Grid.RowDefinitions>
@@ -31,10 +35,17 @@
                    FontSize="24" Foreground="White" Margin="0,10,0,0"
                    Grid.Row="0"/>
             
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+                <Label x:Name="WhiteTimerLabel" Content="White: 00:00"
+                       FontSize="20" Foreground="White" Margin="0,5"/>
+                <Label x:Name="BlackTimerLabel" Content="Black: 00:00"
+                       FontSize="20" Foreground="White" Margin="20,5,0,5"/>
+            </StackPanel>
+            
             
             
             <Grid x:Name="PieceGrid"
-                Grid.Row="1"
+                Grid.Row="2"
                 Width="600"
                 Height="600">
                 <Grid.Background>
@@ -67,8 +78,14 @@
 
             <Label x:Name="HalfMoveLabel" Content="Halfmoves: 0" 
                    HorizontalAlignment="Center" Margin="0,10"
-                   Grid.Row="2" Foreground="Red"
+                   Grid.Row="3" Foreground="Red"
                    FontSize="24"/>
+            
+            <!-- Mute Button -->
+            <Button x:Name="MuteButton" Content="Mute Lobby Music"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Row="4"
+                    FontSize="20" Foreground="White" Margin="0,10"/>
         </Grid>
         
     </Viewbox>

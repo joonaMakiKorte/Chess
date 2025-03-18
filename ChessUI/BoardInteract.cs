@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Windows;
+using System.Media;
 
 namespace Chess
 {
@@ -17,8 +18,11 @@ namespace Chess
         private (int row, int col)? selectedPiece = null;
         private readonly Grid pieceGrid; // store to reference PieceGrid
 
+        // list of all sound players
+        private List<SoundPlayer> soundPlayers = new List<SoundPlayer>(); 
 
-        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi)
+
+        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi, Button muteButton)
         {
             this.pieceGrid = pieceGrid;
             this.chessGame = chessGame;
@@ -26,6 +30,8 @@ namespace Chess
 
             // Attach event handler directly to constructor
             this.pieceGrid.MouseDown += PieceGrid_MouseDown;
+
+            muteButton.Click += MuteButton_Click;
         }
 
 
@@ -102,5 +108,16 @@ namespace Chess
                 selectedPiece = null; // Deselect after move
             }
         }
+        private void MuteButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Stop all sounds
+            foreach (var player in soundPlayers)
+            {
+                player.Stop();
+            }
+        }
+
+        
+        
     }
 }

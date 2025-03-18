@@ -8,11 +8,15 @@ using System.Windows.Media;
 using System.Windows;
 using System.Diagnostics;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace Chess
 {
     class BoardUI
     {
+      
+
+
         private readonly Grid pieceGrid;
         private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
         private readonly Image[,] pieceImages = new Image[8, 8];
@@ -21,22 +25,43 @@ namespace Chess
 
         private readonly Label halfMoveLabel;
         private ChessGame chessGame;
+        private AudioPlayer _audioPlayer;
+
+        private readonly Label whiteTimerLabel;
+        private readonly Label blackTimerLabel;
+        private DispatcherTimer whiteTimer;
+        private DispatcherTimer blackTimer;
+        private TimeSpan whiteTimeRemaining;
+        private TimeSpan blackTimeRemaining;
+
+        public BoardUI(AudioPlayer audioPlayer)
+        {
+            _audioPlayer = audioPlayer;
+        }
 
         private (int row, int col)? highlightedSquare = null;
 
-        public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel, Images images)
+        public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel,
+            Label whiteTimerLabel, Label blackTimerLabel, Images images, AudioPlayer audioPlayer, int initialtimerMinutes)
         {
             this.pieceGrid = grid;
             this.images = images;
             this.turnLabel = turnLabel;
+            this.whiteTimerLabel = whiteTimerLabel;
+            this.blackTimerLabel = blackTimerLabel;
             this.halfMoveLabel = halfMoveLabel;
+            this._audioPlayer = audioPlayer;
+            
             InitializeBoard();
+            InitializeTimers(initialtimerMinutes);
         }
 
 
         
         public void InitializeBoard()
         {
+
+            
             pieceGrid.Children.Clear(); // Clear older images
 
             for (int row = 0; row < 8; row++)
@@ -74,9 +99,65 @@ namespace Chess
                 }
             }
         }
+        private void InitializeTimers(int initialTimerMinutes)
+        {
+            // Set initial time for both players (e.g., 5 minutes each)
+            whiteTimeRemaining = TimeSpan.FromMinutes(initialTimerMinutes);
+            blackTimeRemaining = TimeSpan.FromMinutes(initialTimerMinutes);
 
-        
+            whiteTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            blackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
 
+            whiteTimer.Tick += WhiteTimer_Tick;
+            blackTimer.Tick += BlackTimer_Tick;
+
+            UpdateTimerLabels();
+        }
+
+        private void WhiteTimer_Tick(object sender, EventArgs e)
+        {
+            if (whiteTimeRemaining > TimeSpan.Zero)
+            {
+                whiteTimeRemaining = whiteTimeRemaining.Subtract(TimeSpan.FromSeconds(1));
+                UpdateTimerLabels();
+            }
+            else
+            {
+                whiteTimer.Stop();
+                // Handle time out for white player
+            }
+        }
+
+        private void BlackTimer_Tick(object sender, EventArgs e)
+        {
+            if (blackTimeRemaining > TimeSpan.Zero)
+            {
+                blackTimeRemaining = blackTimeRemaining.Subtract(TimeSpan.FromSeconds(1));
+                UpdateTimerLabels();
+            }
+            else
+            {
+                blackTimer.Stop();
+                // Handle time out for black player
+            }
+        }
+        private void UpdateTimerLabels()
+        {
+            whiteTimerLabel.Content = $"White: {whiteTimeRemaining:mm\\:ss}";
+            blackTimerLabel.Content = $"Black: {blackTimeRemaining:mm\\:ss}";
+        }
+
+        public void StartWhiteTimer()
+        {
+            whiteTimer.Start();
+            blackTimer.Stop();
+        }
+
+        public void StartBlackTimer()
+        {
+            blackTimer.Start();
+            whiteTimer.Stop();
+        }
 
 
         public void UpdateBoard(string[,] boardState)
@@ -101,17 +182,32 @@ namespace Chess
                     pieceImages[row, col].Stretch = Stretch.UniformToFill;
                 }
             }
+            _audioPlayer.StopMusic();// stops previous sound
+            _audioPlayer.PlayMoveSound();
         }
+
+
 
         public void UpdateTurnDisplay( bool isWhiteTurn)
         {
             string turnText = isWhiteTurn ? "White's Turn" : "Black's Turn";
             turnLabel.Content = turnText;
+            // start the timer at the same time as turn changes
+            if (isWhiteTurn)
+            {
+                StartWhiteTimer();
+            }
+            else
+            {
+                StartBlackTimer();
+            }
+
         }
         public void HighlightSquare(int row, int col, Brush color)
         {
             highlightedSquare = (row, col);
             pieceBorders[row, col].Background = color;
+
         }
 
         public void ClearHighlights()

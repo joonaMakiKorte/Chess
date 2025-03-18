@@ -21,7 +21,7 @@ namespace Chess
         private IntPtr board; // Pointer to native board
 
        
-        public ChessGame()
+        public ChessGame(string gameMode, string aiDifficulty, string timer)
         {
            
 
@@ -31,9 +31,22 @@ namespace Chess
                 throw new Exception("Failed to initialize the chess board from the engine.");
             }
 
+            // Initialize game settings
+            InitializeGameSettings(gameMode, aiDifficulty, timer);
+
+
             // Get initial board state and apply to pieceLocations
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
+        }
+
+
+        private void InitializeGameSettings(string gameMode, string aiDifficulty, string timer)
+        {
+            // Implement logic to set game mode, AI difficulty, and timer
+            // Example: SetGameMode(gameMode);
+            // Example: SetAIDifficulty(aiDifficulty);
+            // Example: SetTimer(timer);
         }
 
         // this is to move halfmove updates
@@ -86,7 +99,6 @@ namespace Chess
 
             // Read half moves
             halfMoves = int.Parse(sections[4]);
-            //Console.WriteLine(halfMoves);
             OnHalfMoveUpdated?.Invoke(halfMoves); // Notify UI
 
             // Read full moves
