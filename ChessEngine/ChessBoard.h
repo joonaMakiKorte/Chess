@@ -6,8 +6,12 @@
 class ChessBoard {
 private:
     // Store the board logic
-    std::unique_ptr<Bitboard> board; // Smart pointer
+    Bitboard board; // Smart pointer
 
+    // Keep track of player turns
+    bool white;
+
+    // Debug
     std::string debugMessage;
 
 public:

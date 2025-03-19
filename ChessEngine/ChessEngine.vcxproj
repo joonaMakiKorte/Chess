@@ -172,6 +172,7 @@ if "$(Platform)"=="x64" (
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BitboardConstants.h" />
+    <ClInclude Include="ChessAI.h" />
     <ClInclude Include="MoveTables.h" />
     <ClInclude Include="ChessBoard.h" />
     <ClInclude Include="ChessEngineExports.h" />
@@ -180,6 +181,7 @@ if "$(Platform)"=="x64" (
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ChessAI.cpp" />
     <ClCompile Include="MoveTables.cpp" />
     <ClCompile Include="ChessBoard.cpp" />
     <ClCompile Include="ChessEngineExports.cpp" />

@@ -19,7 +19,8 @@ constexpr uint64_t RANK_8 = 0xFF00000000000000ULL;
 
 // Pre-computed variables
 constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
-constexpr int MAX_MOVES = 32; // Max number of legal moves for a piece, in theory max would be 28 (for queen) but we use 32 for alignment and placement
+constexpr int MAX_MOVES = 256; // Max number of legal moves for a player turn
+// Absolute theoretical maximum would be 218 but we use 256 (a power of 2) for efficient memory alignment
 
 // Masks for castling rights
 constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)

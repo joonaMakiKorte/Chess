@@ -20,7 +20,7 @@ extern "C" {
     CHESSENGINE_API uint64_t ValidMoves(void* board, int square);
 
     // Make move in bitboard
-    // Takes a void pointer to the board and the source and target as sqwuare indexes
+    // Takes a void pointer to the board and the source and target as square indexes
     CHESSENGINE_API void MakeMove(void* board, int source, int target);
 
     // Retrieve the current state of the chessboard and return it as a FEN string

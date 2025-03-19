@@ -15,5 +15,6 @@
 #include <stdexcept>
 #include <bit>
 #include <memory>
+#include <array>
 
 #endif //PCH_H
