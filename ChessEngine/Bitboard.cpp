@@ -186,7 +186,6 @@ int Bitboard::getFullMoveNumber() const {
 	return full_moves;
 }
 
-
 uint64_t Bitboard::getLegalMoves(int from) {
 	char piece = getPieceType(from); // Get piece type at square
 
@@ -229,10 +228,7 @@ uint64_t Bitboard::getLegalMoves(int from) {
 
 		// Get all the potential enemy attacks after the captures and combine with currently possible attacks
 		enemy_attacks |= getAttackSquares(white_pieces, black_pieces);
-
-
 		legal_moves &= ~enemy_attacks; // Squares left after realistic and potential attacks are where king can move
-
 		break;
 	default: throw std::invalid_argument("Invalid piece type");
 	}
