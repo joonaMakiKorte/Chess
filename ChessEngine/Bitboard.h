@@ -2,6 +2,7 @@
 #define BOARD_H
 
 #include "BitboardConstants.h"
+#include "ChessAI.h"
 
 class Bitboard {
 private:
@@ -25,6 +26,7 @@ private:
     // Bit 2 : Black kingside(k)
     // Bit 3 : Black queenside(q)
     uint8_t castling_rights;
+	uint8_t previous_castling_rights; // Store previous castling rights (for undoing)
 
     // The square where a pawn can be captured en passant
     // If not possible, set UNASSIGNED
@@ -140,14 +142,30 @@ public:
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
     void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
+	// Function for ChessAI to apply the move
+	// Takes the encoded move as a parameter and applies it to the board
+	void applyMoveAI(uint32_t move, bool white);
+
+	// Function for ChessAI to undo the move
+	// Takes the encoded move as a parameter and undoes it
+	void undoMoveAI(uint32_t move, bool white);
+
 private: 
 	// Helper to get correct piece enum corresponding to the piece type
 	// Used for encoding moves
 	ChessAI::PieceType getPieceEnum(int square) const;
 
+    // Helper to get the correct piece bitboard as a reference from enum
+	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
+	uint64_t& getPieceBitboard(ChessAI::PieceType piece, bool white);
+
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
 	ChessAI::MoveType getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const;
+
+	// Helper for undoing castling, moves rook back to original position and resets correct castling rights
+	// Takes the active color and castling side as parameters
+	void undoCastling(bool white, bool kingside);
 };
 
 #endif CHESSLOGIC_H

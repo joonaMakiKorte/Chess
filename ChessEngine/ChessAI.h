@@ -2,6 +2,7 @@
 #define CHESSAI_h
 
 #include "Bitboard.h"
+
 /*
 The ChessAI structures a move in 32 bits:
 
@@ -37,6 +38,7 @@ public:
         PROMOTION_CAPTURE = 5  // Pawn promotion with capture
     };
 
+public:
     // Pack a move into an integer
 	// Must be static since used in Bitboard.cpp without an instance
     static uint32_t encodeMove(int from, int to, PieceType piece, PieceType captured, MoveType type, PieceType promotion, bool enPassant) {
@@ -49,15 +51,24 @@ public:
             ((enPassant ? 1 : 0) << 28);
     }
 
-private:
     // Extract data from a packed move
-    int from(uint32_t move) { return move & 0x3F; }
-    int to(uint32_t move) { return (move >> 6) & 0x3F; }
-    PieceType piece(uint32_t move) { return static_cast<PieceType>((move >> 12) & 0xF); }
-    PieceType capturedPiece(uint32_t move) { return static_cast<PieceType>((move >> 16) & 0xF); }
-    MoveType moveType(uint32_t move) { return static_cast<MoveType>((move >> 20) & 0xF); }
-    PieceType promotion(uint32_t move) { return static_cast<PieceType>((move >> 24) & 0xF); }
-    bool isEnPassant(uint32_t move) { return (move >> 28) & 1; }
+    static int from(uint32_t move) { return move & 0x3F; }
+    static int to(uint32_t move) { return (move >> 6) & 0x3F; }
+    static PieceType piece(uint32_t move) { return static_cast<PieceType>((move >> 12) & 0xF); }
+    static PieceType capturedPiece(uint32_t move) { return static_cast<PieceType>((move >> 16) & 0xF); }
+    static MoveType moveType(uint32_t move) { return static_cast<MoveType>((move >> 20) & 0xF); }
+    static PieceType promotion(uint32_t move) { return static_cast<PieceType>((move >> 24) & 0xF); }
+    static bool isEnPassant(uint32_t move) { return (move >> 28) & 1; }
+
+private:
+    // Get the best move for the current board state
+    uint32_t getBestMove(Bitboard& board, int depth);
+
+	// Minimax algorithm with alpha-beta pruning
+	// Recursively evaluates the board by simulating moves and choosing the best one
+	// Alpha-beta pruning is used to reduce the number of nodes evaluated in the search tree
+    int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
+
 };
 
 #endif // !CHESSAI_H

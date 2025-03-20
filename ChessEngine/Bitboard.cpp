@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "Bitboard.h"
 #include "MoveTables.h"
-#include "ChessAI.h"
 
 
 Bitboard::Bitboard():
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
+	previous_castling_rights(0x0F),		   // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	half_moves(0),                         // Initially 0
 	full_moves(0)                          // Initially 0
@@ -264,6 +264,9 @@ void Bitboard::applyMove(int source, int target, bool white) {
 
 	// Before applying move check if target is an empty square
 	bool empty = target_piece == '\0';
+
+	// Also store the previous castling rights
+	previous_castling_rights = castling_rights;
 
 	++half_moves; // Increment half moves
 	++full_moves; // Increment full moves
@@ -872,6 +875,59 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 	}
 }
 
+void Bitboard::applyMoveAI(uint32_t move, bool white) {
+	// Decode source and target squares
+	int source = ChessAI::from(move);
+	int target = ChessAI::to(move);
+
+	// Call applyMove depending which turn ongoing
+	// applyMove handles all the move logic
+	applyMove(source, target, white);
+}
+
+void Bitboard::undoMoveAI(uint32_t move, bool white) {
+	// Decode the move
+	int source = ChessAI::from(move);
+	int target = ChessAI::to(move);
+	ChessAI::PieceType source_piece = ChessAI::piece(move);
+	ChessAI::PieceType target_piece = ChessAI::capturedPiece(move);
+	ChessAI::MoveType move_type = ChessAI::moveType(move);
+	ChessAI::PieceType promotion = ChessAI::promotion(move);
+	bool en_passant = ChessAI::isEnPassant(move);
+
+	// Move source piece back to source square
+	uint64_t& source_bitboard = getPieceBitboard(source_piece, white); // Get the correct piece bitboard
+	source_bitboard |= 1ULL << source; // Move to original position
+	source_bitboard &= ~(1ULL << target); // Clear target square
+
+	// Move target piece back to target square if capture
+	if (target_piece != ChessAI::PieceType::EMPTY) {
+		uint64_t& target_bitboard = getPieceBitboard(target_piece, !white); // Get the correct piece bitboard
+		target_bitboard |= 1ULL << target; // Move to original position
+	}
+
+	// Check if castling rights need to be restored
+	if (previous_castling_rights != castling_rights) {
+		castling_rights = previous_castling_rights;
+	}
+
+	// Handle special moves
+	if (move_type == ChessAI::MoveType::EN_PASSANT) {
+		en_passant_target = target; // Reset en passant target
+		// Pawn captured with en passant is one rank behind the target square
+		int en_passant_square = white ? (target - 8) : (target + 8);
+		uint64_t& en_passant_pawn = getPieceBitboard(ChessAI::PieceType::PAWN, !white);
+		en_passant_pawn |= 1ULL << en_passant_square; // Move captured pawn back to original position
+	}
+	else if (move_type == ChessAI::MoveType::CASTLING) {
+		bool kingside = target == 6 || target == 62; // Determine if kingside or queenside castling
+		undoCastling(white, kingside); // Undo castling
+	}
+
+	// TODO: add promotion
+
+}
+
 ChessAI::PieceType Bitboard::getPieceEnum(int square) const {
 	uint64_t bitboard = 1ULL << square;
 	// Determine piece type at square
@@ -884,6 +940,20 @@ ChessAI::PieceType Bitboard::getPieceEnum(int square) const {
 	return ChessAI::PieceType::EMPTY;
 }
 
+uint64_t& Bitboard::getPieceBitboard(ChessAI::PieceType piece, bool white) {
+	// Return the correct piece bitboard depending on the piece and color
+	switch (piece)
+	{
+	case ChessAI::PieceType::PAWN: return white ? white_pawns : black_pawns;
+	case ChessAI::PieceType::KNIGHT: return white ? white_knights : black_knights;
+	case ChessAI::PieceType::BISHOP: return white ? white_bishops : black_bishops;
+	case ChessAI::PieceType::ROOK: return white ? white_rooks : black_rooks;
+	case ChessAI::PieceType::QUEEN: return white ? white_queen : black_queen;
+	case ChessAI::PieceType::KING: return white ? white_king : black_king;
+	default: throw std::invalid_argument("Invalid piece type");
+	}
+}
+
 ChessAI::MoveType Bitboard::getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const {
 	// Determine move type
 	if (piece == ChessAI::PieceType::PAWN && target_square == en_passant_target) return ChessAI::MoveType::EN_PASSANT;
@@ -891,4 +961,32 @@ ChessAI::MoveType Bitboard::getMoveType(int source_square, int target_square, Ch
 	if (target_piece != ChessAI::PieceType::EMPTY) return ChessAI::MoveType::CAPTURE;
 	// TODO: Add promotion
 	return ChessAI::MoveType::NORMAL;
+}
+
+void Bitboard::undoCastling(bool white, bool kingside) {
+	uint64_t rook;
+	if (white) {
+		if (kingside) {
+			rook = (1ULL << 5); // White rook on f1
+			white_rooks &= ~rook; // Remove rook from f1
+			white_rooks |= (rook << 2); // Move rook to h1
+		}
+		else {
+			rook = (1ULL << 3); // White rook on d1
+			white_rooks &= ~rook; // Remove rook from d1
+			white_rooks |= (rook >> 3); // Move rook to a1
+		}
+	}
+	else {
+		if (kingside) {
+			rook = (1ULL << 61); // Black rook on f8
+			black_rooks &= ~rook; // Remove rook from f8
+			black_rooks |= (rook << 2); // Move rook to h8
+		}
+		else {
+			rook = (1ULL << 59); // Black rook on d8
+			black_rooks &= ~rook; // Remove rook from d8
+			black_rooks |= (rook >> 3); // Move rook to a8
+		}
+	}
 }
