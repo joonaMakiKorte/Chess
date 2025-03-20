@@ -38,7 +38,8 @@ public:
     };
 
     // Pack a move into an integer
-    uint32_t encodeMove(int from, int to, PieceType piece, PieceType captured, MoveType type, PieceType promotion, bool enPassant) {
+	// Must be static since used in Bitboard.cpp without an instance
+    static uint32_t encodeMove(int from, int to, PieceType piece, PieceType captured, MoveType type, PieceType promotion, bool enPassant) {
         return (from & 0x3F) |
             ((to & 0x3F) << 6) |
             ((piece & 0xF) << 12) |

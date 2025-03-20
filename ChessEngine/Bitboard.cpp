@@ -834,5 +834,61 @@ inline int Bitboard::get_direction(int diff) {
 	return 0;  // Invalid (should not happen if called correctly)
 }
 
+/*
+* The functions below are used for move generation and move encoding in chessAI
+* The functions are used by the AI to generate all legal moves for a given position
+* 
+* Move generation is done by looping over all pieces and getting their legal moves
+* The moves are then encoded using the chessAI encoding functions,
+* and encoded moves are then added to the move list array
+* 
+* We only need to worry about the move encoding here, chessAI handles the rest
+* ChessAI uses the move list to determine the best move to play
+* 
+*/
+
 void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
+	uint64_t white_pieces = whitePieces();
+	uint64_t black_pieces = blackPieces();
+	// Loop over all pieces and get all their legal moves
+	uint64_t friendly_pieces = white ? white_pieces : black_pieces;
+	while (friendly_pieces != 0) {
+		int from = findFirstSetBit(friendly_pieces); // Isolate FSB and get as index
+		ChessAI::PieceType piece = getPieceEnum(from);
+		uint64_t legal_moves = getLegalMoves(from, white);
+		while (legal_moves != 0) {
+			int to = findFirstSetBit(legal_moves); // Isolate FSB and get as index
+			// Get piece type at target square
+			ChessAI::PieceType target_piece = getPieceEnum(to);
+			// Get move type
+			ChessAI::MoveType move_type = getMoveType(from, to, piece, target_piece);
+			bool en_passant = (move_type == ChessAI::MoveType::EN_PASSANT);
+			// Encode the move and add to move list
+			uint32_t encoded_move = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::EMPTY, en_passant);
+			move_list[move_count++] = encoded_move;
+			legal_moves ^= 1ULL << to; // Remove the processed square
+		}
+		friendly_pieces ^= 1ULL << from; // Remove the processed square
+	}
+}
+
+ChessAI::PieceType Bitboard::getPieceEnum(int square) const {
+	uint64_t bitboard = 1ULL << square;
+	// Determine piece type at square
+	if (bitboard & (white_pawns | black_pawns)) return ChessAI::PieceType::PAWN;
+	if (bitboard & (white_knights | black_knights)) return ChessAI::PieceType::KNIGHT;
+	if (bitboard & (white_bishops | black_bishops)) return ChessAI::PieceType::BISHOP;
+	if (bitboard & (white_rooks | black_rooks)) return ChessAI::PieceType::ROOK;
+	if (bitboard & (white_queen | black_queen)) return ChessAI::PieceType::QUEEN;
+	if (bitboard & (white_king | black_king)) return ChessAI::PieceType::KING;
+	return ChessAI::PieceType::EMPTY;
+}
+
+ChessAI::MoveType Bitboard::getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const {
+	// Determine move type
+	if (piece == ChessAI::PieceType::PAWN && target_square == en_passant_target) return ChessAI::MoveType::EN_PASSANT;
+	if (piece == ChessAI::PieceType::KING && abs(source_square - target_square) == 2) return ChessAI::MoveType::CASTLING;
+	if (target_piece != ChessAI::PieceType::EMPTY) return ChessAI::MoveType::CAPTURE;
+	// TODO: Add promotion
+	return ChessAI::MoveType::NORMAL;
 }

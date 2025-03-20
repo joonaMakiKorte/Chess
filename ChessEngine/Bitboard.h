@@ -139,6 +139,15 @@ public:
     // Function for ChessAI to generate the legal moves
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
     void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+
+private: 
+	// Helper to get correct piece enum corresponding to the piece type
+	// Used for encoding moves
+	ChessAI::PieceType getPieceEnum(int square) const;
+
+	// Helper to get correct move type depending on the target square and piece type
+	// Used for encoding moves
+	ChessAI::MoveType getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const;
 };
 
 #endif CHESSLOGIC_H
