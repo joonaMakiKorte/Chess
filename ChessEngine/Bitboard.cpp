@@ -837,6 +837,14 @@ inline int Bitboard::get_direction(int diff) {
 	return 0;  // Invalid (should not happen if called correctly)
 }
 
+inline int Bitboard::count_set_bits(const uint64_t& bitboard) {
+#if defined(_MSC_VER) // MSVC
+	return __popcnt64(bitboard);
+#else // GCC and Clang
+	return __builtin_popcountll(bitboard);
+#endif
+}
+
 /*
 * The functions below are used for move generation and move encoding in chessAI
 * The functions are used by the AI to generate all legal moves for a given position
@@ -926,6 +934,36 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 
 	// TODO: add promotion
 
+}
+
+int Bitboard::evaluateBoard(bool white) {
+	int score = 0;
+
+	// Get material score for all pieces in the board
+	// Done by counting the number of set bits in the bitboards (amount of pieces) and multiplying by the piece value
+	score += count_set_bits(white_pawns) * PAWN_VALUE;
+	score += count_set_bits(white_knights) * KNIGHT_VALUE;
+	score += count_set_bits(white_bishops) * BISHOP_VALUE;
+	score += count_set_bits(white_rooks) * ROOK_VALUE;
+	score += count_set_bits(white_queen) * QUEEN_VALUE;
+	score += count_set_bits(white_king) * KING_VALUE;
+
+	score -= count_set_bits(black_pawns) * PAWN_VALUE;
+	score -= count_set_bits(black_knights) * KNIGHT_VALUE;
+	score -= count_set_bits(black_bishops) * BISHOP_VALUE;
+	score -= count_set_bits(black_rooks) * ROOK_VALUE;
+	score -= count_set_bits(black_queen) * QUEEN_VALUE;
+	score -= count_set_bits(black_king) * KING_VALUE;
+
+	// TODO	: Add positional score for all pieces in the board
+
+	// Return the score depending on the turn
+	// For white, the score is positive, for black the score is negative
+	return white ? score : -score;
+}
+
+bool Bitboard::isGameOver(bool white) {
+	return isCheckmate(white) || isStalemate(white);
 }
 
 ChessAI::PieceType Bitboard::getPieceEnum(int square) const {

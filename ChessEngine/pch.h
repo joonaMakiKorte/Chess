@@ -16,5 +16,6 @@
 #include <bit>
 #include <memory>
 #include <array>
+#include <algorithm>S
 
 #endif //PCH_H

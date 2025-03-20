@@ -164,6 +164,9 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
 
+            string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
+            Console.WriteLine(debugMessage);
+
             if (gameState == "M")
             {
                Console.WriteLine("Checkmate! The game is over.");

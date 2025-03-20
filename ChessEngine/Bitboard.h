@@ -1,5 +1,5 @@
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef BITBOARD_H
+#define BITBOARD_H
 
 #include "BitboardConstants.h"
 #include "ChessAI.h"
@@ -57,6 +57,9 @@ public:
     // Get full moves 
     int getFullMoveNumber() const;
 
+    // Helper function to convert a square index to algebraic notation
+    std::string squareToString(int square) const;
+
     // Get all legal moves from a square as a bitboard
     // Takes the source square and turn as the parameters
     uint64_t getLegalMoves(int from, bool white);
@@ -72,9 +75,6 @@ private:
     // To get all occupied squares, combine these two functions with bitwise OR
     uint64_t whitePieces();
     uint64_t blackPieces();
-
-    // Helper function to convert a square index to algebraic notation
-    std::string squareToString(int square) const;
 
     // Helper functions to create legal moves for different piece types
     uint64_t getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
@@ -137,6 +137,9 @@ private:
     // Done by normalizing the movement direction to match one of the 8 possible moving directions
     inline int get_direction(int diff);
 
+	// Helper to count the number of set bits in a bitboard
+	inline int count_set_bits(const uint64_t& bitboard);
+
 public:
     // Function for ChessAI to generate the legal moves
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
@@ -149,6 +152,14 @@ public:
 	// Function for ChessAI to undo the move
 	// Takes the encoded move as a parameter and undoes it
 	void undoMoveAI(uint32_t move, bool white);
+
+    // Function to assign a score to the board
+	// Used for evaluation of the board state
+	int evaluateBoard(bool white);
+
+	// Function to check if the game is over
+	// Checkmate, stalemate or insufficient material
+	bool isGameOver(bool white);
 
 private: 
 	// Helper to get correct piece enum corresponding to the piece type
@@ -168,4 +179,4 @@ private:
 	void undoCastling(bool white, bool kingside);
 };
 
-#endif CHESSLOGIC_H
+#endif BITBOARD_H

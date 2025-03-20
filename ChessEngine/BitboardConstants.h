@@ -18,6 +18,7 @@ constexpr uint64_t RANK_7 = 0x00FF000000000000ULL;
 constexpr uint64_t RANK_8 = 0xFF00000000000000ULL;
 
 // Pre-computed variables
+constexpr int INF = 2147483647; // Infinity
 constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
 constexpr int MAX_MOVES = 256; // Max number of legal moves for a player turn
 // Absolute theoretical maximum would be 218 but we use 256 (a power of 2) for efficient memory alignment
@@ -29,5 +30,13 @@ constexpr uint64_t BLACK_KINGSIDE_CASTLE_SQUARES = (1ULL << 61) | (1ULL << 62); 
 constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) | (1ULL << 59); // (b8, c8, d8)
 constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
 constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
+
+// Piece values for board evaluation
+constexpr int PAWN_VALUE = 100;
+constexpr int KNIGHT_VALUE = 320;
+constexpr int BISHOP_VALUE = 330;
+constexpr int ROOK_VALUE = 500;
+constexpr int QUEEN_VALUE = 900;
+constexpr int KING_VALUE = 20000;
 
 #endif // BITBOARD_CONSTANTS_H

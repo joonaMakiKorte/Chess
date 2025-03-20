@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ChessBoard.h"
+#include "ChessAI.h"
 
 ChessBoard::ChessBoard() : 
     board(Bitboard()),
@@ -22,6 +23,14 @@ void ChessBoard::MovePiece(int source, int target) {
     // Apply move in bitboard
     board.applyMove(source, target, white);
     white = !white; // Switch turn
+
+    if (!white) {
+		std::string bestMove = ChessAI::getBestMoveString(board, 3);
+		UpdateDebugMessage("AI move: " + bestMove);
+    }
+    else {
+        UpdateDebugMessage("Your turn");
+    }
 }
 
 std::string ChessBoard::GetBoardState() {

@@ -1,7 +1,8 @@
 #ifndef CHESSAI_H
-#define CHESSAI_h
+#define CHESSAI_H
 
-#include "Bitboard.h"
+// Forward declaration of Bitboard class
+class Bitboard;
 
 /*
 The ChessAI structures a move in 32 bits:
@@ -15,6 +16,7 @@ The ChessAI structures a move in 32 bits:
 0001 0000 0000 0000 0000 0000 0000 0000  -> special flags (1 bit for en passant)
 
 */
+
 class ChessAI {
 public:
     // Each piece is assigned a unique integer (4 bits)
@@ -62,13 +64,16 @@ public:
 
 private:
     // Get the best move for the current board state
-    uint32_t getBestMove(Bitboard& board, int depth);
+    static uint32_t getBestMove(Bitboard& board, int depth);
 
 	// Minimax algorithm with alpha-beta pruning
 	// Recursively evaluates the board by simulating moves and choosing the best one
 	// Alpha-beta pruning is used to reduce the number of nodes evaluated in the search tree
-    int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
+    static int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
 
+public:
+	// Get the best move as a string in algebraic notation
+    static std::string getBestMoveString(Bitboard& board, int depth);
 };
 
 #endif // !CHESSAI_H
