@@ -34,12 +34,22 @@ void ChessBoard::MakeMoveAI(int depth) {
 		return;
 	}
 
-    // Extract source and target
-    int from = ChessAI::from(best_move);
-    int to = ChessAI::to(best_move);
-
     // Apply move
-    MovePiece(from, to);
+	board.applyMoveAI(best_move, white);
+	white = !white; // Switch turn
+
+}
+
+void ChessBoard::MakePromotion(int target, char promotion) {
+	// Validate promotion piece
+	if (promotion != 'q' && promotion != 'r' && promotion != 'b' && promotion != 'n') {
+		UpdateDebugMessage("Invalid promotion piece");
+		return;
+	}
+	// Apply promotion
+	// Piece has already been moved and turn has changed,
+	// so we negate the turn to apply the promotion to correct side
+	board.applyPromotion(target, promotion, !white);
 }
 
 std::string ChessBoard::GetBoardState() {

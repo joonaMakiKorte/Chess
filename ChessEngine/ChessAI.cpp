@@ -23,6 +23,7 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
         board.applyMoveAI(move_list[i], false, castling_rights, en_passant_target);
 
         // Call minimax (assuming AI plays as Black)
+		// Call with maximizingPlayer = true since AI wants to minimize White's score
         int score = minimax(board, depth - 1, -INF, INF, true);
 
         // Undo move

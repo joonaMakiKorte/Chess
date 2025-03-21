@@ -317,7 +317,10 @@ void Bitboard::applyMove(int source, int target, bool white) {
 		case 'p': white ? capturePiece(black_pawns) : capturePiece(white_pawns); break;
 		case 'n': white ? capturePiece(black_knights) : capturePiece(white_knights); break;
 		case 'b': white ? capturePiece(black_bishops) : capturePiece(white_bishops); break;
-		case 'r': white ? capturePiece(black_rooks) : capturePiece(white_rooks); break;
+		case 'r': white ? capturePiece(black_rooks) : capturePiece(white_rooks);
+			// Update castling rights if rook was captured
+			if (castling_rights != 0) updateRookCastling(!white, target);
+			break;
 		case 'q': white ? capturePiece(black_queen) : capturePiece(white_queen); break;
 		case 'k': white ? capturePiece(black_king) : capturePiece(white_king); break;
 		default: throw std::invalid_argument("Invalid piece type");
@@ -335,6 +338,28 @@ void Bitboard::applyMove(int source, int target, bool white) {
 	}
 	half_moves = 0; // Captures reset halfmove-clock
 	en_passant_target = UNASSIGNED; // Reset en passant; 
+}
+
+void Bitboard::applyPromotion(int target, char promotion, bool white) {
+	uint64_t target_square = 1ULL << target; // Convert target to bitboard
+	// Update the bitboard of the piece moved
+	// Clears target square using bitwise AND with the negation target_square
+	// Sets the target using bitwise OR with target_square
+	// Create lambda for the moving operations
+	auto movePiece = [target_square](uint64_t& piece_bitboard) {
+		piece_bitboard |= target_square; // Set target square
+		};
+	// Call movePiece depending which turn ongoing
+	switch (promotion)
+	{
+	case 'n': white ? movePiece(white_knights) : movePiece(black_knights); break;
+	case 'b': white ? movePiece(white_bishops) : movePiece(black_bishops); break;
+	case 'r': white ? movePiece(white_rooks) : movePiece(black_rooks); break;
+	case 'q': white ? movePiece(white_queen) : movePiece(black_queen); break;
+	default: throw std::invalid_argument("Invalid promotion type");
+	}
+	// Clear pawn from target square
+	(white ? white_pawns : black_pawns) &= ~target_square;
 }
 
 uint64_t Bitboard::whitePieces() {
@@ -868,11 +893,20 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 			// Get piece type at target square
 			ChessAI::PieceType target_piece = getPieceEnum(to);
 			// Get move type
-			ChessAI::MoveType move_type = getMoveType(from, to, piece, target_piece);
-			bool en_passant = (move_type == ChessAI::MoveType::EN_PASSANT);
-			// Encode the move and add to move list
-			uint32_t encoded_move = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::EMPTY, en_passant);
-			move_list[move_count++] = encoded_move;
+			ChessAI::MoveType move_type = getMoveType(from, to, piece, target_piece, white);
+			// If move was promotion, add all possible promotions to move list
+			if (move_type == ChessAI::MoveType::PROMOTION || move_type == ChessAI::MoveType::PROMOTION_CAPTURE) {
+				// Add all possible promotions to move list
+				move_list[move_count++] = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::QUEEN, false);
+				move_list[move_count++] = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::ROOK, false);
+				move_list[move_count++] = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::BISHOP, false);
+				move_list[move_count++] = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::KNIGHT, false);
+			}
+			else {
+				// Encode the move and add to move list
+				bool en_passant = (move_type == ChessAI::MoveType::EN_PASSANT);
+				move_list[move_count++] = ChessAI::encodeMove(from, to, piece, target_piece, move_type, ChessAI::PieceType::EMPTY, en_passant);
+			}
 			legal_moves ^= 1ULL << to; // Remove the processed square
 		}
 		friendly_pieces ^= 1ULL << from; // Remove the processed square
@@ -891,6 +925,42 @@ void Bitboard::applyMoveAI(uint32_t move, bool white, uint8_t& prev_castling_rig
 	// Call applyMove depending which turn ongoing
 	// applyMove handles all the move logic
 	applyMove(source, target, white);
+
+	// Handle promotion
+	if (ChessAI::moveType(move) == ChessAI::MoveType::PROMOTION || ChessAI::moveType(move) == ChessAI::MoveType::PROMOTION_CAPTURE) {
+		// Get promotion piece and promote pawn
+		ChessAI::PieceType promotion = ChessAI::promotion(move);
+		switch (promotion) {
+		case ChessAI::PieceType::QUEEN: applyPromotion(target, 'q', white); break;
+		case ChessAI::PieceType::ROOK: applyPromotion(target, 'r', white); break;
+		case ChessAI::PieceType::BISHOP: applyPromotion(target, 'b', white); break;
+		case ChessAI::PieceType::KNIGHT: applyPromotion(target, 'n', white); break;
+		default: throw std::invalid_argument("Invalid promotion piece");
+		}
+	}
+}
+
+void Bitboard::applyMoveAI(uint32_t move, bool white) {
+	// Decode source and target squares
+	int source = ChessAI::from(move);
+	int target = ChessAI::to(move);
+
+	// Call applyMove depending which turn ongoing
+	// applyMove handles all the move logic
+	applyMove(source, target, white);
+
+	// Handle promotion
+	if (ChessAI::moveType(move) == ChessAI::MoveType::PROMOTION || ChessAI::moveType(move) == ChessAI::MoveType::PROMOTION_CAPTURE) {
+		// Get promotion piece and promote pawn
+		ChessAI::PieceType promotion = ChessAI::promotion(move);
+		switch (promotion) {
+		case ChessAI::PieceType::QUEEN: applyPromotion(target, 'q', white); break;
+		case ChessAI::PieceType::ROOK: applyPromotion(target, 'r', white); break;
+		case ChessAI::PieceType::BISHOP: applyPromotion(target, 'b', white); break;
+		case ChessAI::PieceType::KNIGHT: applyPromotion(target, 'n', white); break;
+		default: throw std::invalid_argument("Invalid promotion piece");
+		}
+	}
 }
 
 void Bitboard::undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_rights, int prev_en_passant) {
@@ -901,37 +971,49 @@ void Bitboard::undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_right
 	ChessAI::PieceType target_piece = ChessAI::capturedPiece(move);
 	ChessAI::MoveType move_type = ChessAI::moveType(move);
 	ChessAI::PieceType promotion = ChessAI::promotion(move);
-	bool en_passant = ChessAI::isEnPassant(move);
-
-	// Move source piece back to source square
-	uint64_t& source_bitboard = getPieceBitboard(source_piece, white);
-	source_bitboard |= 1ULL << source; // Move to original position
-	source_bitboard &= ~(1ULL << target); // Clear target square
-
-	// Restore captured piece (if any)
-	if (target_piece != ChessAI::PieceType::EMPTY) {
-		uint64_t& target_bitboard = getPieceBitboard(target_piece, !white);
-		target_bitboard |= 1ULL << target; // Restore captured piece
-	}
 
 	// Restore castling rights and en passant target
 	castling_rights = prev_castling_rights;
 	en_passant_target = prev_en_passant;
 
-	// Handle en passant
+	// Move source piece back to source square
+	// Doesn't differ for any move type
+	uint64_t& source_bitboard = getPieceBitboard(source_piece, white);
+	source_bitboard |= 1ULL << source; // Move to original position
+
+	// Handle special cases
+
+	// Restore captured piece if move was a capture
+	if (move_type == ChessAI::MoveType::CAPTURE || move_type == ChessAI::MoveType::PROMOTION_CAPTURE) {
+		uint64_t& target_bitboard = getPieceBitboard(target_piece, !white);
+		target_bitboard |= 1ULL << target; // Restore captured piece
+	}
+
+	// Restore en passant pawn if move was en passant
 	if (move_type == ChessAI::MoveType::EN_PASSANT) {
-		int en_passant_square = white ? (prev_en_passant - 8) : (prev_en_passant + 8);
+		// Determine en passant square
+		int en_passant_square = white ? (target - 8) : (target + 8);
 		uint64_t& en_passant_pawn = getPieceBitboard(ChessAI::PieceType::PAWN, !white);
 		en_passant_pawn |= 1ULL << en_passant_square; // Restore captured pawn
 	}
-	// Handle castling
-	else if (move_type == ChessAI::MoveType::CASTLING) {
+
+	// Restore rook to original position if move was castling
+	if (move_type == ChessAI::MoveType::CASTLING) {
+		// Determine if kingside or queenside castling
 		bool kingside = target == 6 || target == 62;
 		undoCastling(white, kingside);
 	}
 
-	// TODO: add promotion
+	// Restore promotion piece if move was promotion
+	if (move_type == ChessAI::MoveType::PROMOTION || move_type == ChessAI::MoveType::PROMOTION_CAPTURE) {
+		uint64_t& promoted_piece = getPieceBitboard(promotion, white);
+		promoted_piece &= ~(1ULL << target); // Clear promotion square
+	}
 
+	// Remove the piece from the target square (applies to all non-promotion moves)
+	if (move_type != ChessAI::MoveType::PROMOTION && move_type != ChessAI::MoveType::PROMOTION_CAPTURE) {
+		source_bitboard &= ~(1ULL << target);
+	}
 }
 
 int Bitboard::evaluateBoard(bool white) {
@@ -990,12 +1072,16 @@ uint64_t& Bitboard::getPieceBitboard(ChessAI::PieceType piece, bool white) {
 	}
 }
 
-ChessAI::MoveType Bitboard::getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const {
+ChessAI::MoveType Bitboard::getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece, bool white) const {
 	// Determine move type
-	if (piece == ChessAI::PieceType::PAWN && target_square == en_passant_target) return ChessAI::MoveType::EN_PASSANT;
+	if (piece == ChessAI::PieceType::PAWN) {
+		if (target_square == en_passant_target) return ChessAI::MoveType::EN_PASSANT;
+		if ((white && target_square >= 56) || (!white && target_square <= 7)) {
+			return (target_piece == ChessAI::PieceType::EMPTY) ? ChessAI::MoveType::PROMOTION : ChessAI::MoveType::PROMOTION_CAPTURE;
+		}
+	}
 	if (piece == ChessAI::PieceType::KING && abs(source_square - target_square) == 2) return ChessAI::MoveType::CASTLING;
 	if (target_piece != ChessAI::PieceType::EMPTY) return ChessAI::MoveType::CAPTURE;
-	// TODO: Add promotion
 	return ChessAI::MoveType::NORMAL;
 }
 

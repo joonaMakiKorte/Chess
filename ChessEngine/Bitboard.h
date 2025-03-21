@@ -65,6 +65,11 @@ public:
     // Move is applied only after making sure its legal, meaning no need to check for validity
     void applyMove(int source, int target, bool white);
 
+    // Apply promotion by updating bitboards
+	// Move has already been applied , so only need to promote the pawn
+	// Takes the target square and promotion piece as parameters
+	void applyPromotion(int target, char promotion, bool white);
+
 private:
     // Get locations of white or black pieces (bitboard)
      // Uses bitwise OR operation to combine occupancy of all pieces of same color
@@ -148,6 +153,7 @@ public:
 	// Takes the encoded move as a parameter and applies it to the board
     // Also saves the en passant target and castling rights before applying move for later undoign
 	void applyMoveAI(uint32_t move, bool white, uint8_t& prev_castling_rights, int& prev_en_passant);
+	void applyMoveAI(uint32_t move, bool white); // Overload for applying move without saving castling rights and en passant
 
 	// Function for ChessAI to undo the move
 	// Takes the encoded move as a parameter and undoes it
@@ -172,7 +178,7 @@ private:
 
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
-	ChessAI::MoveType getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const;
+	ChessAI::MoveType getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece, bool white) const;
 
 	// Helper for undoing castling, moves rook back to original position
 	// Takes the active color and castling side as parameters

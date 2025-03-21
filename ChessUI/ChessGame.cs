@@ -160,6 +160,15 @@ namespace Chess
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, source, target);
 
+            // Temporary pawn promotion logic
+            // Is promotion when pawn reaches the last rank
+            if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) || 
+               ( pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
+            {
+                ChessEngineInterop.MakePromotion(board, target, 'q');
+            }
+
+
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
@@ -188,7 +197,7 @@ namespace Chess
 
         public void MakeBlackMove()
         {
-            ChessEngineInterop.MakeBestMove(board, 3);
+            ChessEngineInterop.MakeBestMove(board, 5);
 
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>

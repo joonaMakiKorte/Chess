@@ -30,6 +30,9 @@ public:
     // Determined by search depth
     void MakeMoveAI(int depth);
 
+	// Promote the pawn at target square to a piece of choice
+	void MakePromotion(int target, char promotion);
+
     // Return board state as a FEN string (Forsyth-Edwards Notation)
     // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 -
     // Explanation:
