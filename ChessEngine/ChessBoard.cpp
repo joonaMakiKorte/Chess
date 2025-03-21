@@ -23,14 +23,23 @@ void ChessBoard::MovePiece(int source, int target) {
     // Apply move in bitboard
     board.applyMove(source, target, white);
     white = !white; // Switch turn
+}
 
-    if (!white) {
-		std::string bestMove = ChessAI::getBestMoveString(board, 3);
-		UpdateDebugMessage("AI move: " + bestMove);
-    }
-    else {
-        UpdateDebugMessage("Your turn");
-    }
+void ChessBoard::MakeMoveAI(int depth) {
+    // Get best move in encoded form
+    uint32_t best_move = ChessAI::getBestMove(board, depth);
+
+	if (best_move == 0) {
+		UpdateDebugMessage("No legal moves available");
+		return;
+	}
+
+    // Extract source and target
+    int from = ChessAI::from(best_move);
+    int to = ChessAI::to(best_move);
+
+    // Apply move
+    MovePiece(from, to);
 }
 
 std::string ChessBoard::GetBoardState() {

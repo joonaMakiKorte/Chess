@@ -11,21 +11,25 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
         return 0; // No legal moves available
     }
 
-    int bestScore = -INF;
+    int bestScore = INF; // Black wants to minimize White's evaluation
     uint32_t bestMove = 0;
 
     for (int i = 0; i < move_count; i++) {
+        // Save en passant and castling rights for undoing
+        uint8_t castling_rights = 0;
+        int en_passant_target = UNASSIGNED;
+
         // Apply the move
-        board.applyMoveAI(move_list[i], false);
+        board.applyMoveAI(move_list[i], false, castling_rights, en_passant_target);
 
         // Call minimax (assuming AI plays as Black)
-        int score = minimax(board, depth - 1, -INF, INF, false);
+        int score = minimax(board, depth - 1, -INF, INF, true);
 
         // Undo move
-        board.undoMoveAI(move_list[i], false);
+        board.undoMoveAI(move_list[i], false, castling_rights, en_passant_target);
 
-        // Check if the move is better
-        if (score >= bestScore) {
+		// Black wants to minimize White's score
+        if (score < bestScore) {
             bestScore = score;
             bestMove = move_list[i];
         }
@@ -46,9 +50,12 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     if (maximizingPlayer) { // AI (Black) tries to maximize
         int maxEval = -INF;
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizingPlayer);
+            // Save en passant and castling rights for undoing
+            uint8_t castling_rights = 0;
+            int en_passant_target = UNASSIGNED;
+            board.applyMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
-            board.undoMoveAI(move_list[i], maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
 			maxEval = max(maxEval, eval);
             alpha = max(alpha, eval);
             if (beta <= alpha) break; // Alpha-beta pruning
@@ -58,27 +65,16 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     else { // Opponent (White) tries to minimize
         int minEval = INF;
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizingPlayer);
+            // Save en passant and castling rights for undoing
+            uint8_t castling_rights = 0;
+            int en_passant_target = UNASSIGNED;
+            board.applyMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
-            board.undoMoveAI(move_list[i], maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
             minEval = min(minEval, eval);
             beta = min(beta, eval);
             if (beta <= alpha) break; // Alpha-beta pruning
         }
         return minEval;
     }
-}
-
-std::string ChessAI::getBestMoveString(Bitboard& board, int depth) {
-    // Generate the best move
-	uint32_t bestMove = getBestMove(board, depth);
-
-	// Turn the move into algebraic notation
-	int from = ChessAI::from(bestMove);
-	int to = ChessAI::to(bestMove);
-
-	std::string from_square = board.squareToString(from);
-	std::string to_square = board.squareToString(to);
-
-	return from_square + to_square;
 }

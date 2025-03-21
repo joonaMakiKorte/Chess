@@ -186,6 +186,20 @@ namespace Chess
 
         }
 
+        public void MakeBlackMove()
+        {
+            ChessEngineInterop.MakeBestMove(board, 3);
+
+            // Ensure all UI updates happen on the main thread
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // Update local board state from DLL
+                string fen = ChessEngineInterop.GetBoardStateString(board);
+                LoadFromFEN(fen);
+                Console.WriteLine(fen);
+            });
+        }
+
         // Destroy board
         public void Dispose()
         {

@@ -30,6 +30,7 @@ namespace Chess
         private BoardUI boardUI;
         private BoardInteract boardInteract;
         private AudioPlayer audioPlayer;
+        private object pieceGrid;
 
         public MainWindow(string gameMode, string aiDifficulty, string timer)
         {
@@ -49,7 +50,7 @@ namespace Chess
 
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);         
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);
         }
 
     }

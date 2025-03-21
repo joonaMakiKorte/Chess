@@ -63,17 +63,14 @@ public:
     static bool isEnPassant(uint32_t move) { return (move >> 28) & 1; }
 
 private:
-    // Get the best move for the current board state
-    static uint32_t getBestMove(Bitboard& board, int depth);
-
 	// Minimax algorithm with alpha-beta pruning
 	// Recursively evaluates the board by simulating moves and choosing the best one
 	// Alpha-beta pruning is used to reduce the number of nodes evaluated in the search tree
     static int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
 
 public:
-	// Get the best move as a string in algebraic notation
-    static std::string getBestMoveString(Bitboard& board, int depth);
+    // Get the best move for the current board state
+    static uint32_t getBestMove(Bitboard& board, int depth);
 };
 
 #endif // !CHESSAI_H

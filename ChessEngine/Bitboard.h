@@ -26,7 +26,6 @@ private:
     // Bit 2 : Black kingside(k)
     // Bit 3 : Black queenside(q)
     uint8_t castling_rights;
-	uint8_t previous_castling_rights; // Store previous castling rights (for undoing)
 
     // The square where a pawn can be captured en passant
     // If not possible, set UNASSIGNED
@@ -57,9 +56,6 @@ public:
     // Get full moves 
     int getFullMoveNumber() const;
 
-    // Helper function to convert a square index to algebraic notation
-    std::string squareToString(int square) const;
-
     // Get all legal moves from a square as a bitboard
     // Takes the source square and turn as the parameters
     uint64_t getLegalMoves(int from, bool white);
@@ -75,6 +71,9 @@ private:
     // To get all occupied squares, combine these two functions with bitwise OR
     uint64_t whitePieces();
     uint64_t blackPieces();
+
+    // Helper function to convert a square index to algebraic notation
+    std::string squareToString(int square) const;
 
     // Helper functions to create legal moves for different piece types
     uint64_t getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
@@ -147,11 +146,12 @@ public:
 
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
-	void applyMoveAI(uint32_t move, bool white);
+    // Also saves the en passant target and castling rights before applying move for later undoign
+	void applyMoveAI(uint32_t move, bool white, uint8_t& prev_castling_rights, int& prev_en_passant);
 
 	// Function for ChessAI to undo the move
 	// Takes the encoded move as a parameter and undoes it
-	void undoMoveAI(uint32_t move, bool white);
+	void undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_rights, int prev_en_passant);
 
     // Function to assign a score to the board
 	// Used for evaluation of the board state
@@ -174,7 +174,7 @@ private:
 	// Used for encoding moves
 	ChessAI::MoveType getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece) const;
 
-	// Helper for undoing castling, moves rook back to original position and resets correct castling rights
+	// Helper for undoing castling, moves rook back to original position
 	// Takes the active color and castling side as parameters
 	void undoCastling(bool white, bool kingside);
 };

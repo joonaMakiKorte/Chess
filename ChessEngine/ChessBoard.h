@@ -26,6 +26,10 @@ public:
     // Is called in C# if validating move successful
     void MovePiece(int source, int target);
 
+    // Get best move for black pieces and apply it
+    // Determined by search depth
+    void MakeMoveAI(int depth);
+
     // Return board state as a FEN string (Forsyth-Edwards Notation)
     // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 -
     // Explanation:

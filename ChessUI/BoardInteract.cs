@@ -30,8 +30,13 @@ namespace Chess
 
             // Attach event handler directly to constructor
             this.pieceGrid.MouseDown += PieceGrid_MouseDown;
+            this.pieceGrid.KeyDown += PieceGrid_KeyDown;
 
             muteButton.Click += MuteButton_Click;
+
+            // Ensure pieceGrid can receive key events
+            this.pieceGrid.Focusable = true;
+            this.pieceGrid.Focus();  // Force focus to receive key events
         }
 
 
@@ -98,8 +103,6 @@ namespace Chess
                 {
                     chessGame.MovePiece(source, target);
                     boardUi.UpdateBoard(chessGame.GetBoardState());
-
-                    
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
                 }
 
@@ -117,7 +120,29 @@ namespace Chess
             }
         }
 
-        
-        
+
+        // Temporary function
+        // Make AI move on Enter key press
+        private async void PieceGrid_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && !chessGame.IsWhiteTURN()) // If it's Black's turn
+            {
+                Console.WriteLine("Pressed enter");
+                await Task.Run(() =>
+                {
+                    chessGame.MakeBlackMove(); // Run AI move on a separate thread
+                });
+
+                // Ensure UI updates happen on the main thread
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    boardUi.UpdateBoard(chessGame.GetBoardState());
+                    boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+                    boardUi.ClearHighlights();
+                    boardUi.ClearValidMoveHighlights();
+                    selectedPiece = null; // Deselect after move
+                });
+            }
+        }
     }
 }

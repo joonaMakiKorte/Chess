@@ -5,7 +5,6 @@
 
 Bitboard::Bitboard():
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
-	previous_castling_rights(0x0F),		   // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	half_moves(0),                         // Initially 0
 	full_moves(0)                          // Initially 0
@@ -264,9 +263,6 @@ void Bitboard::applyMove(int source, int target, bool white) {
 
 	// Before applying move check if target is an empty square
 	bool empty = target_piece == '\0';
-
-	// Also store the previous castling rights
-	previous_castling_rights = castling_rights;
 
 	++half_moves; // Increment half moves
 	++full_moves; // Increment full moves
@@ -620,7 +616,7 @@ void Bitboard::updateRookCastling(bool white, int source) {
 		if (source % 8 == 0) { // Queenside
 			castling_rights &= ~0x02;
 		}
-		else if (source % 7 == 0) { // Kingside
+		else if (source % 8 == 7) { // Kingside
 			castling_rights &= ~0x01;
 		}
 	}
@@ -883,17 +879,21 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 	}
 }
 
-void Bitboard::applyMoveAI(uint32_t move, bool white) {
+void Bitboard::applyMoveAI(uint32_t move, bool white, uint8_t& prev_castling_rights, int& prev_en_passant) {
 	// Decode source and target squares
 	int source = ChessAI::from(move);
 	int target = ChessAI::to(move);
+
+	// Save en passant and castling rights
+	prev_castling_rights = castling_rights;
+	prev_en_passant = en_passant_target;
 
 	// Call applyMove depending which turn ongoing
 	// applyMove handles all the move logic
 	applyMove(source, target, white);
 }
 
-void Bitboard::undoMoveAI(uint32_t move, bool white) {
+void Bitboard::undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_rights, int prev_en_passant) {
 	// Decode the move
 	int source = ChessAI::from(move);
 	int target = ChessAI::to(move);
@@ -904,32 +904,30 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 	bool en_passant = ChessAI::isEnPassant(move);
 
 	// Move source piece back to source square
-	uint64_t& source_bitboard = getPieceBitboard(source_piece, white); // Get the correct piece bitboard
+	uint64_t& source_bitboard = getPieceBitboard(source_piece, white);
 	source_bitboard |= 1ULL << source; // Move to original position
 	source_bitboard &= ~(1ULL << target); // Clear target square
 
-	// Move target piece back to target square if capture
+	// Restore captured piece (if any)
 	if (target_piece != ChessAI::PieceType::EMPTY) {
-		uint64_t& target_bitboard = getPieceBitboard(target_piece, !white); // Get the correct piece bitboard
-		target_bitboard |= 1ULL << target; // Move to original position
+		uint64_t& target_bitboard = getPieceBitboard(target_piece, !white);
+		target_bitboard |= 1ULL << target; // Restore captured piece
 	}
 
-	// Check if castling rights need to be restored
-	if (previous_castling_rights != castling_rights) {
-		castling_rights = previous_castling_rights;
-	}
+	// Restore castling rights and en passant target
+	castling_rights = prev_castling_rights;
+	en_passant_target = prev_en_passant;
 
-	// Handle special moves
+	// Handle en passant
 	if (move_type == ChessAI::MoveType::EN_PASSANT) {
-		en_passant_target = target; // Reset en passant target
-		// Pawn captured with en passant is one rank behind the target square
-		int en_passant_square = white ? (target - 8) : (target + 8);
+		int en_passant_square = white ? (prev_en_passant - 8) : (prev_en_passant + 8);
 		uint64_t& en_passant_pawn = getPieceBitboard(ChessAI::PieceType::PAWN, !white);
-		en_passant_pawn |= 1ULL << en_passant_square; // Move captured pawn back to original position
+		en_passant_pawn |= 1ULL << en_passant_square; // Restore captured pawn
 	}
+	// Handle castling
 	else if (move_type == ChessAI::MoveType::CASTLING) {
-		bool kingside = target == 6 || target == 62; // Determine if kingside or queenside castling
-		undoCastling(white, kingside); // Undo castling
+		bool kingside = target == 6 || target == 62;
+		undoCastling(white, kingside);
 	}
 
 	// TODO: add promotion
@@ -1007,24 +1005,24 @@ void Bitboard::undoCastling(bool white, bool kingside) {
 		if (kingside) {
 			rook = (1ULL << 5); // White rook on f1
 			white_rooks &= ~rook; // Remove rook from f1
-			white_rooks |= (rook << 2); // Move rook to h1
+			white_rooks |= (1ULL << 7); // Move rook to h1
 		}
 		else {
 			rook = (1ULL << 3); // White rook on d1
 			white_rooks &= ~rook; // Remove rook from d1
-			white_rooks |= (rook >> 3); // Move rook to a1
+			white_rooks |= (1ULL << 0); // Move rook to a1
 		}
 	}
 	else {
 		if (kingside) {
 			rook = (1ULL << 61); // Black rook on f8
 			black_rooks &= ~rook; // Remove rook from f8
-			black_rooks |= (rook << 2); // Move rook to h8
+			black_rooks |= (1ULL << 63); // Move rook to h8
 		}
 		else {
 			rook = (1ULL << 59); // Black rook on d8
 			black_rooks &= ~rook; // Remove rook from d8
-			black_rooks |= (rook >> 3); // Move rook to a8
+			black_rooks |= (1ULL << 56); // Move rook to a8
 		}
 	}
 }
