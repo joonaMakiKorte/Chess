@@ -31,6 +31,27 @@ constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) 
 constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
 constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
 
+// Each piece is assigned a unique integer (4 bits)
+const enum PieceType : uint8_t {
+    EMPTY = 0,   // No piece
+    PAWN = 1,
+    KNIGHT = 2,
+    BISHOP = 3,
+    ROOK = 4,
+    QUEEN = 5,
+    KING = 6
+};
+
+// Defines the type of move (4 bits)
+const enum MoveType : uint8_t {
+    NORMAL = 0,        // Standard move
+    CAPTURE = 1,       // Capturing a piece
+    CASTLING = 2,      // Castling (O-O, O-O-O)
+    EN_PASSANT = 3,    // En passant capture
+    PROMOTION = 4,     // Pawn promotion
+    PROMOTION_CAPTURE = 5  // Pawn promotion with capture
+};
+
 // Piece values for board evaluation
 constexpr int PAWN_VALUE = 100;
 constexpr int KNIGHT_VALUE = 320;

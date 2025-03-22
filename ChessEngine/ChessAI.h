@@ -1,6 +1,8 @@
 #ifndef CHESSAI_H
 #define CHESSAI_H
 
+#include "BitboardConstants.h"
+
 // Forward declaration of Bitboard class
 class Bitboard;
 
@@ -18,28 +20,6 @@ The ChessAI structures a move in 32 bits:
 */
 
 class ChessAI {
-public:
-    // Each piece is assigned a unique integer (4 bits)
-    enum PieceType : uint8_t {
-        EMPTY = 0,   // No piece
-        PAWN = 1,
-        KNIGHT = 2,
-        BISHOP = 3,
-        ROOK = 4,
-        QUEEN = 5,
-        KING = 6
-    };
-
-    // Defines the type of move (4 bits)
-    enum MoveType : uint8_t {
-        NORMAL = 0,        // Standard move
-        CAPTURE = 1,       // Capturing a piece
-        CASTLING = 2,      // Castling (O-O, O-O-O)
-        EN_PASSANT = 3,    // En passant capture
-        PROMOTION = 4,     // Pawn promotion
-        PROMOTION_CAPTURE = 5  // Pawn promotion with capture
-    };
-
 public:
     // Pack a move into an integer
 	// Must be static since used in Bitboard.cpp without an instance

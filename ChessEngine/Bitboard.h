@@ -39,7 +39,7 @@ public:
     Bitboard();
 
     // Helper to get the piece type at a given square
-    char getPieceType(int square) const;
+    char getPieceTypeChar(int square) const;
 
     // Helper function to get castling rights as a string
     std::string getCastlingRightsString() const;
@@ -170,15 +170,15 @@ public:
 private: 
 	// Helper to get correct piece enum corresponding to the piece type
 	// Used for encoding moves
-	ChessAI::PieceType getPieceEnum(int square) const;
+	PieceType getPieceType(int square) const;
 
     // Helper to get the correct piece bitboard as a reference from enum
 	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
-	uint64_t& getPieceBitboard(ChessAI::PieceType piece, bool white);
+	uint64_t& getPieceBitboard(PieceType piece, bool white);
 
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
-	ChessAI::MoveType getMoveType(int source_square, int target_square, ChessAI::PieceType piece, ChessAI::PieceType target_piece, bool white) const;
+	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
 
 	// Helper for undoing castling, moves rook back to original position
 	// Takes the active color and castling side as parameters

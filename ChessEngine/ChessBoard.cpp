@@ -10,7 +10,7 @@ ChessBoard::ChessBoard() :
 
 uint64_t ChessBoard::LegalMoves(int square) {
     // Validate move notation
-    if (!(0 <= square <= 63)) return 0ULL;
+    if (square < 0 || square > 63) return 0ULL;
 
     // Get all legal moves from the source square
     return board.getLegalMoves(square, white);
@@ -18,7 +18,7 @@ uint64_t ChessBoard::LegalMoves(int square) {
 
 void ChessBoard::MovePiece(int source, int target) {
     // Validate move notations
-    if (!(0 <= source <= 63) || !(0 <= target <= 63)) return;
+    if (source < 0 || source > 63 || target < 0 || target > 63) return;
 
     // Apply move in bitboard
     board.applyMove(source, target, white);
@@ -63,7 +63,7 @@ std::string ChessBoard::GetBoardState() {
             int square = rank * 8 + file; // Get current square as bitboard
 
             // Get piece type at square
-            char piece = board.getPieceType(square);
+            char piece = board.getPieceTypeChar(square);
 
             // If empty continue
             if (piece == '\0') {
