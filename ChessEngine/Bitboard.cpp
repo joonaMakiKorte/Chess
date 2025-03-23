@@ -535,6 +535,10 @@ uint64_t Bitboard::getKingMoves(int square, uint64_t white_pieces, uint64_t blac
 		if (square == 60) moves |= getCastlingMoves(white);
 	}
 
+	// Exlude enemy king's adjacent squares
+	uint64_t enemy_king = white ? black_king : white_king;
+	moves &= ~KING_MOVES[findFirstSetBit(enemy_king)].moves;
+
 	// King can't move into check
 	// Get potential squares where enemy could attack (results in check)
 	// This also includes the squares where king moves to capture an opposite piece and ends up in check
@@ -551,7 +555,7 @@ uint64_t Bitboard::getKingMoves(int square, uint64_t white_pieces, uint64_t blac
 
 	// Get all the potential enemy attacks after the captures and combine with currently possible attacks
 	enemy_attacks |= getAttackSquares(white_pieces, black_pieces, white);
-	moves &= ~enemy_attacks; // Squares left after realistic and potential attacks are where king can move
+	moves &= ~enemy_attacks;
 
 	return moves; 
 }
