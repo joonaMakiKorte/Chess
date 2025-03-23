@@ -183,6 +183,16 @@ private:
 	// Helper for undoing castling, moves rook back to original position
 	// Takes the active color and castling side as parameters
 	void undoCastling(bool white, bool kingside);
+
+    // Calculate the material score of the board
+	int calculateMaterialScore(bool white);
+
+	// Calculate the positional score of the board
+	int calculatePositionalScore(bool white);
+
+	// Determine the game phase score (middle or endgame)
+    // Is based on the remaining pieces
+	int calculateGamePhase();
 };
 
 #endif BITBOARD_H

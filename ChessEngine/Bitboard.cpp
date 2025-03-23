@@ -1017,29 +1017,12 @@ void Bitboard::undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_right
 }
 
 int Bitboard::evaluateBoard(bool white) {
-	int score = 0;
+	// Calculate material and positional score
+	int material_score = calculateMaterialScore(white);
+	int positional_score = calculatePositionalScore(white);
 
-	// Get material score for all pieces in the board
-	// Done by counting the number of set bits in the bitboards (amount of pieces) and multiplying by the piece value
-	score += count_set_bits(white_pawns) * PAWN_VALUE;
-	score += count_set_bits(white_knights) * KNIGHT_VALUE;
-	score += count_set_bits(white_bishops) * BISHOP_VALUE;
-	score += count_set_bits(white_rooks) * ROOK_VALUE;
-	score += count_set_bits(white_queen) * QUEEN_VALUE;
-	score += count_set_bits(white_king) * KING_VALUE;
-
-	score -= count_set_bits(black_pawns) * PAWN_VALUE;
-	score -= count_set_bits(black_knights) * KNIGHT_VALUE;
-	score -= count_set_bits(black_bishops) * BISHOP_VALUE;
-	score -= count_set_bits(black_rooks) * ROOK_VALUE;
-	score -= count_set_bits(black_queen) * QUEEN_VALUE;
-	score -= count_set_bits(black_king) * KING_VALUE;
-
-	// TODO	: Add positional score for all pieces in the board
-
-	// Return the score depending on the turn
-	// For white, the score is positive, for black the score is negative
-	return white ? score : -score;
+	// Return the total score
+	return material_score + positional_score;
 }
 
 bool Bitboard::isGameOver(bool white) {
@@ -1111,4 +1094,106 @@ void Bitboard::undoCastling(bool white, bool kingside) {
 			black_rooks |= (1ULL << 56); // Move rook to a8
 		}
 	}
+}
+
+int Bitboard::calculateMaterialScore(bool white) {
+	int white_score = 0;
+	int black_score = 0;
+
+	// Get material score for all pieces in the board
+	// Done by counting the number of set bits in the bitboards (amount of pieces) and multiplying by the piece value
+	white_score += count_set_bits(white_pawns) * PAWN_VALUE;
+	white_score += count_set_bits(white_knights) * KNIGHT_VALUE;
+	white_score += count_set_bits(white_bishops) * BISHOP_VALUE;
+	white_score += count_set_bits(white_rooks) * ROOK_VALUE;
+	white_score += count_set_bits(white_queen) * QUEEN_VALUE;
+	white_score += count_set_bits(white_king) * KING_VALUE;
+
+	black_score += count_set_bits(black_pawns) * PAWN_VALUE;
+	black_score += count_set_bits(black_knights) * KNIGHT_VALUE;
+	black_score += count_set_bits(black_bishops) * BISHOP_VALUE;
+	black_score += count_set_bits(black_rooks) * ROOK_VALUE;
+	black_score += count_set_bits(black_queen) * QUEEN_VALUE;
+	black_score += count_set_bits(black_king) * KING_VALUE;
+
+	// Calculate the difference: white's score minus black's score
+	int score = white_score - black_score;
+
+	// Return the score depending on the turn
+	// For white, the score is positive, for black the score is negative
+	return white ? score : -score;
+}
+
+int Bitboard::calculatePositionalScore(bool white) {
+	int white_score = 0;
+	int black_score = 0;
+
+	int game_phase = calculateGamePhase(); // Get the game phase score
+
+	// Calculate positional scoring for both sides
+	// Done by looping over all pieces and getting the positional score at the current square
+	uint64_t white_pieces = whitePieces();
+	while (white_pieces != 0) {
+		int square = findLastSetBit(white_pieces); // Extract LSB
+		PieceType piece = getPieceType(square); // Get piece type at square
+		int row = 7 - (square / 8); // Convert square to row (0-7) for white
+		int col = square % 8; // Convert square to column (0-7)
+
+		// Add positional score for white
+		if (piece == PieceType::PAWN) white_score += (game_phase * PawnTableMid[row][col] + (1 - game_phase) * PawnTableEnd[row][col]);
+		else if (piece == PieceType::KNIGHT) white_score += (game_phase * KnightTableMid[row][col] + (1 - game_phase) * KnightTableEnd[row][col]);
+		else if (piece == PieceType::BISHOP) white_score += (game_phase * BishopTableMid[row][col] + (1 - game_phase) * BishopTableEnd[row][col]);
+		else if (piece == PieceType::ROOK) white_score += (game_phase * RookTableMid[row][col] + (1 - game_phase) * RookTableEnd[row][col]);
+		else if (piece == PieceType::QUEEN) white_score += (game_phase * QueenTableMid[row][col] + (1 - game_phase) * QueenTableEnd[row][col]);
+		else if (piece == PieceType::KING) white_score += (game_phase * KingTableMid[row][col] + (1 - game_phase) * KingTableEnd[row][col]);
+
+		white_pieces ^= 1ULL << square; // Remove the processed square
+	}
+
+	uint64_t black_pieces = blackPieces();
+	while (black_pieces != 0) {
+		int square = findLastSetBit(black_pieces); // Extract LSB
+		PieceType piece = getPieceType(square); // Get piece type at square
+		int row = square / 8; // Convert square to row (0-7) for black
+		int col = 7 - (square % 8); // Convert square to column (0-7)
+
+		// Add positional score for black
+		if (piece == PieceType::PAWN) black_score += (game_phase * PawnTableMid[row][col] + (1 - game_phase) * PawnTableEnd[row][col]);
+		else if (piece == PieceType::KNIGHT) black_score += (game_phase * KnightTableMid[row][col] + (1 - game_phase) * KnightTableEnd[row][col]);
+		else if (piece == PieceType::BISHOP) black_score += (game_phase * BishopTableMid[row][col] + (1 - game_phase) * BishopTableEnd[row][col]);
+		else if (piece == PieceType::ROOK) black_score += (game_phase * RookTableMid[row][col] + (1 - game_phase) * RookTableEnd[row][col]);
+		else if (piece == PieceType::QUEEN) black_score += (game_phase * QueenTableMid[row][col] + (1 - game_phase) * QueenTableEnd[row][col]);
+		else if (piece == PieceType::KING) black_score += (game_phase * KingTableMid[row][col] + (1 - game_phase) * KingTableEnd[row][col]);
+
+		black_pieces ^= 1ULL << square; // Remove the processed square
+	}
+
+	// Calculate the difference: white's score minus black
+	int score = white_score - black_score;
+
+	// Return the score depending on the turn
+	return white ? score : -score;
+}
+
+int Bitboard::calculateGamePhase() {
+	int game_phase = 0;
+
+	// We use weighted sum method for game phase calculation
+	// Weights are assigned to remaining pieces and summed up
+	// Weights:
+	// Queen = 4
+	// Rook = 2
+	// Knight & Bishop = 1
+
+	game_phase += 4 * (count_set_bits(white_queen) + count_set_bits(black_queen));
+	game_phase += 2 * (count_set_bits(white_rooks) + count_set_bits(black_rooks));
+	game_phase += count_set_bits(white_knights) + count_set_bits(black_knights);
+
+	// Normalize the game_phase to the range [0, 1]
+	float normalized_game_phase = static_cast<float>(game_phase) / MAX_GAME_PHASE;
+
+	// Ensure the value is clamped between 0 and 1 (in case of edge cases)
+	normalized_game_phase = max(0.0f, min(1.0f, normalized_game_phase));
+
+	return normalized_game_phase;
 }

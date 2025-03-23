@@ -52,12 +52,165 @@ const enum MoveType : uint8_t {
     PROMOTION_CAPTURE = 5  // Pawn promotion with capture
 };
 
+constexpr int MAX_GAME_PHASE = 24; // Maximum game phase (total number of pieces on board)
+// Game phase is used to determine if we are in the middle or endgame
+
 // Piece values for board evaluation
+// Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
 constexpr int PAWN_VALUE = 100;
 constexpr int KNIGHT_VALUE = 320;
 constexpr int BISHOP_VALUE = 330;
 constexpr int ROOK_VALUE = 500;
 constexpr int QUEEN_VALUE = 900;
 constexpr int KING_VALUE = 20000;
+
+// Piece-square tables for positional scoring evaluation (PSTs)
+// Separete tables for middle and endgame
+// Tables are designed to be used with white pieces, to use with black pieces, flip the tables
+// Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
+
+// In the middle game, pawn structure and control of the center is important
+constexpr int PawnTableMid[8][8] = {
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    {50, 50, 50, 50, 50, 50, 50, 50},
+    {10, 10, 20, 30, 30, 20, 10, 10},
+    { 5,  5, 10, 25, 25, 10,  5,  5},
+    { 0,  0,  0, 20, 20,  0,  0,  0},
+    { 5, -5,-10,  0,  0,-10, -5,  5},
+    { 5, 10, 10,-20,-20, 10, 10,  5},
+    { 0,  0,  0,  0,  0,  0,  0,  0}
+};
+
+// Pawns are more valuable in the endgame as they approach promotion
+// Pawn structure and control of the center is de-emphasized
+constexpr int PawnTableEnd[8][8] = {
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    {80, 80, 80, 80, 80, 80, 80, 80},
+    {60, 60, 60, 60, 60, 60, 60, 60},
+    {40, 40, 40, 40, 40, 40, 40, 40},
+    {20, 20, 20, 20, 20, 20, 20, 20},
+    {10, 10, 10, 10, 10, 10, 10, 10},
+    { 5,  5,  5,  5,  5,  5,  5,  5},
+    { 0,  0,  0,  0,  0,  0,  0,  0}
+};
+
+// Knights are more valuable in the center of the board
+// Knight positions don't change significantly in the endgame
+constexpr int KnightTableMid[8][8] = {
+    {-50,-40,-30,-30,-30,-30,-40,-50},
+    {-40,-20,  0,  0,  0,  0,-20,-40},
+    {-30,  0, 10, 15, 15, 10,  0,-30},
+    {-30,  5, 15, 20, 20, 15,  5,-30},
+    {-30,  0, 15, 20, 20, 15,  0,-30},
+    {-30,  5, 10, 15, 15, 10,  5,-30},
+    {-40,-20,  0,  5,  5,  0,-20,-40},
+    {-50,-40,-30,-30,-30,-30,-40,-50}
+};
+
+constexpr int KnightTableEnd[8][8] = {
+    {-50,-40,-30,-30,-30,-30,-40,-50},
+    {-40,-20,  0,  0,  0,  0,-20,-40},
+    {-30,  0, 10, 15, 15, 10,  0,-30},
+    {-30,  5, 15, 20, 20, 15,  5,-30},
+    {-30,  0, 15, 20, 20, 15,  0,-30},
+    {-30,  5, 10, 15, 15, 10,  5,-30},
+    {-40,-20,  0,  5,  5,  0,-20,-40},
+    {-50,-40,-30,-30,-30,-30,-40,-50}
+};
+
+// Bishops are strongest on long diagonals
+constexpr int BishopTableMid[8][8] = {
+    {-20,-10,-10,-10,-10,-10,-10,-20},
+    {-10,  0,  0,  0,  0,  0,  0,-10},
+    {-10,  0,  5, 10, 10,  5,  0,-10},
+    {-10,  5,  5, 10, 10,  5,  5,-10},
+    {-10,  0, 10, 10, 10, 10,  0,-10},
+    {-10, 10, 10, 10, 10, 10, 10,-10},
+    {-10,  5,  0,  0,  0,  0,  5,-10},
+    {-20,-10,-10,-10,-10,-10,-10,-20}
+};
+
+// In the endgame, bishop value increases as the board opens up
+constexpr int BishopTableEnd[8][8] = {
+    {-20,-10,-10,-10,-10,-10,-10,-20},
+    {-10,  0,  0,  0,  0,  0,  0,-10},
+    {-10,  0, 10, 10, 10, 10,  0,-10},
+    {-10,  0, 10, 20, 20, 10,  0,-10},
+    {-10,  0, 10, 20, 20, 10,  0,-10},
+    {-10,  0, 10, 10, 10, 10,  0,-10},
+    {-10,  0,  0,  0,  0,  0,  0,-10},
+    {-20,-10,-10,-10,-10,-10,-10,-20}
+};
+
+// Rooks are strongest on open files and the seventh rank
+constexpr int RookTableMid[8][8] = {
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    { 5, 10, 10, 10, 10, 10, 10,  5},
+    {-5,  0,  0,  0,  0,  0,  0, -5},
+    {-5,  0,  0,  0,  0,  0,  0, -5},
+    {-5,  0,  0,  0,  0,  0,  0, -5},
+    {-5,  0,  0,  0,  0,  0,  0, -5},
+    {-5,  0,  0,  0,  0,  0,  0, -5},
+    { 0,  0,  0,  5,  5,  0,  0,  0}
+};
+
+// Rooks are more valuable in the endgame as they can control the board
+constexpr int RookTableEnd[8][8] = {
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    {10, 20, 20, 20, 20, 20, 20, 10},
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0,  0,  0,  0,  0,  0},
+    { 0,  0,  0, 10, 10,  0,  0,  0}
+};
+
+// Queens are versatile and powerful in both phases, but their value increases in the endgame
+constexpr int QueenTableMid[8][8] = {
+    {-20,-10,-10, -5, -5,-10,-10,-20},
+    {-10,  0,  0,  0,  0,  0,  0,-10},
+    {-10,  0,  5,  5,  5,  5,  0,-10},
+    { -5,  0,  5,  5,  5,  5,  0, -5},
+    {  0,  0,  5,  5,  5,  5,  0, -5},
+    {-10,  5,  5,  5,  5,  5,  0,-10},
+    {-10,  0,  5,  0,  0,  0,  0,-10},
+    {-20,-10,-10, -5, -5,-10,-10,-20}
+};
+
+constexpr int QueenTableEnd[8][8] = {
+    {-20,-10,-10, -5, -5,-10,-10,-20},
+    {-10,  0,  0,  0,  0,  0,  0,-10},
+    {-10,  0,  5,  5,  5,  5,  0,-10},
+    { -5,  0,  5,  5,  5,  5,  0, -5},
+    {  0,  0,  5,  5,  5,  5,  0, -5},
+    {-10,  5,  5,  5,  5,  5,  0,-10},
+    {-10,  0,  5,  0,  0,  0,  0,-10},
+    {-20,-10,-10, -5, -5,-10,-10,-20}
+};
+
+// In the middle game, the king should stay safe (e.g., castled)
+constexpr int KingTableMid[8][8] = {
+    {-30,-40,-40,-50,-50,-40,-40,-30},
+    {-30,-40,-40,-50,-50,-40,-40,-30},
+    {-30,-40,-40,-50,-50,-40,-40,-30},
+    {-30,-40,-40,-50,-50,-40,-40,-30},
+    {-20,-30,-30,-40,-40,-30,-30,-20},
+    {-10,-20,-20,-20,-20,-20,-20,-10},
+    { 20, 20,  0,  0,  0,  0, 20, 20},
+    { 20, 30, 10,  0,  0, 10, 30, 20}
+};
+
+// In the endgame, the king becomes an active piece
+constexpr int KingTableEnd[8][8] = {
+	{-50,-40,-30,-20,-20,-30,-40,-50},
+	{-30,-20,-10,  0,  0,-10,-20,-30},
+	{-30,-10, 20, 30, 30, 20,-10,-30},
+	{-30,-10, 30, 40, 40, 30,-10,-30},
+	{-30,-10, 30, 40, 40, 30,-10,-30},
+	{-30,-10, 20, 30, 30, 20,-10,-30},
+	{-30,-30,  0,  0,  0,  0,-30,-30},
+	{-50,-30,-30,-30,-30,-30,-30,-50}
+};
 
 #endif // BITBOARD_CONSTANTS_H
