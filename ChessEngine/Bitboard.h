@@ -126,6 +126,7 @@ private:
     // Returns bool indicating result
     bool canBlock(const uint64_t& attack_ray, bool white);
 
+public:
     // Check game state
     bool isInCheck(bool white);
     bool isCheckmate(bool white);
@@ -166,6 +167,10 @@ public:
 	// Function to check if the game is over
 	// Checkmate, stalemate or insufficient material
 	bool isGameOver(bool white);
+
+    // Calculate legal moves for the king
+    // Used for evaluating the king mobility
+	int calculateKingMobility(bool white);
 
 private: 
 	// Helper to get correct piece enum corresponding to the piece type

@@ -41,7 +41,7 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
 
 int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
 	if (depth == 0 || board.isGameOver(true) || board.isGameOver(false)) {
-		return board.evaluateBoard(maximizingPlayer); // Evaluate the board
+		return evaluateBoard(board, depth, maximizingPlayer); // Evaluate the board
 	}
 
     std::array<uint32_t, MAX_MOVES> move_list;
@@ -78,4 +78,26 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
         }
         return minEval;
     }
+}
+
+int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
+    if (board.isCheckmate(true)) return -100000 + (depth * 1000);  // White loses
+	if (board.isCheckmate(false)) return 100000 - (depth * 1000); // Black loses
+    if (board.isStalemate(true) || board.isStalemate(false)) return 0; // Draw -> neutral outcome
+
+    // Evaluate material and positional score of the board
+    int score = board.evaluateBoard(maximizingPlayer);
+
+	// King safety (mobility and attacks)
+	int white_king_mobility = board.calculateKingMobility(true);
+	int black_king_mobility = board.calculateKingMobility(false);
+	score += (white_king_mobility - black_king_mobility) * 10; // Mobility bonus
+
+    // Encourage attacking the opponent’s king
+    if (board.isInCheck(true)) score -= 30; // White in check
+    if (board.isInCheck(false)) score += 30; // Black in check
+
+    // Return the score
+	// No need for additional negation since already done in board.evaluateBoard()
+    return score;
 }

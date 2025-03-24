@@ -1035,6 +1035,17 @@ bool Bitboard::isGameOver(bool white) {
 	return isCheckmate(white) || isStalemate(white);
 }
 
+int Bitboard::calculateKingMobility(bool white) {
+	// Determine king square and get king moves
+	// Return the set bits of the moves bitboard (amount of legal moves)
+	if (white) {
+		return count_set_bits(getKingMoves(findFirstSetBit(white_king), whitePieces(), blackPieces(), true));
+	}
+	else {
+		return count_set_bits(getKingMoves(findFirstSetBit(black_king), whitePieces(), blackPieces(), false));
+	}
+}
+
 PieceType Bitboard::getPieceType(int square) const {
 	uint64_t bitboard = 1ULL << square;
 	// Determine piece type at square

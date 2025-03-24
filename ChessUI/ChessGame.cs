@@ -197,7 +197,7 @@ namespace Chess
 
         public void MakeBlackMove()
         {
-            ChessEngineInterop.MakeBestMove(board, 3);
+            ChessEngineInterop.MakeBestMove(board, 5);
 
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>
