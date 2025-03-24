@@ -535,26 +535,28 @@ uint64_t Bitboard::getKingMoves(int square, uint64_t white_pieces, uint64_t blac
 		if (square == 60) moves |= getCastlingMoves(white);
 	}
 
-	// Exlude enemy king's adjacent squares
-	uint64_t enemy_king = white ? black_king : white_king;
-	moves &= ~KING_MOVES[findFirstSetBit(enemy_king)].moves;
+	// Ensure enemy king's control squares are included in enemy attack calculation
+	uint64_t enemy_king_bitboard = white ? black_king : white_king;
+	uint64_t enemy_king_attacks = KING_MOVES[findFirstSetBit(enemy_king_bitboard)].moves;
 
-	// King can't move into check
-	// Get potential squares where enemy could attack (results in check)
-	// This also includes the squares where king moves to capture an opposite piece and ends up in check
+	// Compute enemy attacks, including the king's control squares
+	uint64_t temp_white_pieces = white_pieces;
+	uint64_t temp_black_pieces = black_pieces;
 
-	// Get the squares where enemy could move with the current board state and minus the king
-	// Meaning moves that leap over the king
-	(white ? white_pieces : black_pieces) &= ~(1ULL << square); // Clear king square
-	uint64_t enemy_attacks = getAttackSquares(white_pieces, black_pieces, white);
+	(white ? temp_white_pieces : temp_black_pieces) &= ~(1ULL << square); // Temporarily remove king
+	uint64_t enemy_attacks = getAttackSquares(temp_white_pieces, temp_black_pieces, white);
+	enemy_attacks |= enemy_king_attacks; // Add enemy king's control squares
 
-	// Get the king captures that would result in check
+	// Remove squares where king captures enemy pieces
 	uint64_t king_captures = (white ? black_pieces : white_pieces) & moves;
-	(white ? black_pieces : white_pieces) &= ~king_captures; // Capture possible pieces
-	(white ? white_pieces : black_pieces) |= king_captures; // Move in own sides bitboard
 
-	// Get all the potential enemy attacks after the captures and combine with currently possible attacks
-	enemy_attacks |= getAttackSquares(white_pieces, black_pieces, white);
+	// Recalculate enemy attacks *without modifying actual board state*
+	uint64_t temp_captured_white = temp_white_pieces;
+	uint64_t temp_captured_black = temp_black_pieces;
+	(white ? temp_captured_black : temp_captured_white) &= ~king_captures; // Temporarily "capture" pieces
+	enemy_attacks |= getAttackSquares(temp_captured_white, temp_captured_black, white);
+
+	// Remove squares that are under enemy attack
 	moves &= ~enemy_attacks;
 
 	return moves; 
@@ -589,8 +591,8 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 	uint64_t occupied = white_pieces | black_pieces;
 	uint64_t attack_squares = getAttackSquares(white_pieces, black_pieces, white);
 
-	// If in check, cannot castle
-	if (isInCheck(white)) return 0ULL;
+	// If is in check, cannot castle
+	if (white ? (attack_squares & white_king) : (attack_squares & black_king)) return 0ULL;
 
 	uint64_t critical_squares;
 	// Depending on player turn and castling availability add available castling moves
@@ -599,7 +601,7 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 			if ((occupied & WHITE_KINGSIDE_CASTLE_SQUARES) == 0) { // f1 and g1 must be free
 				// King cannot castle out of, throught, or into check
 				// Get squares that can't be under attack
-				critical_squares = WHITE_KING | WHITE_KINGSIDE_CASTLE_SQUARES;
+				critical_squares = WHITE_KINGSIDE_CASTLE_SQUARES;
 
 				// Now compare with opponents attack squares and make sure no squares alignt (bitwise AND)
 				// // Ensure the king does not move thorught or into check
@@ -611,7 +613,7 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 		}
 		if (castling_rights & 0x02) { // White Queenside
 			if ((occupied & WHITE_QUEENSIDE_CASTLE_SQUARES) == 0) { // b1, c1 and d1 must be free
-				critical_squares = WHITE_KING | WHITE_QUEENSIDE_CASTLE_SQUARES;
+				critical_squares = WHITE_QUEENSIDE_CASTLE_SQUARES;
 				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 2; // King moves to c1
 				}
@@ -621,7 +623,7 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 	else {
 		if (castling_rights & 0x04) { // Black Kingside
 			if ((occupied & BLACK_KINGSIDE_CASTLE_SQUARES) == 0) { // f8 and g8 must be free
-				critical_squares = BLACK_KING | BLACK_KINGSIDE_CASTLE_SQUARES; // e8, f8, g8
+				critical_squares = BLACK_KINGSIDE_CASTLE_SQUARES; // e8, f8, g8
 				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 62; // King moves to g8
 				}
@@ -629,7 +631,7 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 		}
 		if (castling_rights & 0x08) { // Black Queenside
 			if ((occupied & BLACK_QUEENSIDE_CASTLE_SQUARES) == 0) { // c8 and d8 must be free
-				critical_squares = BLACK_KING | BLACK_QUEENSIDE_CASTLE_SQUARES; // e8, d8, c8
+				critical_squares = BLACK_QUEENSIDE_CASTLE_SQUARES; // e8, d8, c8
 				if (!(critical_squares & attack_squares)) {
 					castling_moves |= 1ULL << 58; // King moves to c8
 				}
