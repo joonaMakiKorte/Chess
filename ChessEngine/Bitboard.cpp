@@ -22,6 +22,8 @@ Bitboard::Bitboard():
 	black_queen = 0x0800000000000000;      // d8
 	white_king = 0x0000000000000010;       // e1
 	black_king = 0x1000000000000000;       // e8
+
+	state.flags = 0; // Empty game state at beginning (no check, no checkmate, no stalemate)
 }
 
 char Bitboard::getPieceTypeChar(int square_int) const {
@@ -64,13 +66,13 @@ std::string Bitboard::getEnPassantString() const {
 
 std::string Bitboard::getGameState(bool white) {
 	std::string game_state;
-	if (isCheckmate(white)) {
+	if (white ? state.isCheckmateWhite() : state.isCheckmateBlack()) {
 		game_state = "M";
 	}
-	else if (isInCheck(white)) {
+	else if (white ? state.isCheckWhite() : state.isCheckBlack()) {
 		game_state = "C";
 	}
-	else if (isStalemate(white)) {
+	else if (state.isStalemate()) {
 		game_state = "S";
 	}
 	else {
@@ -220,7 +222,7 @@ uint64_t Bitboard::getLegalMoves(int from, bool white) {
 		uint64_t attacker;
 		int attacker_square;
 		uint64_t attacking_ray;
-		if (isInCheck(white)) {
+		if (white ? state.isCheckWhite() : state.isCheckBlack()) {
 			// Legal moves are the ones that overlap with attacking ray
 			attacker = getAttackers(king_bitboard, white_pieces, black_pieces, white);
 			attacker_square = findLastSetBit(attacker);
@@ -302,7 +304,10 @@ void Bitboard::applyMove(int source, int target, bool white) {
 
 	// Early exit if piece was moved to an empty square
 	// Except if it was moved to an en passant target square
-	if (empty && target != en_passant_target) return;
+	if (empty && target != en_passant_target) {
+		updateBoardState(); // Update board state
+		return;
+	}
 
 	// Separate normal capturing logic and en passant capturing
 	if (!empty) { 
@@ -338,6 +343,8 @@ void Bitboard::applyMove(int source, int target, bool white) {
 	}
 	half_moves = 0; // Captures reset halfmove-clock
 	en_passant_target = UNASSIGNED; // Reset en passant; 
+
+	updateBoardState(); // Update board state
 }
 
 void Bitboard::applyPromotion(int target, char promotion, bool white) {
@@ -592,7 +599,7 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 	uint64_t attack_squares = getAttackSquares(white_pieces, black_pieces, white);
 
 	// If is in check, cannot castle
-	if (white ? (attack_squares & white_king) : (attack_squares & black_king)) return 0ULL;
+	if (white ? state.isCheckWhite() : state.isCheckBlack()) return 0ULL;
 
 	uint64_t critical_squares;
 	// Depending on player turn and castling availability add available castling moves
@@ -831,6 +838,16 @@ bool Bitboard::canBlock(const uint64_t& attack_ray, bool white) {
 	return false; // No blocks were found
 }
 
+void Bitboard::updateBoardState() {
+	state.flags = 0; // Reset state before updating
+
+	if (isInCheck(true))  state.flags |= BoardState::CHECK_WHITE;
+	if (isInCheck(false)) state.flags |= BoardState::CHECK_BLACK;
+	if (isCheckmate(true))  state.flags |= BoardState::CHECKMATE_WHITE;
+	if (isCheckmate(false)) state.flags |= BoardState::CHECKMATE_BLACK;
+	if (isStalemate(true) || isStalemate(false)) state.flags |= BoardState::STALEMATE;
+}
+
 inline int Bitboard::findFirstSetBit(uint64_t value) {
 #if defined(_MSC_VER) // MSVC
 	unsigned long index;
@@ -1031,8 +1048,8 @@ int Bitboard::evaluateBoard(bool white) {
 	return material_score + positional_score;
 }
 
-bool Bitboard::isGameOver(bool white) {
-	return isCheckmate(white) || isStalemate(white);
+bool Bitboard::isGameOver() {
+	return state.isCheckmateWhite() || state.isCheckmateBlack() || state.isStalemate();
 }
 
 int Bitboard::calculateKingMobility(bool white) {

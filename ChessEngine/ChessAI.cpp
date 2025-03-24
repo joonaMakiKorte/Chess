@@ -19,6 +19,8 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
         uint8_t castling_rights = 0;
         int en_passant_target = UNASSIGNED;
 
+		BoardState state = board.state; // Save the state before applying the move
+
         // Apply the move
         board.applyMoveAI(move_list[i], false, castling_rights, en_passant_target);
 
@@ -28,6 +30,7 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
 
         // Undo move
         board.undoMoveAI(move_list[i], false, castling_rights, en_passant_target);
+		board.state = state; // Restore the state
 
 		// Black wants to minimize White's score
         if (score < bestScore) {
@@ -40,7 +43,7 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
 }
 
 int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
-	if (depth == 0 || board.isGameOver(true) || board.isGameOver(false)) {
+	if (depth == 0 || board.isGameOver()) {
 		return evaluateBoard(board, depth, maximizingPlayer); // Evaluate the board
 	}
 
@@ -48,15 +51,22 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
 	int move_count = 0;
 	board.generateMoves(move_list, move_count, maximizingPlayer);
 
+	BoardState state = board.state; // Save the state before applying the move
+
     if (maximizingPlayer) { // AI (Black) tries to maximize
         int maxEval = -INF;
         for (int i = 0; i < move_count; i++) {
             // Save en passant and castling rights for undoing
             uint8_t castling_rights = 0;
             int en_passant_target = UNASSIGNED;
+
             board.applyMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
+
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+
             board.undoMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
+			board.state = state; // Restore the state
+
 			maxEval = max(maxEval, eval);
             alpha = max(alpha, eval);
             if (beta <= alpha) break; // Alpha-beta pruning
@@ -69,9 +79,14 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
             // Save en passant and castling rights for undoing
             uint8_t castling_rights = 0;
             int en_passant_target = UNASSIGNED;
+
             board.applyMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
+
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+
             board.undoMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
+			board.state = state; // Restore the state
+
             minEval = min(minEval, eval);
             beta = min(beta, eval);
             if (beta <= alpha) break; // Alpha-beta pruning
@@ -81,9 +96,9 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
 }
 
 int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
-    if (board.isCheckmate(true)) return -100000 + (depth * 1000);  // White loses
-	if (board.isCheckmate(false)) return 100000 - (depth * 1000); // Black loses
-    if (board.isStalemate(true) || board.isStalemate(false)) return 0; // Draw -> neutral outcome
+    if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
+	if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
+    if (board.state.isStalemate()) return 0; // Draw -> neutral outcome
 
     // Evaluate material and positional score of the board
     int score = board.evaluateBoard(maximizingPlayer);
@@ -94,8 +109,8 @@ int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
 	score += (white_king_mobility - black_king_mobility) * 10; // Mobility bonus
 
     // Encourage attacking the opponent’s king
-    if (board.isInCheck(true)) score -= 30; // White in check
-    if (board.isInCheck(false)) score += 30; // Black in check
+    if (board.state.isCheckWhite()) score -= 30; // White in check
+    if (board.state.isCheckBlack()) score += 30; // Black in check
 
     // Return the score
 	// No need for additional negation since already done in board.evaluateBoard()

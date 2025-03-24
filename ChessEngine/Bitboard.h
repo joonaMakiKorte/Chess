@@ -38,6 +38,9 @@ public:
     // Initialize each piece with starting pos
     Bitboard();
 
+    // Store the game state as a bitmask
+    BoardState state;
+
     // Helper to get the piece type at a given square
     char getPieceTypeChar(int square) const;
 
@@ -126,7 +129,10 @@ private:
     // Returns bool indicating result
     bool canBlock(const uint64_t& attack_ray, bool white);
 
-public:
+    // Each time after applying a move set the new board state
+	// Includes check, checkmate and stalemate information
+    void updateBoardState();
+
     // Check game state
     bool isInCheck(bool white);
     bool isCheckmate(bool white);
@@ -165,8 +171,8 @@ public:
 	int evaluateBoard(bool white);
 
 	// Function to check if the game is over
-	// Checkmate, stalemate or insufficient material
-	bool isGameOver(bool white);
+	// Checkmate or stalemate for either side
+	bool isGameOver();
 
     // Calculate legal moves for the king
     // Used for evaluating the king mobility

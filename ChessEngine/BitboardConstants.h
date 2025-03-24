@@ -52,6 +52,37 @@ const enum MoveType : uint8_t {
     PROMOTION_CAPTURE = 5  // Pawn promotion with capture
 };
 
+// Board state is stored as a bitmask
+struct BoardState {
+    uint8_t flags = 0; // 8-bit bitfield to store state flags
+
+    static constexpr uint8_t CHECK_WHITE = 1 << 0; // 0000 0001
+    static constexpr uint8_t CHECK_BLACK = 1 << 1; // 0000 0010
+    static constexpr uint8_t STALEMATE = 1 << 2; // 0000 0100
+    static constexpr uint8_t CHECKMATE_WHITE = 1 << 3; // 0000 1000
+    static constexpr uint8_t CHECKMATE_BLACK = 1 << 4; // 0001 0000
+
+    bool isCheckWhite() const {
+        return flags & CHECK_WHITE;
+    }
+
+    bool isCheckBlack() const {
+        return flags & CHECK_BLACK;
+    }
+
+    bool isStalemate() const {
+        return flags & STALEMATE;
+    }
+
+    bool isCheckmateWhite() const {
+        return flags & CHECKMATE_WHITE;
+    }
+
+    bool isCheckmateBlack() const {
+        return flags & CHECKMATE_BLACK;
+    }
+};
+
 constexpr int MAX_GAME_PHASE = 24; // Maximum game phase (total number of pieces on board)
 // Game phase is used to determine if we are in the middle or endgame
 
