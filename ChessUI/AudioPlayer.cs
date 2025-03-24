@@ -24,7 +24,7 @@ namespace Chess
             _mediaPlayer.Play();
 
             // Optionally, set the volume
-            _mediaPlayer.Volume = 0.5; // 50% volume
+            _mediaPlayer.Volume = 0.15; // 50% volume
         }
 
         public void StopMusic()
@@ -33,7 +33,6 @@ namespace Chess
             {
                 _mediaPlayer.Stop();
                 _mediaPlayer.Close();
-                _mediaPlayer = new MediaPlayer(); // Reset the player
             }
         }
 
