@@ -1,25 +1,55 @@
 #include "pch.h"
 #include "ChessBoard.h"
+#include "ChessAI.h"
 
-ChessBoard::ChessBoard() 
-    : board(std::make_unique<Bitboard>()), debugMessage("Initial debug message")
+ChessBoard::ChessBoard() : 
+    board(Bitboard()),
+    white(true), // White starts
+    debugMessage("Initial debug message")
 {}
 
 uint64_t ChessBoard::LegalMoves(int square) {
     // Validate move notation
-    if (!(0 <= square <= 63)) return 0ULL;
+    if (square < 0 || square > 63) return 0ULL;
 
     // Get all legal moves from the source square
-    return board->getLegalMoves(square);
+    return board.getLegalMoves(square, white);
 }
 
 void ChessBoard::MovePiece(int source, int target) {
     // Validate move notations
-    if (!(0 <= source <= 63) || !(0 <= target <= 63)) return;
+    if (source < 0 || source > 63 || target < 0 || target > 63) return;
 
     // Apply move in bitboard
-    board->applyMove(source, target);
-    board->switchTurn(); 
+    board.applyMove(source, target, white);
+    white = !white; // Switch turn
+}
+
+void ChessBoard::MakeMoveAI(int depth) {
+    // Get best move in encoded form
+    uint32_t best_move = ChessAI::getBestMove(board, depth);
+
+	if (best_move == 0) {
+		UpdateDebugMessage("No legal moves available");
+		return;
+	}
+
+    // Apply move
+	board.applyMoveAI(best_move, white);
+	white = !white; // Switch turn
+
+}
+
+void ChessBoard::MakePromotion(int target, char promotion) {
+	// Validate promotion piece
+	if (promotion != 'q' && promotion != 'r' && promotion != 'b' && promotion != 'n') {
+		UpdateDebugMessage("Invalid promotion piece");
+		return;
+	}
+	// Apply promotion
+	// Piece has already been moved and turn has changed,
+	// so we negate the turn to apply the promotion to correct side
+	board.applyPromotion(target, promotion, !white);
 }
 
 std::string ChessBoard::GetBoardState() {
@@ -33,7 +63,7 @@ std::string ChessBoard::GetBoardState() {
             int square = rank * 8 + file; // Get current square as bitboard
 
             // Get piece type at square
-            char piece = board->getPieceType(square);
+            char piece = board.getPieceTypeChar(square);
 
             // If empty continue
             if (piece == '\0') {
@@ -63,23 +93,23 @@ std::string ChessBoard::GetBoardState() {
     }
 
     // 2. Active Color
-    std::string active_color = board->isWhite() ? " w " : " b ";
+    std::string active_color = white ? " w " : " b ";
     fen += active_color;
 
     // 3. Castling Rights (assume all castling rights available for simplicity)
-    fen += board->getCastlingRightsString();
+    fen += board.getCastlingRightsString();
 
     // 4. En Passant Target Square
-    fen += " " + board->getEnPassantString();
+    fen += " " + board.getEnPassantString();
 
     // 5. Half-Move Clock
-    fen += " " + std::to_string(board->getHalfMoveClock());
+    fen += " " + std::to_string(board.getHalfMoveClock());
 
     // 6. Full-Move Number
-    fen += " " + std::to_string(board->getFullMoveNumber());
+    fen += " " + std::to_string(board.getFullMoveNumber());
 
     // 7. Game state (Check/Checkmate/Stalemate/No threat)
-    fen += " " + board->getGameState();
+    fen += " " + board.getGameState(white);
 
     return fen;
 }

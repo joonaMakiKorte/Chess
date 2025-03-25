@@ -6,8 +6,12 @@
 class ChessBoard {
 private:
     // Store the board logic
-    std::unique_ptr<Bitboard> board; // Smart pointer
+    Bitboard board; // Smart pointer
 
+    // Keep track of player turns
+    bool white;
+
+    // Debug
     std::string debugMessage;
 
 public:
@@ -21,6 +25,13 @@ public:
     // Update chessboard status accordingly
     // Is called in C# if validating move successful
     void MovePiece(int source, int target);
+
+    // Get best move for black pieces and apply it
+    // Determined by search depth
+    void MakeMoveAI(int depth);
+
+	// Promote the pawn at target square to a piece of choice
+	void MakePromotion(int target, char promotion);
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
     // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 -

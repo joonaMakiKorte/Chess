@@ -1,5 +1,8 @@
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef BITBOARD_H
+#define BITBOARD_H
+
+#include "BitboardConstants.h"
+#include "ChessAI.h"
 
 class Bitboard {
 private:
@@ -28,7 +31,6 @@ private:
     // If not possible, set UNASSIGNED
     int en_passant_target;
 
-    bool white; // Track the player turns
     int half_moves; // Helps determine if a draw can be claimed
     int full_moves; // For game analysis and record keeping
 
@@ -36,13 +38,11 @@ public:
     // Initialize each piece with starting pos
     Bitboard();
 
-    // Get player turn
-    bool isWhite(); 
-
-    void switchTurn();
+    // Store the game state as a bitmask
+    BoardState state;
 
     // Helper to get the piece type at a given square
-    char getPieceType(int square) const;
+    char getPieceTypeChar(int square) const;
 
     // Helper function to get castling rights as a string
     std::string getCastlingRightsString() const;
@@ -51,7 +51,7 @@ public:
     std::string getEnPassantString() const;
 
     // Get game state as a string
-    std::string getGameState();
+    std::string getGameState(bool white);
 
     // Get half moves
     int getHalfMoveClock() const;
@@ -60,13 +60,18 @@ public:
     int getFullMoveNumber() const;
 
     // Get all legal moves from a square as a bitboard
-    // Takes the source square as the parameter
-    uint64_t getLegalMoves(int from);
+    // Takes the source square and turn as the parameters
+    uint64_t getLegalMoves(int from, bool white);
 
     // Apply move by updating bitboards
     // Takes the source and target as parameters
     // Move is applied only after making sure its legal, meaning no need to check for validity
-    void applyMove(int source, int target);
+    void applyMove(int source, int target, bool white);
+
+    // Apply promotion by updating bitboards
+	// Move has already been applied , so only need to promote the pawn
+	// Takes the target square and promotion piece as parameters
+	void applyPromotion(int target, char promotion, bool white);
 
 private:
     // Get locations of white or black pieces (bitboard)
@@ -79,31 +84,37 @@ private:
     std::string squareToString(int square) const;
 
     // Helper functions to create legal moves for different piece types
-    uint64_t getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces);
-    uint64_t getPawnCaptures(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces); // Used for attack squares
+    uint64_t getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
+    uint64_t getPawnCaptures(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white); // Used for attack squares
     uint64_t getKnightMoves(int knight, const uint64_t& white_pieces, const uint64_t& black_pieces);
-    uint64_t getBishopMoves(int bishop, const uint64_t& white_pieces, const uint64_t& black_pieces);
-    uint64_t getRookMoves(int rook, const uint64_t& white_pieces, const uint64_t& black_pieces);
-    uint64_t getQueenMoves(int queen, const uint64_t& white_pieces, const uint64_t& black_pieces);
-    uint64_t getKingMoves(int king);
+    uint64_t getBishopMoves(int bishop, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
+    uint64_t getRookMoves(int rook, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
+    uint64_t getQueenMoves(int queen, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
+    uint64_t getKingMoves(int king, uint64_t white_pieces, uint64_t black_pieces, bool white);
 
     // Helper to get the sliding moves of a movetable
     // Used for Bishop, Rook and Queen, since can't leap over other pieces
     // Uses LSB/FSB to isolate the occupied bit depending on move direction
-    uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse, const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
 
     // Helper to get castling moves for a king
-    uint64_t getCastlingMoves();
+    uint64_t getCastlingMoves(bool white);
+
+    // Update castling rights when rook was moved
+    void updateRookCastling(bool white, int source);
+
+    // Perform castling by moving king and rook in correct places
+    void handleCastling(bool white, int target);
 
     // Helper to get all the attack squares of opponent (squares that are possible to attack)
     // If white turn, we get all the squares black could attack, and vice versa
     // Takes bitboards of both of the pieces as the parameter
     // Gets all the possible squares as a bitboard
-    uint64_t getAttackSquares(const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getAttackSquares(const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
 
     // Helper to get king attackers locations
     // Returns the attackers as a bitboard
-    uint64_t getAttackers(uint64_t king, const uint64_t& white_pieces, const uint64_t& black_pieces);
+    uint64_t getAttackers(uint64_t king, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
 
     // Find the ray which must be blocked if the king is in check
     // If attacker is pawn or knight, returns only the piece location
@@ -116,12 +127,16 @@ private:
 
     // Determine if the attacking ray can be blocked by any of the own pieces
     // Returns bool indicating result
-    bool canBlock(const uint64_t& attack_ray);
+    bool canBlock(const uint64_t& attack_ray, bool white);
+
+    // Each time after applying a move set the new board state
+	// Includes check, checkmate and stalemate information
+    void updateBoardState();
 
     // Check game state
-    bool isInCheck();
-    bool isCheckmate();
-    bool isStalemate();
+    bool isInCheck(bool white);
+    bool isCheckmate(bool white);
+    bool isStalemate(bool white);
 
 private:
     // Helper function to find the index of first set bit and last set bit
@@ -132,6 +147,63 @@ private:
     // Helper to get direction between two squares from their difference
     // Done by normalizing the movement direction to match one of the 8 possible moving directions
     inline int get_direction(int diff);
+
+	// Helper to count the number of set bits in a bitboard
+	inline int count_set_bits(const uint64_t& bitboard);
+
+public:
+    // Function for ChessAI to generate the legal moves
+    // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
+    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+
+	// Function for ChessAI to apply the move
+	// Takes the encoded move as a parameter and applies it to the board
+    // Also saves the en passant target and castling rights before applying move for later undoign
+	void applyMoveAI(uint32_t move, bool white, uint8_t& prev_castling_rights, int& prev_en_passant);
+	void applyMoveAI(uint32_t move, bool white); // Overload for applying move without saving castling rights and en passant
+
+	// Function for ChessAI to undo the move
+	// Takes the encoded move as a parameter and undoes it
+	void undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_rights, int prev_en_passant);
+
+    // Function to assign a score to the board
+	// Used for evaluation of the board state
+	int evaluateBoard(bool white);
+
+	// Function to check if the game is over
+	// Checkmate or stalemate for either side
+	bool isGameOver();
+
+    // Calculate legal moves for the king
+    // Used for evaluating the king mobility
+	int calculateKingMobility(bool white);
+
+private: 
+	// Helper to get correct piece enum corresponding to the piece type
+	// Used for encoding moves
+	PieceType getPieceType(int square) const;
+
+    // Helper to get the correct piece bitboard as a reference from enum
+	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
+	uint64_t& getPieceBitboard(PieceType piece, bool white);
+
+	// Helper to get correct move type depending on the target square and piece type
+	// Used for encoding moves
+	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
+
+	// Helper for undoing castling, moves rook back to original position
+	// Takes the active color and castling side as parameters
+	void undoCastling(bool white, bool kingside);
+
+    // Calculate the material score of the board
+	int calculateMaterialScore(bool white);
+
+	// Calculate the positional score of the board
+	int calculatePositionalScore(bool white);
+
+	// Determine the game phase score (middle or endgame)
+    // Is based on the remaining pieces
+	int calculateGamePhase();
 };
 
-#endif CHESSLOGIC_H
+#endif BITBOARD_H

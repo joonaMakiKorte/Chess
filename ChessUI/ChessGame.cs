@@ -160,10 +160,21 @@ namespace Chess
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, source, target);
 
+            // Temporary pawn promotion logic
+            // Is promotion when pawn reaches the last rank
+            if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) || 
+               ( pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
+            {
+                ChessEngineInterop.MakePromotion(board, target, 'q');
+            }
+
+
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
-            Console.WriteLine(fen);
             LoadFromFEN(fen);
+
+            string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
+            Console.WriteLine(debugMessage);
 
             if (gameState == "M")
             {
@@ -182,6 +193,20 @@ namespace Chess
                 Console.WriteLine("The game is safe. No check or checkmate.");
             }
 
+        }
+
+        public void MakeBlackMove()
+        {
+            ChessEngineInterop.MakeBestMove(board, 5);
+
+            // Ensure all UI updates happen on the main thread
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // Update local board state from DLL
+                string fen = ChessEngineInterop.GetBoardStateString(board);
+                LoadFromFEN(fen);
+                Console.WriteLine(fen);
+            });
         }
 
         // Destroy board

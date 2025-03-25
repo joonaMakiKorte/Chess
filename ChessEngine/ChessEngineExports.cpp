@@ -24,6 +24,19 @@ extern "C" CHESSENGINE_API void MakeMove(void* board, int source, int target) {
     b->MovePiece(source, target); // Apply move 
 }
 
+extern "C" CHESSENGINE_API void MakeBestMove(void* board, int depth) {
+    if (!board) return; // Prevent crashes
+    ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
+    b->MakeMoveAI(depth); // Apply move
+}
+
+extern "C" CHESSENGINE_API void MakePromotion(void* board, int target, char promotion)
+{
+	if (!board) return; // Prevent crashes
+	ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
+	b->MakePromotion(target, promotion); // Apply promotion
+}
+
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {
     if (!board) return; // Prevent crashes if the board is null
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* back to ChessBoard*

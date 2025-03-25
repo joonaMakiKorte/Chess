@@ -41,13 +41,14 @@
                 <Label x:Name="BlackTimerLabel" Content="Black: 00:00"
                        FontSize="20" Foreground="White" Margin="20,5,0,5"/>
             </StackPanel>
-            
-            
-            
+
+
+
             <Grid x:Name="PieceGrid"
                 Grid.Row="2"
                 Width="600"
-                Height="600">
+                Height="600"
+                Focusable="True">
                 <Grid.Background>
                     <ImageBrush ImageSource="pics/Board.png"/>
                 </Grid.Background>
