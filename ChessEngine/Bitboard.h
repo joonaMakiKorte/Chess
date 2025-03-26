@@ -34,6 +34,15 @@ private:
     int half_moves; // Helps determine if a draw can be claimed
     int full_moves; // For game analysis and record keeping
 
+    // Save previous board states for faster state recovery in move undoing
+    struct UndoInfo {
+        uint8_t castling_rights;
+        int en_passant_target;
+        uint8_t flags;
+    };
+    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack
+    int undo_stack_top;
+
 public:
     // Initialize each piece with starting pos
     Bitboard();
@@ -151,11 +160,15 @@ private:
 	// Helper to count the number of set bits in a bitboard
 	inline int count_set_bits(const uint64_t& bitboard);
 
-	inline int get_mvv_lva_score(uint32_t move);
+	inline int get_mvv_lva_score(PieceType attacker, PieceType victim);
 
 	inline int get_piece_value(PieceType piece);
 
 public:
+    // Reset undo stack
+    // Sets top element index to 0
+    void resetUndoStack();
+
     // Function for ChessAI to generate the legal moves
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
 	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
@@ -169,12 +182,11 @@ public:
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
     // Also saves the en passant target and castling rights before applying move for later undoign
-	void applyMoveAI(uint32_t move, bool white, uint8_t& prev_castling_rights, int& prev_en_passant);
-	void applyMoveAI(uint32_t move, bool white); // Overload for applying move without saving castling rights and en passant
+	void applyMoveAI(uint32_t move, bool white);
 
 	// Function for ChessAI to undo the move
 	// Takes the encoded move as a parameter and undoes it
-	void undoMoveAI(uint32_t move, bool white, uint8_t prev_castling_rights, int prev_en_passant);
+	void undoMoveAI(uint32_t move, bool white);
 
     // Function to assign a score to the board
 	// Used for evaluation of the board state
@@ -188,10 +200,10 @@ public:
     // Used for evaluating the king mobility
 	int calculateKingMobility(bool white);
 
-private: 
-    // Function to generate all legal moves
-    void generateAllMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+    // Used in quiescence search for delta pruning
+    int estimateCaptureValue(uint32_t move);
 
+private: 
 	// Helper to get correct piece enum corresponding to the piece type
 	// Used for encoding moves
 	PieceType getPieceType(int square) const;
