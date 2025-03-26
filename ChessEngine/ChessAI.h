@@ -48,6 +48,11 @@ private:
 	// Alpha-beta pruning is used to reduce the number of nodes evaluated in the search tree
     static int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
 
+	// Quiescence search algorithm
+	// Searches for the best move in a noisy position (captures and promotions)
+	// Reduces the horizon effect by searching deeper in capturing positions
+	static int quiescenceSearch(Bitboard& board, int alpha, int beta, bool maximizingPlayer);
+
 	// Helper evaluation function for the minimax algorithm
 	// Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
 	// Advantegeous positions are assigned higher scores for prioritization

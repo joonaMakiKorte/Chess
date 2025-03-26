@@ -554,19 +554,25 @@ uint64_t Bitboard::getKingMoves(int square, uint64_t white_pieces, uint64_t blac
 	uint64_t enemy_attacks = getAttackSquares(temp_white_pieces, temp_black_pieces, white);
 	enemy_attacks |= enemy_king_attacks; // Add enemy king's control squares
 
-	// Remove squares where king captures enemy pieces
-	uint64_t king_captures = (white ? black_pieces : white_pieces) & moves;
-
-	// Recalculate enemy attacks *without modifying actual board state*
-	uint64_t temp_captured_white = temp_white_pieces;
-	uint64_t temp_captured_black = temp_black_pieces;
-	(white ? temp_captured_black : temp_captured_white) &= ~king_captures; // Temporarily "capture" pieces
-	enemy_attacks |= getAttackSquares(temp_captured_white, temp_captured_black, white);
-
 	// Remove squares that are under enemy attack
 	moves &= ~enemy_attacks;
 
-	return moves; 
+	// Go through each capture move and remove if it results in king capture
+	uint64_t king_captures = (white ? black_pieces : white_pieces) & moves;
+	while (king_captures != 0) {
+		int target = findFirstSetBit(king_captures); // Isolate LSB
+		uint64_t target_square = 1ULL << target; // Convert to bitboard
+
+		// Temporarily remove the piece that is captured and check if king is still under attack
+		(white ? temp_black_pieces : temp_white_pieces) &= ~target_square; // Remove captured piece
+		uint64_t new_enemy_attacks = getAttackSquares(temp_white_pieces, temp_black_pieces, white); // Recalculate enemy attacks
+		if (new_enemy_attacks & target_square) {
+			moves &= ~target_square; // Add to enemy attacks if king would be captured there
+		}
+		king_captures ^= target_square; // Remove the processed square
+	}
+
+	return moves;
 }
 
 uint64_t Bitboard::getSlidingMoves(uint64_t direction_moves, bool reverse, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white) {
@@ -889,6 +895,39 @@ inline int Bitboard::count_set_bits(const uint64_t& bitboard) {
 #endif
 }
 
+inline int Bitboard::get_mvv_lva_score(uint32_t move) {
+	int from = ChessAI::from(move);
+	int to = ChessAI::to(move);
+
+	PieceType attacker = ChessAI::piece(move);  // The piece making the capture
+	PieceType victim = ChessAI::capturedPiece(move);      // The piece being captured
+
+	int attacker_value = get_piece_value(attacker);
+	int victim_value;
+	if (ChessAI::moveType(move) == MoveType::EN_PASSANT) {
+		victim_value = PAWN_VALUE;  // En passant captures are valued as pawn captures
+	}
+	else {
+		victim_value = get_piece_value(victim);
+	}
+
+	return (victim_value * 10) - attacker_value;  // Higher value captures come first
+}
+
+inline int Bitboard::get_piece_value(PieceType piece) {
+	// Return the value of the piece
+	switch (piece)
+	{
+	case PieceType::PAWN: return PAWN_VALUE;
+	case PieceType::KNIGHT: return KNIGHT_VALUE;
+	case PieceType::BISHOP: return BISHOP_VALUE;
+	case PieceType::ROOK: return ROOK_VALUE;
+	case PieceType::QUEEN: return QUEEN_VALUE;
+	case PieceType::KING: return KING_VALUE; // Technically not used since king can't be captured
+	default: throw std::invalid_argument("Invalid piece type");
+	}
+}
+
 /*
 * The functions below are used for move generation and move encoding in chessAI
 * The functions are used by the AI to generate all legal moves for a given position
@@ -903,6 +942,42 @@ inline int Bitboard::count_set_bits(const uint64_t& bitboard) {
 */
 
 void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
+	std::vector<std::pair<uint32_t, int>> move_scores;  // Store moves with MVV-LVA score
+	move_scores.reserve(MAX_MOVES); // Reserve space for moves to avoid dynamic resizing
+
+	move_count = 0;
+	std::array<uint32_t, MAX_MOVES> all_moves;
+	int all_move_count = 0;
+
+	generateAllMoves(all_moves, all_move_count, white);
+
+	for (int i = 0; i < all_move_count; i++) {
+		uint32_t move = all_moves[i];
+
+		if (ChessAI::moveType(move) == MoveType::CAPTURE ||
+			ChessAI::moveType(move) == MoveType::PROMOTION_CAPTURE ||
+			ChessAI::moveType(move) == MoveType::EN_PASSANT) {
+			int score = get_mvv_lva_score(move);
+			move_scores.emplace_back(move, score);
+		}
+		else {
+			move_scores.emplace_back(move, 0);  // Non-captures get lowest priority
+		}
+	}
+
+	// Sort the moves based on MVV-LVA
+	std::sort(move_scores.begin(), move_scores.end(),
+		[](const std::pair<uint32_t, int>& a, const std::pair<uint32_t, int>& b) {
+		return a.second > b.second;
+		});
+
+	// Add the sorted moves to the move list
+	for (const auto& [move, score] : move_scores) {
+		move_list[move_count++] = move;
+	}
+}
+
+void Bitboard::generateAllMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
 	// Loop over all pieces and get all their legal moves
@@ -933,6 +1008,27 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 			legal_moves ^= 1ULL << to; // Remove the processed square
 		}
 		friendly_pieces ^= 1ULL << from; // Remove the processed square
+	}
+}
+
+void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
+	move_count = 0;
+	std::array<uint32_t, MAX_MOVES> all_moves;
+	int all_move_count = 0;
+
+	// Generate all legal moves
+	// Are sorted with MVV-LVA
+	generateMoves(all_moves, all_move_count, white);
+
+	// Filter only captures and promotions
+	for (int i = 0; i < all_move_count; i++) {
+		uint32_t move = all_moves[i];
+		if (ChessAI::moveType(move) == MoveType::CAPTURE || 
+			ChessAI::moveType(move) == MoveType::EN_PASSANT ||
+			ChessAI::moveType(move) == MoveType::PROMOTION ||
+			ChessAI::moveType(move) == MoveType::PROMOTION_CAPTURE) {
+			move_list[move_count++] = move;
+		}
 	}
 }
 

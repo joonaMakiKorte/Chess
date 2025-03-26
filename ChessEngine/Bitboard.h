@@ -151,10 +151,20 @@ private:
 	// Helper to count the number of set bits in a bitboard
 	inline int count_set_bits(const uint64_t& bitboard);
 
+	inline int get_mvv_lva_score(uint32_t move);
+
+	inline int get_piece_value(PieceType piece);
+
 public:
     // Function for ChessAI to generate the legal moves
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
+	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
     void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+
+	// Function for ChessAI to generate noisy moves
+	// Used for quiescence search to reduce horizon effect
+	// Noisy moves are captures and promotions
+	void generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
@@ -179,6 +189,9 @@ public:
 	int calculateKingMobility(bool white);
 
 private: 
+    // Function to generate all legal moves
+    void generateAllMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+
 	// Helper to get correct piece enum corresponding to the piece type
 	// Used for encoding moves
 	PieceType getPieceType(int square) const;
