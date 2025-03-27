@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.IO;
 
 
 namespace Chess
@@ -27,7 +28,11 @@ namespace Chess
 
             _mediaPlayer = new AudioPlayer();
             this.Loaded += StartWindow_Loaded; // Ensure UI is fully loaded before modifying the slider
-            _mediaPlayer.PlayBackgroundMusic("C:\\chessproject\\Chess\\ChessUI\\pics\\Lobbymusic.mp3");
+
+
+
+            
+            _mediaPlayer.PlayBackgroundMusic();
 
         }
 
