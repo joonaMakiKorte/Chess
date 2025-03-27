@@ -14,23 +14,17 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
     int bestScore = INF; // Black wants to minimize White's evaluation
     uint32_t bestMove = 0;
 
+    board.resetUndoStack(); // Reset undo stack before new search
     for (int i = 0; i < move_count; i++) {
-        // Save en passant and castling rights for undoing
-        uint8_t castling_rights = 0;
-        int en_passant_target = UNASSIGNED;
-
-		BoardState state = board.state; // Save the state before applying the move
-
         // Apply the move
-        board.applyMoveAI(move_list[i], false, castling_rights, en_passant_target);
+        board.applyMoveAI(move_list[i], false);
 
         // Call minimax (assuming AI plays as Black)
 		// Call with maximizingPlayer = true since AI wants to minimize White's score
         int score = minimax(board, depth - 1, -INF, INF, true);
 
         // Undo move
-        board.undoMoveAI(move_list[i], false, castling_rights, en_passant_target);
-		board.state = state; // Restore the state
+        board.undoMoveAI(move_list[i], false);
 
 		// Black wants to minimize White's score
         if (score < bestScore) {
@@ -44,28 +38,21 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
 
 int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
 	if (depth == 0 || board.isGameOver()) {
-		return evaluateBoard(board, depth, maximizingPlayer); // Evaluate the board
+		return quiescenceSearch(board, alpha, beta, maximizingPlayer);
 	}
 
     std::array<uint32_t, MAX_MOVES> move_list;
 	int move_count = 0;
 	board.generateMoves(move_list, move_count, maximizingPlayer);
 
-	BoardState state = board.state; // Save the state before applying the move
-
     if (maximizingPlayer) { // AI (Black) tries to maximize
         int maxEval = -INF;
         for (int i = 0; i < move_count; i++) {
-            // Save en passant and castling rights for undoing
-            uint8_t castling_rights = 0;
-            int en_passant_target = UNASSIGNED;
-
-            board.applyMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
+            board.applyMoveAI(move_list[i], maximizingPlayer);
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
 
-            board.undoMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
-			board.state = state; // Restore the state
+            board.undoMoveAI(move_list[i], maximizingPlayer);
 
 			maxEval = max(maxEval, eval);
             alpha = max(alpha, eval);
@@ -76,16 +63,11 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     else { // Opponent (White) tries to minimize
         int minEval = INF;
         for (int i = 0; i < move_count; i++) {
-            // Save en passant and castling rights for undoing
-            uint8_t castling_rights = 0;
-            int en_passant_target = UNASSIGNED;
-
-            board.applyMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
+            board.applyMoveAI(move_list[i], maximizingPlayer);
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
 
-            board.undoMoveAI(move_list[i], maximizingPlayer, castling_rights, en_passant_target);
-			board.state = state; // Restore the state
+            board.undoMoveAI(move_list[i], maximizingPlayer);
 
             minEval = min(minEval, eval);
             beta = min(beta, eval);
@@ -93,6 +75,38 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
         }
         return minEval;
     }
+}
+
+int ChessAI::quiescenceSearch(Bitboard& board, int alpha, int beta, bool maximizingPlayer) {
+    const int DELTA_MARGIN = 900; // Value of a queen
+    int eval = evaluateBoard(board, 0, maximizingPlayer);  // Get a static evaluation of the current position
+
+    // Stand pat: if this position is already better than beta, cut off search (pruning)
+    if (eval >= beta) return beta;
+    if (eval > alpha) alpha = eval;  // Update alpha if we find a better move
+
+    // Generate only capture moves (no quiet moves)
+    std::array<uint32_t, MAX_MOVES> capture_list;
+    int capture_count = 0;
+    board.generateNoisyMoves(capture_list, capture_count, maximizingPlayer);
+
+    for (int i = 0; i < capture_count; i++) {
+        // Delta pruning - skip moves that can't possibly raise alpha
+        int move_value = board.estimateCaptureValue(capture_list[i]);
+        if (eval + move_value + DELTA_MARGIN <= alpha) {
+            continue; // Skip this move as it can't improve alpha
+        }
+        board.applyMoveAI(capture_list[i], maximizingPlayer);
+
+        int score = -quiescenceSearch(board, -beta, -alpha, !maximizingPlayer);  // Negamax approach
+
+        board.undoMoveAI(capture_list[i], maximizingPlayer);
+
+        if (score >= beta) return beta;  // Beta cutoff
+        if (score > alpha) alpha = score;  // Improve alpha
+    }
+
+    return alpha;  // Best evaluation we found
 }
 
 int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {

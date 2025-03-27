@@ -86,14 +86,20 @@ struct BoardState {
 constexpr int MAX_GAME_PHASE = 24; // Maximum game phase (total number of pieces on board)
 // Game phase is used to determine if we are in the middle or endgame
 
+constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
+// 128 for alignment + would be an extreme case which is near impossible
+
 // Piece values for board evaluation
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
-constexpr int PAWN_VALUE = 100;
-constexpr int KNIGHT_VALUE = 320;
-constexpr int BISHOP_VALUE = 330;
-constexpr int ROOK_VALUE = 500;
-constexpr int QUEEN_VALUE = 900;
-constexpr int KING_VALUE = 20000;
+constexpr int PIECE_VALUES[7] = {
+    0,     // EMPTY (should never be accessed)
+    100,   // PAWN
+    320,   // KNIGHT
+    330,   // BISHOP
+    500,   // ROOK
+    900,   // QUEEN
+    20000  // KING (captures should be handled separately)
+};
 
 // Piece-square tables for positional scoring evaluation (PSTs)
 // Separete tables for middle and endgame

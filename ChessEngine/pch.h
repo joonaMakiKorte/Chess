@@ -17,5 +17,7 @@
 #include <memory>
 #include <array>
 #include <algorithm>
+#include <vector>
+#include <cassert>
 
 #endif //PCH_H
