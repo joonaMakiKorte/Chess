@@ -10,6 +10,11 @@ Bitboard::Bitboard():
 	half_moves(0),                         // Initially 0
 	full_moves(0)                          // Initially 0
 {
+	// Initialize undo_stack
+	for (int i = 0; i < MAX_SEARCH_DEPTH; ++i) {
+		undo_stack[i] = { 0, UNASSIGNED, 0 };
+	}
+
 	// Standard little-endian rank-file mapping (LSB = a1, MSB = h8)
 	white_pawns = 0x000000000000FF00;      // a2, b2, c2, d2, e2, f2, g2, h2
 	black_pawns = 0x00FF000000000000;      // a7, b7, c7, d7, e7, f7, g7, h7
@@ -220,28 +225,22 @@ uint64_t Bitboard::getLegalMoves(int from, bool white) {
 		// We have already made sure at this point that the king is not in checkmate,
 		// So there must be moves that get the king out of checkmate
 		// Exclude king from this check, since we have already calculated the squares where it could move
-		uint64_t attacker;
-		int attacker_square;
-		uint64_t attacking_ray;
-		if (white ? state.isCheckWhite() : state.isCheckBlack()) {
-			// Legal moves are the ones that overlap with attacking ray
-			attacker = getAttackers(king_bitboard, white_pieces, black_pieces, white);
-			attacker_square = findLastSetBit(attacker);
-			attacking_ray = getAttackingRay(attacker_square, king_square);
-			legal_moves &= attacking_ray;
-		}
-		else {
-			// Exclude the piece from its sides bitboard and check if the removal results in check
-			(white ? white_pieces : black_pieces) &= ~(1ULL << from);
-			uint64_t new_enemy_attacks = getAttackSquares(white_pieces, black_pieces, white);
-			if (king_bitboard & new_enemy_attacks) { // King is attacked after move -> results in check
-				// The legal moves cannot differ from the attacking ray
-				attacker = getAttackers(king_bitboard, white_pieces, black_pieces, white);
-				attacker_square = findLastSetBit(attacker);
-				attacking_ray = getAttackingRay(attacker_square, king_square);
-				legal_moves &= attacking_ray;
-			}
-		}
+
+		// Exclude the piece from its sides bitboard to get enemy attacks after moving
+		(white ? white_pieces : black_pieces) &= ~(1ULL << from);
+		uint64_t attackers = getAttackers(king_bitboard, white_pieces, black_pieces, white);
+
+		// If more than one attacker after moving, results in checkmate -> no legal moves
+		if (count_set_bits(attackers) > 1) return 0ULL;
+		if (attackers == 0) return legal_moves; // No attackers after removal -> no modifications
+
+		// Get the ray of the attacker
+		int attacker_square = findLastSetBit(attackers);
+		uint64_t attacking_ray = getAttackingRay(attacker_square, king_square);
+
+		// Legal moves are the ones that overlap with attacking ray
+		// Includes capturing the attacker
+		legal_moves &= attacking_ray;
 	}
 	return legal_moves;
 }
@@ -461,7 +460,7 @@ uint64_t Bitboard::getKnightMoves(int square, const uint64_t& white_pieces, cons
 		moves &= ~black_pieces; // Black knight can't move onto black pieces
 	}
 
-	return moves; // Should never reach here
+	return moves;
 }
 
 uint64_t Bitboard::getBishopMoves(int square, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white) {
