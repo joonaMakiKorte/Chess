@@ -42,6 +42,14 @@ public:
     // Store the game state as a bitmask
     BoardState state;
 
+    struct PinData {
+        uint64_t pinned;       // All pinned pieces
+        uint64_t pin_rays[64]; // Store pin ray for each pinned square
+    };
+
+    // Store the pin data
+    PinData pin_data;
+
     // Helper to get the piece type at a given square
     char getPieceTypeChar(int square) const;
 
@@ -87,6 +95,11 @@ private:
     // Helper functions to create legal moves for different piece types
     uint64_t getKingMoves(int king, uint64_t white_pieces, uint64_t black_pieces, bool white);
 
+    // Filter king moves
+    // Cannot move into check or to enemy king control area
+    // Also adds castling
+    void filterKingMoves(uint64_t& legal_moves, int square, bool white);
+
     // Helper to get castling moves for a king
     uint64_t getCastlingMoves(bool white);
 
@@ -121,7 +134,8 @@ private:
 
     // Each time after applying a move set the new board state
 	// Includes check, checkmate and stalemate information
-    void updateBoardState();
+    // Only updating the necessary side
+    void updateBoardState(bool white);
 
     // Check game state
     bool isInCheck(bool white);

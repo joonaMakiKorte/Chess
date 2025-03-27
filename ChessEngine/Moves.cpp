@@ -2,7 +2,21 @@
 #include "Moves.h"
 #include "Magic.h"
 #include "MoveTables.h"
-#include "BitboardConstants.h"
+
+uint64_t Moves::getPseudoLegalMoves(int square, PieceType piece, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white, int en_passant) {
+	switch (piece)
+	{
+	case PAWN: return getPawnMoves(square, white_pieces, black_pieces, white, en_passant);
+	case KNIGHT: return getKnightMoves(square, white_pieces, black_pieces, white);
+	case BISHOP: return getBishopMoves(square, white_pieces, black_pieces, white);
+	case ROOK: return getRookMoves(square, white_pieces, black_pieces, white);
+	case QUEEN: return getQueenMoves(square, white_pieces, black_pieces, white);
+	case KING: return getKingMoves(square, white_pieces, black_pieces, white);
+	default: throw std::invalid_argument("Invalid piece type");
+	}
+
+	return 0ULL; // Should never reach here
+}
 
 uint64_t Moves::getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white, int en_passant) {
 	uint64_t pawn_bb = 1ULL << pawn; // Convert index to bitboard
@@ -78,7 +92,18 @@ uint64_t Moves::getKnightMoves(int knight, const uint64_t& white_pieces, const u
 }
 
 uint64_t Moves::getKingMoves(int king, uint64_t white_pieces, uint64_t black_pieces, bool white) {
-	return 0;
+	uint64_t king_bb = 1ULL << king; // Convert index to bitboard
+	// Make sure exists
+	const uint64_t& friendly = white ? white_pieces : black_pieces;
+	if (!(king_bb & friendly)) return 0ULL;
+
+	// Initialize moves
+	uint64_t moves = KING_MOVES[king].moves;
+
+	// Exclude friendly pieces from moves
+	moves &= ~friendly;
+
+	return moves;
 }
 
 uint64_t Moves::getBishopMoves(int bishop, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white) {

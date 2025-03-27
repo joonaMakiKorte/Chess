@@ -66,6 +66,19 @@ const enum MoveType : uint8_t {
     PROMOTION_CAPTURE = 5  // Pawn promotion with capture
 };
 
+// Direction type (8 possible directions + 0 for no direction)
+const enum Direction : int8_t {
+    NORTH = 8,
+    SOUTH = -8,
+    EAST = 1,
+    WEST = -1,
+    NORTH_EAST = 9,
+    NORTH_WEST = 7,
+    SOUTH_EAST = -7,
+    SOUTH_WEST = -9,
+    NONE = 0
+};
+
 // Board state is stored as a bitmask
 struct BoardState {
     uint8_t flags = 0; // 8-bit bitfield to store state flags

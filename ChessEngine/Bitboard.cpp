@@ -17,6 +17,11 @@ Bitboard::Bitboard():
 		undo_stack[i] = { 0, UNASSIGNED, 0 };
 	}
 
+	// Initialize pin-data (initially none)
+	for (int i = 0; i < 64; ++i) {
+		pin_data.pin_rays[i] = 0xFFFFFFFFFFFFFFFFULL;
+	}
+
 	// Standard little-endian rank-file mapping (LSB = a1, MSB = h8)
 	piece_bitboards[WHITE][PAWN] = 0x000000000000FF00;  // a2-h2
 	piece_bitboards[BLACK][PAWN] = 0x00FF000000000000;  // a7-h7
@@ -89,7 +94,6 @@ std::string Bitboard::getGameState(bool white) {
 	return game_state;
 }
 
-
 bool Bitboard::isInCheck(bool white) {
 	uint64_t king_bitboard = white ? piece_bitboards[WHITE][KING] : piece_bitboards[BLACK][KING];
 	uint64_t white_pieces = whitePieces();
@@ -100,7 +104,7 @@ bool Bitboard::isInCheck(bool white) {
 
 
 bool Bitboard::isCheckmate(bool white) {
-	if (!isInCheck(white)) {
+	if (!(white ? state.isCheckWhite() : state.isCheckBlack())) {
 		return false; // Not in check, so not checkmate
 
 	}
@@ -191,24 +195,11 @@ int Bitboard::getFullMoveNumber() const {
 uint64_t Bitboard::getLegalMoves(int from, bool white) {
 	PieceType piece = getPieceType(from); // Get piece type at square
 
-	uint64_t legal_moves = 0ULL;
-	uint64_t enemy_attacks = 0ULL;
-	uint64_t king_captures = 0ULL;
-
 	// Get both pieces as bitboards
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
 
-	switch (piece)
-	{
-	case PAWN: legal_moves = Moves::getPawnMoves(from, white_pieces, black_pieces, white, en_passant_target); break;
-	case KNIGHT: legal_moves = Moves::getKnightMoves(from, white_pieces, black_pieces, en_passant_target); break;
-	case BISHOP: legal_moves = Moves::getBishopMoves(from, white_pieces, black_pieces, white); break;
-	case ROOK: legal_moves = Moves::getRookMoves(from, white_pieces, black_pieces, white); break;
-	case QUEEN: legal_moves = Moves::getQueenMoves(from, white_pieces, black_pieces, white); break;
-	case KING: legal_moves = getKingMoves(from, white_pieces, black_pieces, white); break;
-	default: throw std::invalid_argument("Invalid piece type");
-	}
+	uint64_t legal_moves = Moves::getPseudoLegalMoves(from, piece, white_pieces, black_pieces, white, en_passant_target);
 
 	// King cannot be captured
 	// Remove from moves if in
@@ -330,7 +321,7 @@ void Bitboard::applyMove(int source, int target, bool white) {
 		en_passant_target = UNASSIGNED;
 	}
 
-	updateBoardState(); // Must always be called
+	updateBoardState(white); // Must always be called
 }
 
 void Bitboard::applyPromotion(int target, char promotion, bool white) {
@@ -424,6 +415,18 @@ uint64_t Bitboard::getKingMoves(int square, uint64_t white_pieces, uint64_t blac
 }
 
 
+
+void Bitboard::filterKingMoves(uint64_t& legal_moves, int square, bool white) {
+	// First check ability to castle
+	bool castling_available = (castling_rights & (white ? 0x03 : 0x0C)) != 0 &&
+		(white ? (square == 4) : (square == 60));
+	// Add if possible
+	if (castling_available) {
+		legal_moves |= getCastlingMoves(white);
+	}
+
+
+}
 
 uint64_t Bitboard::getCastlingMoves(bool white) {
 	// Initialize castling moves
@@ -673,14 +676,26 @@ bool Bitboard::canBlock(const uint64_t& attack_ray, bool white) {
 	return false; // No blocks were found
 }
 
-void Bitboard::updateBoardState() {
+void Bitboard::updateBoardState(bool white) {
 	state.flags = 0; // Reset state before updating
+	
+	// TODO
+	// Update attack tables here
 
-	if (isInCheck(true))  state.flags |= BoardState::CHECK_WHITE;
-	if (isInCheck(false)) state.flags |= BoardState::CHECK_BLACK;
-	if (isCheckmate(true))  state.flags |= BoardState::CHECKMATE_WHITE;
-	if (isCheckmate(false)) state.flags |= BoardState::CHECKMATE_BLACK;
-	if (isStalemate(true) || isStalemate(false)) state.flags |= BoardState::STALEMATE;
+	// Check/checkmate/stalemate check
+	if (isInCheck(!white)) {
+		state.flags |= white ? BoardState::CHECK_BLACK : BoardState::CHECK_WHITE;
+		if (isCheckmate(!white)) { // Only if in check continue to checkmate 
+			state.flags |=  white ? BoardState::CHECKMATE_BLACK : BoardState::CHECKMATE_WHITE;
+		}
+	}
+	else if (isStalemate(!white)) {
+		state.flags |= BoardState::STALEMATE;
+	}
+
+	// TODO
+	// Additional state updates
+	// Like Zobrist
 }
 
 void Bitboard::resetUndoStack() {
