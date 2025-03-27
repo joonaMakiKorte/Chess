@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Bitboard.h"
 #include "MoveTables.h"
+#include "Moves.h"
 
 
 Bitboard::Bitboard():
@@ -464,63 +465,15 @@ uint64_t Bitboard::getKnightMoves(int square, const uint64_t& white_pieces, cons
 }
 
 uint64_t Bitboard::getBishopMoves(int square, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white) {
-	uint64_t bishop_bitboard = 1ULL << square; // Convert index to bitboard
-
-	if ((white_bishops & bishop_bitboard) == 0 && (black_bishops & bishop_bitboard) == 0) {
-		return 0ULL; // No bishop exists at this square
-	}
-
-	// Initialize moves
-	uint64_t moves = 0ULL;
-
-	// Combine legal moves
-	moves |= getSlidingMoves(BISHOP_MOVES[square].top_left, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(BISHOP_MOVES[square].top_right, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(BISHOP_MOVES[square].bottom_left, false, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(BISHOP_MOVES[square].bottom_right, false, white_pieces, black_pieces, white);
-
-	return moves;
+	return Moves::getBishopMoves(square, white_pieces, black_pieces, white);
 }
 
 uint64_t Bitboard::getRookMoves(int square, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white) {
-	uint64_t rook_bitboard = 1ULL << square; // Convert index to bitboard
-
-	if ((white_rooks & rook_bitboard) == 0 && (black_rooks & rook_bitboard) == 0) {
-		return 0ULL; // No rook exists at this square
-	}
-
-	// Initialize moves
-	uint64_t moves = 0ULL;
-
-	// Combine legal moves
-	moves |= getSlidingMoves(ROOK_MOVES[square].top, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(ROOK_MOVES[square].bottom, false, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(ROOK_MOVES[square].left, false, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(ROOK_MOVES[square].right, true, white_pieces, black_pieces, white);
-
-	return moves;
+	return Moves::getRookMoves(square, white_pieces, black_pieces, white);
 }
 
 uint64_t Bitboard::getQueenMoves(int square, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white) {
-	uint64_t queen_bitboard = 1ULL << square; // Convert index to bitboard
-	if ((white_queen & queen_bitboard) == 0 && (black_queen & queen_bitboard) == 0) {
-		return 0ULL; // No queen exists at this square
-	}
-
-	// Initialize moves
-	uint64_t moves = 0ULL;
-
-	// Combine legal moves
-	moves |= getSlidingMoves(QUEEN_MOVES[square].top, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].bottom, false, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].left, false, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].right, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].top_left, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].top_right, true, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].bottom_left, false, white_pieces, black_pieces, white);
-	moves |= getSlidingMoves(QUEEN_MOVES[square].bottom_right, false, white_pieces, black_pieces, white);
-
-	return moves;
+	return Moves::getQueenMoves(square, white_pieces, black_pieces, white);
 }
 
 uint64_t Bitboard::getKingMoves(int square, uint64_t white_pieces, uint64_t black_pieces, bool white) {

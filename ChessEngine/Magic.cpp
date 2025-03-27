@@ -7,7 +7,7 @@
 MagicMoves MAGIC_TABLE_BISHOP[64];
 MagicMoves MAGIC_TABLE_ROOK[64];
 
-static uint64_t maskBishopAttackRays(int square) {
+uint64_t maskBishopAttackRays(int square) {
     uint64_t attacks = 0ULL;
     
     // Get rank and file as bitmasks
@@ -34,7 +34,7 @@ static uint64_t maskBishopAttackRays(int square) {
     return attacks;
 }
 
-static uint64_t maskRookAttackRays(int square) {
+uint64_t maskRookAttackRays(int square) {
     uint64_t attacks = 0ULL;
 
     // Get rank and file as bitmasks
@@ -61,7 +61,7 @@ static uint64_t maskRookAttackRays(int square) {
     return attacks;
 }
 
-static uint64_t maskBishopXrayAttacks(int square, uint64_t blockers) {
+uint64_t maskBishopXrayAttacks(int square, uint64_t blockers) {
     uint64_t attacks = 0ULL;
 
     // Get rank and file as bitmasks
@@ -123,77 +123,23 @@ uint64_t maskRookXrayAttacks(int square, uint64_t blockers) {
     return attacks;
 }
 
+void initMagicTables() {
+    // Set flag to prevent unnecessary reinitialization
+    static bool initialized = false;
+    if (initialized) return;
+    initialized = true;
 
-static uint64_t generateMagicNumber(int square, int relevant_bits, uint64_t(*maskAttacks)(int), uint64_t(*maskXrayAttacks)(int, uint64_t)) {
-    int occupancy_indices = 1 << relevant_bits;
-    uint64_t attack_mask = maskAttacks(square);
-    uint64_t occupancies[4096], attacks[4096], used_attacks[4096];
-
-    for (int i = 0; i < occupancy_indices; i++) {
-        occupancies[i] = Utils::setOccupancy(i, relevant_bits, attack_mask);
-        attacks[i] = maskXrayAttacks(square, occupancies[i]);
-    }
-
-    for (int max_tries = 0; max_tries < 99999999; max_tries++)
-    {
-        uint64_t candidate = Utils::getMagicNumberCandidate();
-
-        if (Utils::countSetBits((attack_mask * candidate) & 0xFF00000000000000) < 6) continue;
-
-        memset(used_attacks, 0ULL, sizeof(used_attacks));
-
-        int fail = 0;
-        for (int index = 0; !fail && index < occupancy_indices; index++) {
-            int magic_index = (int)((occupancies[index] * candidate) >> (64 - relevant_bits));
-            if (used_attacks[magic_index] == 0ULL) {
-                used_attacks[magic_index] = attacks[index];
-            }
-            else {
-                fail = 1;
-                break;
-            }
-        }
-
-        if (!fail) {
-            return candidate;
-        }
-    }
-
-    return 0ULL;
-}
-
-void generateMagicTables() {
-
+    // Init bishop
     for (int sq = 0; sq < 64; sq++) {
-        int bit_count = RELEVANT_BITS_COUNT_ROOK[sq];
-        uint64_t magic = generateMagicNumber(sq, bit_count, &maskRookAttackRays, &maskRookXrayAttacks);
-        printf("%d : 0x%lxULL\n", sq, magic);
-    }
-    std::cout << std::endl;
-
-    std::cout << "Bishop Magic Numbers" << std::endl;
-    for (int sq = A1; sq < N_SQUARES; sq++)
-    {
-        int bit_count = tables::get_relevant_bits_count_bishop((Square)sq);
-        u64 magic = generate_magic_number((Square)sq, bit_count, &attacks::mask_bishop_attack_rays, &attacks::mask_bishop_xray_attacks);
-        printf("%d : 0x%lxULL\n", sq, magic);
-    }
-    std::cout << std::endl;
-}
-
-void initMagicTables()
-{
-    for (int sq = A1; sq < N_SQUARES; sq++)
-    {
-        MAGIC_TABLE_BISHOP[sq].mask = attacks::mask_bishop_attack_rays((Square)sq);
+        MAGIC_TABLE_BISHOP[sq].mask = maskBishopAttackRays(sq);
         MAGIC_TABLE_BISHOP[sq].magic = MAGICS_BISHOP[sq];
-        MAGIC_TABLE_BISHOP[sq].shift = 64 - tables::get_relevant_bits_count_bishop((Square)sq);
+        MAGIC_TABLE_BISHOP[sq].shift = 64 - RELEVANT_BITS_COUNT_BISHOP[sq];
     }
 
-    for (int sq = A1; sq < N_SQUARES; sq++)
-    {
-        MAGIC_TABLE_ROOK[sq].mask = attacks::mask_rook_attack_rays((Square)sq);
+    // Init rook
+    for (int sq = 0; sq < 64; sq++) {
+        MAGIC_TABLE_ROOK[sq].mask = maskRookAttackRays(sq);
         MAGIC_TABLE_ROOK[sq].magic = MAGICS_ROOK[sq];
-        MAGIC_TABLE_ROOK[sq].shift = 64 - tables::get_relevant_bits_count_rook((Square)sq);
+        MAGIC_TABLE_ROOK[sq].shift = 64 - RELEVANT_BITS_COUNT_ROOK[sq];
     }
 }

@@ -4,22 +4,6 @@
 
 namespace Utils
 {
-    // Helper functions for magic bitboard generation
-
-	static inline uint64_t generateDenseRandomNumber() {
-        uint64_t n1 = ((uint64_t)std::rand()) & 0xFFFF;
-        uint64_t n2 = ((uint64_t)std::rand()) & 0xFFFF;
-        uint64_t n3 = ((uint64_t)std::rand()) & 0xFFFF;
-        uint64_t n4 = ((uint64_t)std::rand()) & 0xFFFF;
-        return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
-	}
-
-    static inline uint64_t getMagicNumberCandidate() {
-        return generateDenseRandomNumber() &
-            generateDenseRandomNumber() &
-            generateDenseRandomNumber();
-    }
-
     // Helper to count the number of set bits in a bitboard
     static inline int countSetBits(const uint64_t& bitboard) {
         #if defined(_MSC_VER) // MSVC

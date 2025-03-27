@@ -12,7 +12,8 @@ struct MagicMoves {
 extern MagicMoves MAGIC_TABLE_BISHOP[64];
 extern MagicMoves MAGIC_TABLE_ROOK[64];
 
-void generateMagicTables();
+uint64_t maskRookXrayAttacks(int square, uint64_t blockers);
+uint64_t maskBishopXrayAttacks(int square, uint64_t blockers);
 
 void initMagicTables();
 

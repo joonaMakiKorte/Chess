@@ -1,6 +1,8 @@
- #include "pch.h"
+#include "pch.h"
 #include "MoveTables.h"
 #include "BitboardConstants.h"
+#include "Magic.h"
+#include "Utils.h"
 
 // Static allocation of tables
 // Declared as global arrays
@@ -8,6 +10,10 @@ PawnMoves WHITE_PAWN_MOVES[64];
 PawnMoves BLACK_PAWN_MOVES[64];
 KnightMoves KNIGHT_MOVES[64];
 KingMoves KING_MOVES[64];
+
+// Define the large tables
+uint64_t(*ATTACKS_BISHOP)[512] = new uint64_t[64][512];
+uint64_t(*ATTACKS_ROOK)[4096] = new uint64_t[64][4096];
 
 void initWhitePawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
@@ -102,10 +108,39 @@ void initMoveTables() {
 	if (initialized) return;
 	initialized = true;
 
+	// Non-sliding pieces
 	for (int square = 0; square < 64; square++) {
 		initWhitePawnMoves(square);
 		initBlackPawnMoves(square);
 		initKnightMoves(square);
 		initKingMoves(square);
 	}
+
+	// Initialize magic tables
+	initMagicTables();
+
+	// Bishop
+	for (int sq = 0; sq < 64; sq++) {
+		int occupancy_indices = 1 << RELEVANT_BITS_COUNT_BISHOP[sq];
+		for (int i = 0; i < occupancy_indices; i++) {
+			uint64_t occupancy = Utils::setOccupancy(i, RELEVANT_BITS_COUNT_BISHOP[sq], MAGIC_TABLE_BISHOP[sq].mask);
+			int index = (int)((occupancy * MAGIC_TABLE_BISHOP[sq].magic) >> MAGIC_TABLE_BISHOP[sq].shift);
+			ATTACKS_BISHOP[sq][index] = maskBishopXrayAttacks(sq, occupancy);
+		}
+	}
+	
+	// Rook
+	for (int sq = 0; sq < 64; sq++) {
+		int occupancy_indices = 1 << RELEVANT_BITS_COUNT_ROOK[sq];
+		for (int i = 0; i < occupancy_indices; i++) {
+			uint64_t occupancy = Utils::setOccupancy(i, RELEVANT_BITS_COUNT_ROOK[sq], MAGIC_TABLE_ROOK[sq].mask);
+			int index = (int)((occupancy * MAGIC_TABLE_ROOK[sq].magic) >> MAGIC_TABLE_ROOK[sq].shift);
+			ATTACKS_ROOK[sq][index] = maskRookXrayAttacks(sq, occupancy);
+		}
+	}
+}
+
+void teardown() {
+	delete[] ATTACKS_BISHOP;
+	delete[] ATTACKS_ROOK;
 }

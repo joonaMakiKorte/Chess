@@ -9,6 +9,9 @@ public:
     uint64_t getKingMoves(int king, uint64_t white_pieces, uint64_t black_pieces, bool white);
 
     // Moves created with magic movetables
+    static uint64_t getBishopMoves(int bishop, const uint64_t& white_pieces, const uint64_t& black_bieces, bool white);
+    static uint64_t getRookMoves(int rook, const uint64_t& white_pieces, const uint64_t& black_bieces, bool white);
+    static uint64_t getQueenMoves(int queen, const uint64_t& white_pieces, const uint64_t& black_bieces, bool white);
 };
 
 #endif

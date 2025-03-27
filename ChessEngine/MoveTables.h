@@ -22,9 +22,16 @@ extern PawnMoves BLACK_PAWN_MOVES[64];
 extern KnightMoves KNIGHT_MOVES[64];
 extern KingMoves KING_MOVES[64];
 
+// Bishops and rook moves are initialize on the heap befause of the large size
+extern uint64_t (*ATTACKS_BISHOP)[512];
+extern uint64_t (*ATTACKS_ROOK)[4096];
+
 // Generate move tables at runtime
 // Loops over the 64 squares of the chessboard and creates moveset for each piece at each location
 // Calls every individual init function of each piece
 void initMoveTables();
+
+// Deallocate slider tables when program exits
+void teardown(); 
 
 #endif // MOVETABLES_H
