@@ -9,25 +9,25 @@ MagicMoves MAGIC_TABLE_ROOK[64];
 
 uint64_t maskBishopAttackRays(int square) {
     uint64_t attacks = 0ULL;
-    
+
     // Get rank and file as bitmasks
     uint64_t rank = Utils::getRank(square);
     uint64_t file = Utils::getFile(square);
 
     // Generate attack rays
-    for (int r = rank + 1, f = file + 1; r < 7 && f < 7; r++, f++) {
+    for (int r = static_cast<int>(rank) + 1, f = static_cast<int>(file) + 1; r < 7 && f < 7; r++, f++) {
         attacks |= (1ULL << Utils::getSquare(r, f));
     }
 
-    for (int r = rank + 1, f = file - 1; r < 7 && f > 0; r++, f--) {
+    for (int r = static_cast<int>(rank) + 1, f = static_cast<int>(file) - 1; r < 7 && f > 0; r++, f--) {
         attacks |= (1ULL << Utils::getSquare(r, f));
     }
 
-    for (int r = rank - 1, f = file + 1; r > 0 && f < 7; r--, f++) {
+    for (int r = static_cast<int>(rank) - 1, f = static_cast<int>(file) + 1; r > 0 && f < 7; r--, f++) {
         attacks |= (1ULL << Utils::getSquare(r, f));
     }
 
-    for (int r = rank - 1, f = file - 1; r > 0 && f > 0; r--, f--) {
+    for (int r = static_cast<int>(rank) - 1, f = static_cast<int>(file) - 1; r > 0 && f > 0; r--, f--) {
         attacks |= (1ULL << Utils::getSquare(r, f));
     }
 
@@ -42,20 +42,20 @@ uint64_t maskRookAttackRays(int square) {
     uint64_t file = Utils::getFile(square);
 
     // Generate attack rays
-    for (int r = rank + 1; r < 7; r++) {
-        attacks |= (1ULL << Utils::getSquare(r, file));
+    for (int r = static_cast<int>(rank) + 1; r < 7; r++) {
+        attacks |= (1ULL << Utils::getSquare(r, static_cast<int>(file)));
     }
 
-    for (int r = rank - 1; r > 0; r--) {
-        attacks |= (1ULL << Utils::getSquare(r, file));
+    for (int r = static_cast<int>(rank) - 1; r > 0; r--) {
+        attacks |= (1ULL << Utils::getSquare(r, static_cast<int>(file)));
     }
 
-    for (int f = file + 1; f < 7; f++) {
-        attacks |= (1ULL << Utils::getSquare(rank, f));
+    for (int f = static_cast<int>(file) + 1; f < 7; f++) {
+        attacks |= (1ULL << Utils::getSquare(static_cast<int>(rank), f));
     }
 
-    for (int f = file - 1; f > 0; f--) {
-        attacks |= (1ULL << Utils::getSquare(rank, f));
+    for (int f = static_cast<int>(file) - 1; f > 0; f--) {
+        attacks |= (1ULL << Utils::getSquare(static_cast<int>(rank), f));
     }
 
     return attacks;
@@ -69,22 +69,22 @@ uint64_t maskBishopXrayAttacks(int square, uint64_t blockers) {
     uint64_t file = Utils::getFile(square);
 
     // Generate xrays, stop traversing a ray after encountering a blocker
-    for (int r = rank + 1, f = file + 1; r < 8 && f < 8; r++, f++) {
+    for (int r = static_cast<int>(rank) + 1, f = static_cast<int>(file) + 1; r < 8 && f < 8; r++, f++) {
         attacks |= (1ULL << Utils::getSquare(r, f));
         if ((1ULL << Utils::getSquare(r, f) & blockers)) break;
     }
 
-    for (int r = rank + 1, f = file - 1; r < 8 && f >= 0; r++, f--) {
+    for (int r = static_cast<int>(rank) + 1, f = static_cast<int>(file) - 1; r < 8 && f >= 0; r++, f--) {
         attacks |= (1ULL << Utils::getSquare(r, f));
         if ((1ULL << Utils::getSquare(r, f) & blockers)) break;
     }
 
-    for (int r = rank - 1, f = file + 1; r >= 0 && f < 8; r--, f++) {
+    for (int r = static_cast<int>(rank) - 1, f = static_cast<int>(file) + 1; r >= 0 && f < 8; r--, f++) {
         attacks |= (1ULL << Utils::getSquare(r, f));
         if ((1ULL << Utils::getSquare(r, f) & blockers)) break;
     }
 
-    for (int r = rank - 1, f = file - 1; r >= 0 && f >= 0; r--, f--) {
+    for (int r = static_cast<int>(rank) - 1, f = static_cast<int>(file) - 1; r >= 0 && f >= 0; r--, f--) {
         attacks |= (1ULL << Utils::getSquare(r, f));
         if ((1ULL << Utils::getSquare(r, f) & blockers)) break;
     }
@@ -100,24 +100,24 @@ uint64_t maskRookXrayAttacks(int square, uint64_t blockers) {
     uint64_t file = Utils::getFile(square);
 
     // Generate xrays, stop traversing a ray after encountering a blocker
-    for (int r = rank + 1; r < 8; r++) {
-        attacks |= (1ULL << Utils::getSquare(r, file));
-        if ((1ULL << Utils::getSquare(r, file) & blockers)) break;
+    for (int r = static_cast<int>(rank) + 1; r < 8; r++) {
+        attacks |= (1ULL << Utils::getSquare(r, static_cast<int>(file)));
+        if ((1ULL << Utils::getSquare(r, static_cast<int>(file)) & blockers)) break;
     }
 
-    for (int r = rank - 1; r >= 0; r--) {
-        attacks |= (1ULL << Utils::getSquare(r, file));
-        if ((1ULL << Utils::getSquare(r, file) & blockers)) break;
+    for (int r = static_cast<int>(rank) - 1; r >= 0; r--) {
+        attacks |= (1ULL << Utils::getSquare(r, static_cast<int>(file)));
+        if ((1ULL << Utils::getSquare(r, static_cast<int>(file)) & blockers)) break;
     }
 
-    for (int f = file + 1; f < 8; f++) {
-        attacks |= (1ULL << Utils::getSquare(rank, f));
-        if ((1ULL << Utils::getSquare(rank, f) & blockers)) break;
+    for (int f = static_cast<int>(file) + 1; f < 8; f++) {
+        attacks |= (1ULL << Utils::getSquare(static_cast<int>(rank), f));
+        if ((1ULL << Utils::getSquare(static_cast<int>(rank), f) & blockers)) break;
     }
 
-    for (int f = file - 1; f >= 0; f--) {
-        attacks |= (1ULL << Utils::getSquare(rank, f));
-        if ((1ULL << Utils::getSquare(rank, f) & blockers)) break;
+    for (int f = static_cast<int>(file) - 1; f >= 0; f--) {
+        attacks |= (1ULL << Utils::getSquare(static_cast<int>(rank), f));
+        if ((1ULL << Utils::getSquare(static_cast<int>(rank), f) & blockers)) break;
     }
 
     return attacks;

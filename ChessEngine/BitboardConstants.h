@@ -39,15 +39,21 @@ constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) 
 constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
 constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
 
+// Sides are assigned an enum
+const enum Color : uint8_t {
+    WHITE = 0,
+    BLACK = 1
+};
+
 // Each piece is assigned a unique integer (4 bits)
 const enum PieceType : uint8_t {
-    EMPTY = 0,   // No piece
-    PAWN = 1,
-    KNIGHT = 2,
-    BISHOP = 3,
-    ROOK = 4,
-    QUEEN = 5,
-    KING = 6
+    PAWN = 0,
+    KNIGHT = 1,
+    BISHOP = 2,
+    ROOK = 3,
+    QUEEN = 4,
+    KING = 5,
+    EMPTY = 6   // No piece
 };
 
 // Defines the type of move (4 bits)
@@ -94,13 +100,13 @@ struct BoardState {
 // Piece values for board evaluation
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
 constexpr int PIECE_VALUES[7] = {
-    0,     // EMPTY (should never be accessed)
     100,   // PAWN
     320,   // KNIGHT
     330,   // BISHOP
     500,   // ROOK
     900,   // QUEEN
-    20000  // KING (captures should be handled separately)
+    20000, // KING (captures should be handled separately)
+    0     // EMPTY (should never be accessed)
 };
 
 // Piece-square tables for positional scoring evaluation (PSTs)

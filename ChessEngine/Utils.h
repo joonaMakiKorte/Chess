@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 #include "pch.h"
+#include "BitboardConstants.h"
 
 namespace Utils
 {
@@ -54,8 +55,7 @@ namespace Utils
 
     static inline void popBit(uint64_t& bn, int sq) { bn &= ~(1ULL << sq); }
 
-    static inline int bitScanForward(uint64_t bb)
-    {
+    static inline int bitScanForward(uint64_t bb) {
         static const int index64[64] = {
             0, 47, 1, 56, 48, 27, 2, 60,
             57, 49, 41, 37, 28, 16, 3, 61,
@@ -70,8 +70,7 @@ namespace Utils
         return (int)index64[((bb ^ (bb - 1)) * debruijn64) >> 58];
     }
 
-    static inline uint64_t setOccupancy(int index, int bits_in_mask, uint64_t attack_mask)
-    {
+    static inline uint64_t setOccupancy(int index, int bits_in_mask, uint64_t attack_mask) {
         uint64_t occupancy = 0ULL;
         for (int bit = 0; bit < bits_in_mask; bit++)
         {
@@ -82,8 +81,28 @@ namespace Utils
                 occupancy |= 1ULL << lsb_sq;
             }
         }
-
         return occupancy;
+    }
+
+    static inline int get_piece_value(PieceType piece) {
+        assert(piece >= PAWN && piece <= EMPTY); // Ensure piece is within valid range
+        return PIECE_VALUES[static_cast<int>(piece)];
+    }
+
+    static inline int get_mvv_lva_score(PieceType attacker, PieceType victim) {
+        int attacker_value = get_piece_value(attacker);
+        int victim_value = get_piece_value(victim);
+
+        return (victim_value * 10) - attacker_value;  // Higher value captures come first
+    }
+
+    inline int get_direction(int diff) {
+        if (diff % 8 == 0) return (diff > 0) ? 8 : -8;  // Vertical
+        if (diff % 7 == 0) return (diff > 0) ? 7 : -7;  // Diagonal
+        if (diff % 9 == 0) return (diff > 0) ? 9 : -9;  // Diagonal
+        if (diff % 1 == 0) return (diff > 0) ? 1 : -1;  // Horizontal
+
+        return 0;  // Invalid (should not happen if called correctly)
     }
 }
 

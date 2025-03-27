@@ -26,6 +26,8 @@ extern KingMoves KING_MOVES[64];
 extern uint64_t (*ATTACKS_BISHOP)[512];
 extern uint64_t (*ATTACKS_ROOK)[4096];
 
+// Pre-compute all attack rays between squares
+
 // Generate move tables at runtime
 // Loops over the 64 squares of the chessboard and creates moveset for each piece at each location
 // Calls every individual init function of each piece
