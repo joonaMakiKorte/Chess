@@ -373,8 +373,8 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 			}
 		}
 		if (castling_rights & 0x08) { // Black Queenside
-			if ((occupied & BLACK_KINGSIDE_CASTLE_SQUARES) == 0) { // c8 and d8 must be free
-				critical_squares = BLACK_KINGSIDE_CASTLE_SQUARES; // e8, d8, c8
+			if ((occupied & BLACK_QUEENSIDE_CASTLE_SQUARES) == 0) { // c8 and d8 must be free
+				critical_squares = BLACK_QUEENSIDE_CASTLE_SQUARES; // e8, d8, c8
 				if (!(critical_squares & attack_data.attack_squares)) {
 					castling_moves |= 1ULL << 58; // King moves to c8
 				}
