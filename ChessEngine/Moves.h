@@ -2,6 +2,7 @@
 #define MOVES_H
 
 #include "BitboardConstants.h"
+#include "Bitboard.h"
 
 class Moves {
 public:
@@ -20,6 +21,11 @@ public:
     static uint64_t getBishopMoves(int bishop, uint64_t occ);
     static uint64_t getRookMoves(int rook, uint64_t occ);
     static uint64_t getQueenMoves(int queen, uint64_t occupied);
+
+    // Compute pinned pieces 
+    // Fills into pin_data reference param
+    static void computePinnedPieces(Bitboard::PinData& pin_data, const int& king_sq, const uint64_t& occupied,
+        const uint64_t& bishops, const uint64_t& rooks, const uint64_t& queen);
 };
 
 #endif

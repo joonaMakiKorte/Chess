@@ -172,7 +172,6 @@ if "$(Platform)"=="x64" (
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Magic.h" />
-    <ClInclude Include="MoveFiltering.h" />
     <ClInclude Include="Moves.h" />
     <ClInclude Include="BitboardConstants.h" />
     <ClInclude Include="ChessAI.h" />
@@ -186,7 +185,6 @@ if "$(Platform)"=="x64" (
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Magic.cpp" />
-    <ClCompile Include="MoveFiltering.cpp" />
     <ClCompile Include="Moves.cpp" />
     <ClCompile Include="ChessAI.cpp" />
     <ClCompile Include="MoveTables.cpp" />

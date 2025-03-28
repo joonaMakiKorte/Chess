@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Bitboard.h"
 #include "MoveTables.h"
-#include "MoveFiltering.h"
 #include "Moves.h"
 #include "Utils.h"
 
@@ -287,10 +286,6 @@ void Bitboard::applyMove(int source, int target, bool white) {
 
 }
 
-uint64_t Bitboard::getPinned() {
-	return pin_data.pinned;
-}
-
 void Bitboard::applyPromotion(int target, char promotion, bool white) {
 	uint64_t target_square = 1ULL << target; // Convert target to bitboard
 	// Update the bitboard of the piece moved
@@ -503,7 +498,7 @@ void Bitboard::updateBoardState(bool white) {
 	uint64_t rooks = white ? piece_bitboards[WHITE][ROOK] : piece_bitboards[BLACK][ROOK];
 	uint64_t queen = white ? piece_bitboards[WHITE][QUEEN] : piece_bitboards[BLACK][QUEEN];
 
-	MoveFiltering::computePinnedPieces(pin_data, king_bb, white_pieces | black_pieces, bishops, rooks, queen);
+	Moves::computePinnedPieces(pin_data, king_bb, white_pieces | black_pieces, bishops, rooks, queen);
 
 	// Now we calculate attack squares of the previously moved side
 	// Exclude enemy king from calculation so we get the rays that pass through king
@@ -864,8 +859,9 @@ int Bitboard::calculatePositionalScore(bool white) {
 	// Calculate positional scoring for both sides
 	// Done by looping over all pieces and getting the positional score at the current square
 	uint64_t white_pieces = whitePieces();
-	while (white_pieces != 0) {
+	while (white_pieces) {
 		int square = Utils::findLastSetBit(white_pieces); // Extract LSB
+		Utils::popBit(white_pieces, square);
 		PieceType piece = getPieceType(square); // Get piece type at square
 		int row = 7 - (square / 8); // Convert square to row (0-7) for white
 		int col = square % 8; // Convert square to column (0-7)
@@ -877,13 +873,12 @@ int Bitboard::calculatePositionalScore(bool white) {
 		else if (piece == ROOK) white_score += (game_phase * RookTableMid[row][col] + (1 - game_phase) * RookTableEnd[row][col]);
 		else if (piece == QUEEN) white_score += (game_phase * QueenTableMid[row][col] + (1 - game_phase) * QueenTableEnd[row][col]);
 		else if (piece == KING) white_score += (game_phase * KingTableMid[row][col] + (1 - game_phase) * KingTableEnd[row][col]);
-
-		white_pieces ^= 1ULL << square; // Remove the processed square
 	}
 
 	uint64_t black_pieces = blackPieces();
-	while (black_pieces != 0) {
+	while (black_pieces) {
 		int square = Utils::findLastSetBit(black_pieces); // Extract LSB
+		Utils::popBit(black_pieces, square);
 		PieceType piece = getPieceType(square); // Get piece type at square
 		int row = square / 8; // Convert square to row (0-7) for black
 		int col = 7 - (square % 8); // Convert square to column (0-7)
@@ -895,8 +890,6 @@ int Bitboard::calculatePositionalScore(bool white) {
 		else if (piece == ROOK) black_score += (game_phase * RookTableMid[row][col] + (1 - game_phase) * RookTableEnd[row][col]);
 		else if (piece == QUEEN) black_score += (game_phase * QueenTableMid[row][col] + (1 - game_phase) * QueenTableEnd[row][col]);
 		else if (piece == KING) black_score += (game_phase * KingTableMid[row][col] + (1 - game_phase) * KingTableEnd[row][col]);
-
-		black_pieces ^= 1ULL << square; // Remove the processed square
 	}
 
 	// Calculate the difference: white's score minus black
