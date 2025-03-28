@@ -22,6 +22,10 @@ void ChessBoard::MovePiece(int source, int target) {
 
     // Apply move in bitboard
     board.applyMove(source, target, white);
+    uint64_t pinned = board.getPinned();
+    std::string message = printBitboardAsSquares(pinned);
+    UpdateDebugMessage(message);
+
     white = !white; // Switch turn
 }
 

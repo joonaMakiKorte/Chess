@@ -6,19 +6,8 @@
 
 class Bitboard {
 private:
-    // Represent each piece type as a bitboard
-    uint64_t white_pawns;
-    uint64_t black_pawns;
-    uint64_t white_knights;
-    uint64_t black_knights;
-    uint64_t white_bishops;
-    uint64_t black_bishops;
-    uint64_t white_rooks;
-    uint64_t black_rooks;
-    uint64_t white_queen;
-    uint64_t black_queen;
-    uint64_t white_king;
-    uint64_t black_king;
+    // Piece bitboards indexed by [color][pieceType]
+    uint64_t piece_bitboards[2][6];
 
     // Store castling rights as a bitmask
     // Bit 0 : White kingside(K)
@@ -36,8 +25,11 @@ private:
 
     // Save previous board states for faster state recovery in move undoing
     struct UndoInfo {
+        // Save castling and en passant
         uint8_t castling_rights;
         int en_passant_target;
+
+        // Flags of the game state
         uint8_t flags;
     };
     UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack
@@ -49,6 +41,24 @@ public:
 
     // Store the game state as a bitmask
     BoardState state;
+
+    // Pinned piece data
+    struct PinData {
+        uint64_t pinned;       // All pinned pieces
+        uint64_t pin_rays[64]; // Store pin ray for each pinned square
+    };
+
+    // Attack data, store enemy attacks squares and attacker ray
+    struct AttackData {
+        uint64_t attack_squares;
+        uint64_t attack_ray;
+    };
+
+    // Store the pin data
+    PinData pin_data;
+
+    // Store the attack data
+    AttackData attack_data;
 
     // Helper to get the piece type at a given square
     char getPieceTypeChar(int square) const;
@@ -76,6 +86,7 @@ public:
     // Takes the source and target as parameters
     // Move is applied only after making sure its legal, meaning no need to check for validity
     void applyMove(int source, int target, bool white);
+    uint64_t getPinned();
 
     // Apply promotion by updating bitboards
 	// Move has already been applied , so only need to promote the pawn
@@ -84,27 +95,13 @@ public:
 
 private:
     // Get locations of white or black pieces (bitboard)
-     // Uses bitwise OR operation to combine occupancy of all pieces of same color
+    // Uses bitwise OR operation to combine occupancy of all pieces of same color
     // To get all occupied squares, combine these two functions with bitwise OR
     uint64_t whitePieces();
     uint64_t blackPieces();
 
     // Helper function to convert a square index to algebraic notation
     std::string squareToString(int square) const;
-
-    // Helper functions to create legal moves for different piece types
-    uint64_t getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-    uint64_t getPawnCaptures(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white); // Used for attack squares
-    uint64_t getKnightMoves(int knight, const uint64_t& white_pieces, const uint64_t& black_pieces);
-    uint64_t getBishopMoves(int bishop, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-    uint64_t getRookMoves(int rook, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-    uint64_t getQueenMoves(int queen, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-    uint64_t getKingMoves(int king, uint64_t white_pieces, uint64_t black_pieces, bool white);
-
-    // Helper to get the sliding moves of a movetable
-    // Used for Bishop, Rook and Queen, since can't leap over other pieces
-    // Uses LSB/FSB to isolate the occupied bit depending on move direction
-    uint64_t getSlidingMoves(uint64_t direction_moves, bool reverse, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
 
     // Helper to get castling moves for a king
     uint64_t getCastlingMoves(bool white);
@@ -119,50 +116,19 @@ private:
     // If white turn, we get all the squares black could attack, and vice versa
     // Takes bitboards of both of the pieces as the parameter
     // Gets all the possible squares as a bitboard
-    uint64_t getAttackSquares(const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-
-    // Helper to get king attackers locations
-    // Returns the attackers as a bitboard
-    uint64_t getAttackers(uint64_t king, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-
-    // Find the ray which must be blocked if the king is in check
-    // If attacker is pawn or knight, returns only the piece location
-    // If rook, bishop or queen, gets the whole attacking ray
-    uint64_t getAttackingRay(int attacker, int king);
-
-    // Helper for calculating the attacking ray between attacker and king
-    // Calculates the square difference of the two pieces and forms the ray on that info
-    uint64_t formAttackingRay(int attacker, int king);
+    void getAttackSquares(int enemy_king, const uint64_t& white_pieces, const uint64_t black_pieces, bool white);
 
     // Determine if the attacking ray can be blocked by any of the own pieces
     // Returns bool indicating result
-    bool canBlock(const uint64_t& attack_ray, bool white);
+    bool canBlock(bool white);
 
     // Each time after applying a move set the new board state
 	// Includes check, checkmate and stalemate information
-    void updateBoardState();
+    // Only updating the necessary side
+    void updateBoardState(bool white);
 
-    // Check game state
-    bool isInCheck(bool white);
     bool isCheckmate(bool white);
     bool isStalemate(bool white);
-
-private:
-    // Helper function to find the index of first set bit and last set bit
-    // Use inline to avoid function call overhead
-    inline int findFirstSetBit(uint64_t value);
-    inline int findLastSetBit(uint64_t value);
-
-    // Helper to get direction between two squares from their difference
-    // Done by normalizing the movement direction to match one of the 8 possible moving directions
-    inline int get_direction(int diff);
-
-	// Helper to count the number of set bits in a bitboard
-	inline int count_set_bits(const uint64_t& bitboard);
-
-	inline int get_mvv_lva_score(PieceType attacker, PieceType victim);
-
-	inline int get_piece_value(PieceType piece);
 
 public:
     // Reset undo stack
