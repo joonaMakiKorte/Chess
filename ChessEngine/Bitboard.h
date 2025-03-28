@@ -42,13 +42,23 @@ public:
     // Store the game state as a bitmask
     BoardState state;
 
+    // Pinned piece data
     struct PinData {
         uint64_t pinned;       // All pinned pieces
         uint64_t pin_rays[64]; // Store pin ray for each pinned square
     };
 
+    // Attack data, store enemy attacks squares and attacker ray
+    struct AttackData {
+        uint64_t attack_squares;
+        uint64_t attack_ray;
+    };
+
     // Store the pin data
     PinData pin_data;
+
+    // Store the attack data
+    AttackData attack_data;
 
     // Helper to get the piece type at a given square
     char getPieceTypeChar(int square) const;
@@ -92,14 +102,6 @@ private:
     // Helper function to convert a square index to algebraic notation
     std::string squareToString(int square) const;
 
-    // Helper functions to create legal moves for different piece types
-    uint64_t getKingMoves(int king, uint64_t white_pieces, uint64_t black_pieces, bool white);
-
-    // Filter king moves
-    // Cannot move into check or to enemy king control area
-    // Also adds castling
-    void filterKingMoves(uint64_t& legal_moves, int square, bool white);
-
     // Helper to get castling moves for a king
     uint64_t getCastlingMoves(bool white);
 
@@ -113,32 +115,17 @@ private:
     // If white turn, we get all the squares black could attack, and vice versa
     // Takes bitboards of both of the pieces as the parameter
     // Gets all the possible squares as a bitboard
-    uint64_t getAttackSquares(const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-
-    // Helper to get king attackers locations
-    // Returns the attackers as a bitboard
-    uint64_t getAttackers(uint64_t king, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white);
-
-    // Find the ray which must be blocked if the king is in check
-    // If attacker is pawn or knight, returns only the piece location
-    // If rook, bishop or queen, gets the whole attacking ray
-    uint64_t getAttackingRay(int attacker, int king);
-
-    // Helper for calculating the attacking ray between attacker and king
-    // Calculates the square difference of the two pieces and forms the ray on that info
-    uint64_t formAttackingRay(int attacker, int king);
+    void getAttackSquares(int enemy_king, const uint64_t& white_pieces, const uint64_t black_pieces, bool white);
 
     // Determine if the attacking ray can be blocked by any of the own pieces
     // Returns bool indicating result
-    bool canBlock(const uint64_t& attack_ray, bool white);
+    bool canBlock(bool white);
 
     // Each time after applying a move set the new board state
 	// Includes check, checkmate and stalemate information
     // Only updating the necessary side
     void updateBoardState(bool white);
 
-    // Check game state
-    bool isInCheck(bool white);
     bool isCheckmate(bool white);
     bool isStalemate(bool white);
 

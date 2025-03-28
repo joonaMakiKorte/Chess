@@ -18,7 +18,7 @@ void MoveFiltering::computePinnedPieces(Bitboard::PinData& pin_data, const int& 
 	// Meaning possible rays enemy could attack from
 	// Done by getting possible queen moves at this square
 	while (sliders) {
-		int slider_sq = Utils::bitScanForward(sliders);
+		int slider_sq = Utils::findFirstSetBit(sliders);
 		Utils::popBit(sliders, slider_sq);
 		Direction direction = DIR[king_sq][slider_sq];
 
@@ -29,7 +29,7 @@ void MoveFiltering::computePinnedPieces(Bitboard::PinData& pin_data, const int& 
 
 		// Check if exactly one blocker exists and extract it in one step
 		if (blockers && !(blockers & (blockers - 1))) {
-			int pinned_sq = Utils::bitScanForward(blockers); // Get the pinned piece
+			int pinned_sq = Utils::findFirstSetBit(blockers); // Get the pinned piece
 			pin_data.pinned |= (1ULL << pinned_sq); // Add to pinned
 			pin_data.pin_rays[pinned_sq] = LINE[king_sq][slider_sq]; // Get the pin ray
 		}
