@@ -33,7 +33,7 @@ private:
         uint8_t flags;
     };
     UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack
-    int undo_stack_top;
+    int undo_stack_top; // Index of stack top
 
 public:
     // Initialize each piece with starting pos
@@ -86,7 +86,6 @@ public:
     // Takes the source and target as parameters
     // Move is applied only after making sure its legal, meaning no need to check for validity
     void applyMove(int source, int target, bool white);
-    uint64_t getPinned();
 
     // Apply promotion by updating bitboards
 	// Move has already been applied , so only need to promote the pawn
@@ -106,16 +105,14 @@ private:
     // Helper to get castling moves for a king
     uint64_t getCastlingMoves(bool white);
 
-    // Update castling rights when rook was moved
+    // Update castling rights when rook was moved or captured
     void updateRookCastling(bool white, int source);
 
     // Perform castling by moving king and rook in correct places
     void handleCastling(bool white, int target);
 
     // Helper to get all the attack squares of opponent (squares that are possible to attack)
-    // If white turn, we get all the squares black could attack, and vice versa
-    // Takes bitboards of both of the pieces as the parameter
-    // Gets all the possible squares as a bitboard
+    // Also determines if king is in check and calculates the attack ray
     void getAttackSquares(int enemy_king, const uint64_t& white_pieces, const uint64_t black_pieces, bool white);
 
     // Determine if the attacking ray can be blocked by any of the own pieces
