@@ -86,6 +86,7 @@ public:
     // Takes the source and target as parameters
     // Move is applied only after making sure its legal, meaning no need to check for validity
     void applyMove(int source, int target, bool white);
+    uint64_t getPinned();
 
     // Apply promotion by updating bitboards
 	// Move has already been applied , so only need to promote the pawn

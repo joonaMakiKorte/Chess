@@ -284,6 +284,11 @@ void Bitboard::applyMove(int source, int target, bool white) {
 	}
 
 	updateBoardState(white); // Must always be called
+
+}
+
+uint64_t Bitboard::getPinned() {
+	return pin_data.pinned;
 }
 
 void Bitboard::applyPromotion(int target, char promotion, bool white) {
@@ -455,7 +460,7 @@ void Bitboard::getAttackSquares(int enemy_king, const uint64_t& white_pieces, co
 		}
 		// If move landed on enemy king get the pre-computed attack ray
 		if (moves & (1ULL << enemy_king)) {
-			attack_data.attack_ray = LINE[current_square][enemy_king];
+			attack_data.attack_ray = BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
 			// Also update that the king is in check
 			state.flags |= (white ? BoardState::CHECK_BLACK : BoardState::CHECK_WHITE);
 		}

@@ -117,7 +117,7 @@ Direction get_direction(int sq1, int sq2) {
 
 	// Diagonal directions
 	if (dx == dy)  return dx > 0 ? NORTH_EAST : SOUTH_WEST;
-	if (dx == -dy) return dx > 0 ? NORTH_WEST : SOUTH_EAST;
+	if (dx == -dy) return dx > 0 ? SOUTH_EAST : NORTH_WEST;
 
 	// Not aligned
 	return NONE;
