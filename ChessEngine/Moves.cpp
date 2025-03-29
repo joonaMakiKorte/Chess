@@ -2,6 +2,7 @@
 #include "Moves.h"
 #include "Magic.h"
 #include "MoveTables.h"
+#include "Tables.h"
 #include "Utils.h"
 
 uint64_t Moves::getPseudoLegalMoves(int square, PieceType piece, uint64_t occupied) {

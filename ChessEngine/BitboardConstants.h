@@ -122,6 +122,17 @@ constexpr int PIECE_VALUES[7] = {
     0     // EMPTY (should never be accessed)
 };
 
+// MVV_LVA[victim][aggressor] = (VictimValue * 10) - AggressorValue
+constexpr int MVV_LVA[6][6] = {
+    // Aggressor: PAWN  KNIGHT BISHOP ROOK   QUEEN  KING
+    /* PAWN    */ { 900,  880,   870,   500,   100,   0 },
+    /* KNIGHT  */ { 3200, 2880,  2870,  2700,  2300,  0 },
+    /* BISHOP  */ { 3300, 2980,  2970,  2800,  2400,  0 },
+    /* ROOK    */ { 5000, 4680,  4670,  4500,  4100,  0 },
+    /* QUEEN   */ { 9000, 8680,  8670,  8500,  8100,  0 },
+    /* KING    */ { 0,    0,     0,     0,     0,     0 } // Illegal captures
+};
+
 // Piece-square tables for positional scoring evaluation (PSTs)
 // Separete tables for middle and endgame
 // Tables are designed to be used with white pieces, to use with black pieces, flip the tables

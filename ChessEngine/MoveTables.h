@@ -1,8 +1,6 @@
 #ifndef MOVETABLES_H
 #define MOVETABLES_H
 
-#include "BitboardConstants.h"
-
 // Define move tables for non-sliding pieces
 struct PawnMoves {
 	uint64_t single_push;  // Single forward move
@@ -27,12 +25,6 @@ extern KingMoves KING_MOVES[64];
 // Bishops and rook moves are initialize on the heap befause of the large size
 extern uint64_t (*ATTACKS_BISHOP)[512];
 extern uint64_t (*ATTACKS_ROOK)[4096];
-
-// Pre-compute all attack rays between squares
-extern uint64_t BETWEEN[64][64];
-extern uint64_t LINE[64][64];
-extern Direction DIR[64][64];
-
 
 // Generate move tables at runtime
 // Loops over the 64 squares of the chessboard and creates moveset for each piece at each location
