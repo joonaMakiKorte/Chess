@@ -1,16 +1,18 @@
- #include "pch.h"
+#include "pch.h"
 #include "MoveTables.h"
-#include "BitboardConstants.h"
+#include "Magic.h"
+#include "Utils.h"
 
 // Static allocation of tables
 // Declared as global arrays
 PawnMoves WHITE_PAWN_MOVES[64];
 PawnMoves BLACK_PAWN_MOVES[64];
-BishopMoves BISHOP_MOVES[64];
-RookMoves ROOK_MOVES[64];
 KnightMoves KNIGHT_MOVES[64];
-QueenMoves QUEEN_MOVES[64];
 KingMoves KING_MOVES[64];
+
+// Define the large tables
+uint64_t(*ATTACKS_BISHOP)[512] = new uint64_t[64][512];
+uint64_t(*ATTACKS_ROOK)[4096] = new uint64_t[64][4096];
 
 void initWhitePawnMoves(int square) {
 	uint64_t bitboard = 1ULL << square; // Cast square to bitboard
@@ -40,106 +42,6 @@ void initBlackPawnMoves(int square) {
 
 	// Insert moveset at square
 	BLACK_PAWN_MOVES[square] = { single_push, double_push, captures };
-}
-
-void initBishopMoves(int square) {
-	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
-
-	// Different bishop routes
-	uint64_t top_left = 0ULL;
-	uint64_t top_right = 0ULL;
-	uint64_t bottom_left = 0ULL;
-	uint64_t bottom_right = 0ULL;
-
-	int directions[4] = { 7, 9, -9, -7 };  // Top-left, top-right, bottom-left, bottom-right
-
-
-	// next we iterate over the diagonal directions
-	for (int direction : directions) {
-		uint64_t current_square = bitboard;
-
-		// loop and explore the bitboard in the current direction
-		while (true) {
-			// Check for wraparound using masks
-			if (((direction == 7 || direction == -9) && (current_square & FILE_A)) ||  // Left-border
-				((direction == 9 || direction == -7) && (current_square & FILE_H)) ||  // Right-border
-				((direction == 7 || direction == 9) && (current_square & RANK_8)) ||   // Top-border
-				((direction == -9 || direction == -7) && (current_square & RANK_1))) { // Bottom-border
-				break;
-			}
-
-			// Shift in the given direction
-			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
-
-			// Ensure square remains on the board
-			if (current_square == 0) break;
-
-			// Store in corresponding move bitboard
-			if (direction == 7) top_left |= current_square;
-			else if (direction == 9) top_right |= current_square;
-			else if (direction == -9) bottom_left |= current_square;
-			else if (direction == -7) bottom_right |= current_square;
-		}
-	}
-
-	// Store the calculated moves for this square
-	BISHOP_MOVES[square] = { top_left, top_right, bottom_left, bottom_right };
-
-	// Also update for queen
-	QUEEN_MOVES[square].top_left = top_left;
-	QUEEN_MOVES[square].top_right = top_right;
-	QUEEN_MOVES[square].bottom_left = bottom_left;
-	QUEEN_MOVES[square].bottom_right = bottom_right;
-}
-
-
-void initRookMoves(int square) {
-	uint64_t bitboard = 1ULL << square; // Cast a square to bitboard
-
-	// Different rook routes
-	uint64_t top = 0ULL;
-	uint64_t bottom = 0ULL;
-	uint64_t right = 0ULL;
-	uint64_t left = 0ULL;
-
-	int directions[4] = { 8, -8, -1, 1 }; // Up, Down, Left, Right
-
-	// Iterate over the rook directions
-	for (int direction : directions) {
-		uint64_t current_square = bitboard;
-
-		// Loop and explore the bitboard in the current direction
-		while (true) {
-			// Check if the move has gone beyond the edge of the board
-			if ((direction == 1 && (current_square & FILE_H)) ||  // Prevent left wrap
-				(direction == -1 && (current_square & FILE_A)) || // Prevent right wrap
-				(direction == 8 && (current_square & RANK_8)) ||  // Prevent bottom wrap
-				(direction == -8 && (current_square & RANK_1))) { // Prevent top wrap
-				break;
-			}
-				
-			// Shift in the given direction
-			current_square = (direction < 0) ? (current_square >> -direction) : (current_square << direction);
-
-			// Ensure square remains on the board
-			if (current_square == 0) break;
-
-			// Add the current square to the corresponding move bitboard
-			if (direction == 8) top |= current_square;
-			else if (direction == -8) bottom |= current_square;
-			else if (direction == -1) left |= current_square;
-			else if (direction == 1) right |= current_square;
-		}
-	}
-
-	// Store the calculated moves for this square
-	ROOK_MOVES[square] = { top, bottom, left, right };
-
-	// Also update for Queen
-	QUEEN_MOVES[square].top = top;
-	QUEEN_MOVES[square].bottom = bottom;
-	QUEEN_MOVES[square].left = left;
-	QUEEN_MOVES[square].right = right;
 }
 
 void initKnightMoves(int square) {
@@ -198,19 +100,45 @@ void initKingMoves(int square) {
 	KING_MOVES[square] = { moves };
 }
 
-
 void initMoveTables() {
 	// Set flag to prevent unnecessary reinitialization
 	static bool initialized = false; 
 	if (initialized) return;
 	initialized = true;
 
+	// Non-sliding pieces
 	for (int square = 0; square < 64; square++) {
 		initWhitePawnMoves(square);
 		initBlackPawnMoves(square);
-		initBishopMoves(square);
-		initRookMoves(square);
 		initKnightMoves(square);
 		initKingMoves(square);
 	}
+
+	// Initialize magic tables
+	initMagicTables();
+
+	// Bishop
+	for (int sq = 0; sq < 64; sq++) {
+		int occupancy_indices = 1 << RELEVANT_BITS_COUNT_BISHOP[sq];
+		for (int i = 0; i < occupancy_indices; i++) {
+			uint64_t occupancy = Utils::setOccupancy(i, RELEVANT_BITS_COUNT_BISHOP[sq], MAGIC_TABLE_BISHOP[sq].mask);
+			int index = (int)((occupancy * MAGIC_TABLE_BISHOP[sq].magic) >> MAGIC_TABLE_BISHOP[sq].shift);
+			ATTACKS_BISHOP[sq][index] = maskBishopXrayAttacks(sq, occupancy);
+		}
+	}
+	
+	// Rook
+	for (int sq = 0; sq < 64; sq++) {
+		int occupancy_indices = 1 << RELEVANT_BITS_COUNT_ROOK[sq];
+		for (int i = 0; i < occupancy_indices; i++) {
+			uint64_t occupancy = Utils::setOccupancy(i, RELEVANT_BITS_COUNT_ROOK[sq], MAGIC_TABLE_ROOK[sq].mask);
+			int index = (int)((occupancy * MAGIC_TABLE_ROOK[sq].magic) >> MAGIC_TABLE_ROOK[sq].shift);
+			ATTACKS_ROOK[sq][index] = maskRookXrayAttacks(sq, occupancy);
+		}
+	}
+}
+
+void teardown() {
+	delete[] ATTACKS_BISHOP;
+	delete[] ATTACKS_ROOK;
 }

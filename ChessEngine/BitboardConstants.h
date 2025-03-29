@@ -19,9 +19,17 @@ constexpr uint64_t RANK_8 = 0xFF00000000000000ULL;
 
 // Pre-computed variables
 constexpr int INF = 2147483647; // Infinity
+
 constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
+
 constexpr int MAX_MOVES = 256; // Max number of legal moves for a player turn
 // Absolute theoretical maximum would be 218 but we use 256 (a power of 2) for efficient memory alignment
+
+constexpr int MAX_GAME_PHASE = 24; // Maximum game phase (total number of pieces on board)
+// Game phase is used to determine if we are in the middle or endgame
+
+constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
+// 128 for alignment + would be an extreme case which is near impossible
 
 // Masks for castling rights
 constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)
@@ -31,15 +39,21 @@ constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) 
 constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
 constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
 
+// Sides are assigned an enum
+const enum Color : uint8_t {
+    WHITE = 0,
+    BLACK = 1
+};
+
 // Each piece is assigned a unique integer (4 bits)
 const enum PieceType : uint8_t {
-    EMPTY = 0,   // No piece
-    PAWN = 1,
-    KNIGHT = 2,
-    BISHOP = 3,
-    ROOK = 4,
-    QUEEN = 5,
-    KING = 6
+    PAWN = 0,
+    KNIGHT = 1,
+    BISHOP = 2,
+    ROOK = 3,
+    QUEEN = 4,
+    KING = 5,
+    EMPTY = 6   // No piece
 };
 
 // Defines the type of move (4 bits)
@@ -50,6 +64,19 @@ const enum MoveType : uint8_t {
     EN_PASSANT = 3,    // En passant capture
     PROMOTION = 4,     // Pawn promotion
     PROMOTION_CAPTURE = 5  // Pawn promotion with capture
+};
+
+// Direction type (8 possible directions + 0 for no direction)
+const enum Direction : int8_t {
+    NORTH = 8,
+    SOUTH = -8,
+    EAST = 1,
+    WEST = -1,
+    NORTH_EAST = 9,
+    NORTH_WEST = 7,
+    SOUTH_EAST = -7,
+    SOUTH_WEST = -9,
+    NONE = 0
 };
 
 // Board state is stored as a bitmask
@@ -83,22 +110,27 @@ struct BoardState {
     }
 };
 
-constexpr int MAX_GAME_PHASE = 24; // Maximum game phase (total number of pieces on board)
-// Game phase is used to determine if we are in the middle or endgame
-
-constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
-// 128 for alignment + would be an extreme case which is near impossible
-
 // Piece values for board evaluation
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
 constexpr int PIECE_VALUES[7] = {
-    0,     // EMPTY (should never be accessed)
     100,   // PAWN
     320,   // KNIGHT
     330,   // BISHOP
     500,   // ROOK
     900,   // QUEEN
-    20000  // KING (captures should be handled separately)
+    20000, // KING (captures should be handled separately)
+    0     // EMPTY (should never be accessed)
+};
+
+// MVV_LVA[victim][aggressor] = (VictimValue * 10) - AggressorValue
+constexpr int MVV_LVA[6][6] = {
+    // Aggressor: PAWN  KNIGHT BISHOP ROOK   QUEEN  KING
+    /* PAWN    */ { 900,  880,   870,   500,   100,   0 },
+    /* KNIGHT  */ { 3200, 2880,  2870,  2700,  2300,  0 },
+    /* BISHOP  */ { 3300, 2980,  2970,  2800,  2400,  0 },
+    /* ROOK    */ { 5000, 4680,  4670,  4500,  4100,  0 },
+    /* QUEEN   */ { 9000, 8680,  8670,  8500,  8100,  0 },
+    /* KING    */ { 0,    0,     0,     0,     0,     0 } // Illegal captures
 };
 
 // Piece-square tables for positional scoring evaluation (PSTs)
