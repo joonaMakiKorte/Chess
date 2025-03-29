@@ -1,7 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 #include "MoveTables.h"
-#include "Magic.h"
+#include "Tables.h"
 #include "ChessEngineExports.h"
 
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -14,6 +14,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     case DLL_PROCESS_ATTACH: 
         // Create moving tables during engine init
         initMoveTables();
+        initTables();
         break;
     case DLL_THREAD_ATTACH:
         break;

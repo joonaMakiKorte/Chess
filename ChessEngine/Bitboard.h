@@ -133,6 +133,7 @@ public:
     void resetUndoStack();
 
     // Function for ChessAI to generate the legal moves
+    // Only handle queen promotions, underpromotions deferred to quiescence
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
 	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
     void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
