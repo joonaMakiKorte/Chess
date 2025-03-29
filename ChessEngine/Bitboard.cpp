@@ -282,9 +282,6 @@ void Bitboard::applyMove(int source, int target, bool white) {
 	else {
 		en_passant_target = UNASSIGNED;
 	}
-
-	updateBoardState(white); // Must always be called
-
 }
 
 void Bitboard::applyPromotion(int target, char promotion, bool white) {
@@ -685,6 +682,8 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		default: throw std::invalid_argument("Invalid promotion piece");
 		}
 	}
+
+	updateBoardState(white); // Update board state after applied move (+promoted)
 }
 
 void Bitboard::undoMoveAI(uint32_t move, bool white) {
