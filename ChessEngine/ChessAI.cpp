@@ -2,10 +2,16 @@
 #include "ChessAI.h"
 #include "Bitboard.h"
 
-uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
-	std::array<uint32_t, MAX_MOVES> move_list;
-	int move_count = 0;
-	board.generateMoves(move_list, move_count, false); // Generate all legal moves for Black (AI player)
+uint64_t ChessAI::nodes_evaluated = 0; // Init
+
+uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark) {
+    nodes_evaluated = 0;
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::array<uint32_t, MAX_MOVES> move_list;
+    int move_count = 0;
+    board.generateMoves(move_list, move_count, false); // Generate all legal moves for Black (AI player)
 
     if (move_count == 0) {
         return 0; // No legal moves available
@@ -20,18 +26,24 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
         board.applyMoveAI(move_list[i], false);
 
         // Call minimax (assuming AI plays as Black)
-		// Call with maximizingPlayer = true since AI wants to minimize White's score
+        // Call with maximizingPlayer = true since AI wants to minimize White's score
         int score = minimax(board, depth - 1, -INF, INF, true);
 
         // Undo move
         board.undoMoveAI(move_list[i], false);
 
-		// Black wants to minimize White's score
+        // Black wants to minimize White's score
         if (score < bestScore) {
             bestScore = score;
             bestMove = move_list[i];
         }
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    double duration = std::chrono::duration<double>(end - start).count(); // Evaluation time
+    benchmark = "Depth: " + std::to_string(depth) + " | Nodes: " + std::to_string(nodes_evaluated)
+        + " | Time: " + std::to_string(duration) + "s"
+        + " | Nodes/sec: " + std::to_string(nodes_evaluated / duration);
 
     return bestMove;
 }
@@ -110,6 +122,8 @@ int ChessAI::quiescenceSearch(Bitboard& board, int alpha, int beta, bool maximiz
 }
 
 int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
+    nodes_evaluated++; // Track evaluations
+
     if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
 	if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
     if (board.state.isStalemate()) return 0; // Draw -> neutral outcome

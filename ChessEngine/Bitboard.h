@@ -9,6 +9,9 @@ private:
     // Piece bitboards indexed by [color][pieceType]
     uint64_t piece_bitboards[2][6];
 
+    // Lookup table for fast piece type checking
+    PieceType piece_at_square[64];
+
     // Store castling rights as a bitmask
     // Bit 0 : White kingside(K)
     // Bit 1 : White queenside(Q)
@@ -168,10 +171,6 @@ public:
     int estimateCaptureValue(uint32_t move);
 
 private: 
-	// Helper to get correct piece enum corresponding to the piece type
-	// Used for encoding moves
-	PieceType getPieceType(int square) const;
-
     // Helper to get the correct piece bitboard as a reference from enum
 	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
 	uint64_t& getPieceBitboard(PieceType piece, bool white);

@@ -36,8 +36,18 @@ constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); //
 constexpr uint64_t WHITE_QUEENSIDE_CASTLE_SQUARES = (1ULL << 1) | (1ULL << 2) | (1ULL << 3); // (b1, c1, d1)
 constexpr uint64_t BLACK_KINGSIDE_CASTLE_SQUARES = (1ULL << 61) | (1ULL << 62); // (f8, g8)
 constexpr uint64_t BLACK_QUEENSIDE_CASTLE_SQUARES = (1ULL << 57) | (1ULL << 58) | (1ULL << 59); // (b8, c8, d8)
+
+// Masks for castling operations
 constexpr uint64_t WHITE_KING = (1ULL << 4); // (e1)
 constexpr uint64_t BLACK_KING = (1ULL << 60); // (e8)
+constexpr uint64_t ROOK_A1 = (1ULL << 0); // (a1)
+constexpr uint64_t ROOK_D1 = (1ULL << 3); // (d1)
+constexpr uint64_t ROOK_F1 = (1ULL << 5); // (f1)
+constexpr uint64_t ROOK_H1 = (1ULL << 7); // (h1)
+constexpr uint64_t ROOK_A8 = (1ULL << 56); // (a8)
+constexpr uint64_t ROOK_D8 = (1ULL << 59); // (d8)
+constexpr uint64_t ROOK_F8 = (1ULL << 61); // (f8)
+constexpr uint64_t ROOK_H8 = (1ULL << 63); // (h8)
 
 // Sides are assigned an enum
 const enum Color : uint8_t {

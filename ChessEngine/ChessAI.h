@@ -20,6 +20,9 @@ The ChessAI structures a move in 32 bits:
 */
 
 class ChessAI {
+private:
+    static uint64_t nodes_evaluated;
+
 public:
     // Pack a move into an integer
 	// Must be static since used in Bitboard.cpp without an instance
@@ -60,7 +63,7 @@ private:
 
 public:
     // Get the best move for the current board state
-    static uint32_t getBestMove(Bitboard& board, int depth);
+    static uint32_t getBestMove(Bitboard& board, int depth, std::string& benchmark);
 };
 
 #endif // !CHESSAI_H

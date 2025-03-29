@@ -30,7 +30,8 @@ void ChessBoard::MovePiece(int source, int target) {
 
 void ChessBoard::MakeMoveAI(int depth) {
     // Get best move in encoded form
-    uint32_t best_move = ChessAI::getBestMove(board, depth);
+    std::string message;
+    uint32_t best_move = ChessAI::getBestMove(board, depth, message);
 
 	if (best_move == 0) {
 		UpdateDebugMessage("No legal moves available");
@@ -40,7 +41,7 @@ void ChessBoard::MakeMoveAI(int depth) {
     // Apply move
 	board.applyMoveAI(best_move, white);
 	white = !white; // Switch turn
-
+    UpdateDebugMessage(message);
 }
 
 void ChessBoard::MakePromotion(int target, char promotion) {
