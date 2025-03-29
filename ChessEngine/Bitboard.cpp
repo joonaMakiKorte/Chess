@@ -46,7 +46,6 @@ Bitboard::Bitboard():
 	for (int color = WHITE; color <= BLACK; ++color) { // 0 = WHITE, 1 = BLACK
 		for (int piece = PAWN; piece <= KING; ++piece) {
 			uint64_t bitboard = piece_bitboards[color][piece];
-
 			while (bitboard) {
 				int square = Utils::findFirstSetBit(bitboard);  // Get least significant set bit
 				piece_at_square[square] = static_cast<PieceType>(piece);
@@ -55,6 +54,10 @@ Bitboard::Bitboard():
 		}
 	}
 
+	// Material and positonal scores are initially 0 since equal amount of pieces
+	material_score = 0;
+	positional_score = 0;
+	game_phase = MAX_GAME_PHASE; // Max game phase == beginning
 
 	state.flags = 0; // Empty game state at beginning (no check, no checkmate, no stalemate)
 }

@@ -12,6 +12,11 @@ private:
     // Lookup table for fast piece type checking
     PieceType piece_at_square[64];
 
+    // Board state scores updated incrementally
+    int material_score;
+    int positional_score;
+    int game_phase;
+
     // Store castling rights as a bitmask
     // Bit 0 : White kingside(K)
     // Bit 1 : White queenside(Q)
