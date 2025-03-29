@@ -92,6 +92,11 @@ public:
 	// Takes the target square and promotion piece as parameters
 	void applyPromotion(int target, char promotion, bool white);
 
+    // Each time after applying a move set the new board state
+    // Includes check, checkmate and stalemate information
+    // Only updating the necessary side
+    void updateBoardState(bool white);
+
 private:
     // Get locations of white or black pieces (bitboard)
     // Uses bitwise OR operation to combine occupancy of all pieces of same color
@@ -118,11 +123,6 @@ private:
     // Determine if the attacking ray can be blocked by any of the own pieces
     // Returns bool indicating result
     bool canBlock(bool white);
-
-    // Each time after applying a move set the new board state
-	// Includes check, checkmate and stalemate information
-    // Only updating the necessary side
-    void updateBoardState(bool white);
 
     bool isCheckmate(bool white);
     bool isStalemate(bool white);
