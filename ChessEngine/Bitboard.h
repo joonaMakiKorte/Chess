@@ -39,6 +39,11 @@ private:
 
         // Flags of the game state
         uint8_t flags;
+
+        // Board evaluation scores
+        int material_score;
+        int positional_score;
+        int game_phase_score;
     };
     UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack
     int undo_stack_top; // Index of stack top
@@ -93,17 +98,14 @@ public:
     // Apply move by updating bitboards
     // Takes the source and target as parameters
     // Move is applied only after making sure its legal, meaning no need to check for validity
+    // Incrementally updates game phase and material scores
     void applyMove(int source, int target, bool white);
 
     // Apply promotion by updating bitboards
 	// Move has already been applied , so only need to promote the pawn
 	// Takes the target square and promotion piece as parameters
+    // Incrementally updates game phase and material scores
 	void applyPromotion(int target, char promotion, bool white);
-
-    // Each time after applying a move set the new board state
-    // Includes check, checkmate and stalemate information
-    // Only updating the necessary side
-    void updateBoardState(bool white);
 
 private:
     // Get locations of white or black pieces (bitboard)
@@ -134,6 +136,15 @@ private:
 
     bool isCheckmate(bool white);
     bool isStalemate(bool white);
+
+    // Each time after applying a move set the new board state
+    // Includes check, checkmate and stalemate information
+    // Only updating the necessary side
+    void updateBoardState(bool white);
+
+    // Calculate positional scores of pieces
+    // Expensive function call since iterates over every piece, but only called after human applied move so no visible effect
+    void updatePositionalScore();
 
 public:
     // Reset undo stack

@@ -162,6 +162,7 @@ namespace Chess
 
             // Temporary pawn promotion logic
             // Is promotion when pawn reaches the last rank
+            // Queen = 'q', rook = 'r', bishop = 'b', knight = 'k'
             if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) || 
                ( pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
             {
