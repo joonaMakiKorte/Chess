@@ -205,7 +205,7 @@ private:
 	// Calculate the positional score of the board
 	int calculatePositionalScore(bool white);
 
-    inline int getPositionalScore(int square, int game_phase,  PieceType piece, bool white);
+    inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
 };
 
 #endif BITBOARD_H
