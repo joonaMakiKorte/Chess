@@ -205,6 +205,8 @@ private:
 	// Calculate the positional score of the board
 	int calculatePositionalScore(bool white);
 
+    int calculateGamePhase();
+
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
 };
 

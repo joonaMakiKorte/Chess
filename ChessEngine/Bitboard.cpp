@@ -300,7 +300,7 @@ void Bitboard::applyMove(int source, int target, bool white) {
 		half_moves = 0;  // Captures reset halfmove-clock
 
 		// Captures decrease the material score
-		material_score += (white ? 1 : -1) * PIECE_VALUES[target_piece];
+		material_score += white ? PIECE_VALUES[target_piece] : -PIECE_VALUES[target_piece];
 	}
 
 	// Set en passant target if a pawn double moves
@@ -348,8 +348,8 @@ void Bitboard::applyPromotion(int target, char promotion_char, bool white) {
 	*pawn_bitboard &= ~target_square;
 
 	// Update board state
-	material_score += (white ? -1 : 1) * PIECE_VALUES[PAWN];
-	material_score += (white ? 1 : -1) * PIECE_VALUES[promotion];
+	material_score += white ? PIECE_VALUES[promotion] : -PIECE_VALUES[promotion];
+	material_score += white ? -PIECE_VALUES[PAWN] : PIECE_VALUES[PAWN];
 
 	updateBoardState(white);
 	updatePositionalScore();
@@ -744,11 +744,6 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	MoveType move_type = ChessAI::moveType(move);
 	PieceType promotion = ChessAI::promotion(move);
 
-	float previous_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Store previous phase
-	float new_game_phase = previous_game_phase;
-	int material_delta = 0; // Change of material score with move
-	int positional_delta = 0; // Change of positional score with move
-
 	// Save state to undo stack (hot path - optimized)
 	assert(undo_stack_top < MAX_SEARCH_DEPTH);
 	UndoInfo& current = undo_stack[undo_stack_top++];
@@ -759,9 +754,14 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	current.material_score = material_score;
 	current.positional_score = positional_score;
 
+	float previous_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Store previous phase
+	int material_delta = 0; // Count material losses/gains in this move
+	int positional_delta = 0; // Change of positional score with move
+
 	// Clear the source square, doesn't differ for any move
 	piece_bitboards[!white][source_piece] &= ~(1ULL << source);
 	piece_at_square[source] = EMPTY;
+
 	// Clear positional score of source square
 	positional_delta -= getPositionalScore(source, previous_game_phase, source_piece, white);
 
@@ -787,12 +787,10 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		else if (target_piece == KNIGHT || target_piece == BISHOP) game_phase_score -= 1;
 
 		// Update material score
-		material_delta -= PIECE_VALUES[target_piece];
+		material_delta += PIECE_VALUES[target_piece];
 
-		// Update positional score
-		positional_delta -= getPositionalScore(target, previous_game_phase, target_piece, !white);
-
-		new_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
+		// Clear positiinal score of target
+		positional_delta += getPositionalScore(target, previous_game_phase, target_piece, !white);
 	}
 
 	// En passant
@@ -802,9 +800,8 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		piece_bitboards[white][PAWN] &= ~(1ULL << en_passant_square); // Capture pawn
 		piece_at_square[en_passant_square] = EMPTY;
 
-		// Update board scores
-		material_delta -= PIECE_VALUES[PAWN];
-		positional_delta -= getPositionalScore(en_passant_square, previous_game_phase, PAWN, !white);
+		material_delta += PIECE_VALUES[PAWN];
+		positional_delta += getPositionalScore(en_passant_square, previous_game_phase, PAWN, !white);
 	}
 
 	// Castling
@@ -818,9 +815,8 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		int rook_origin = white ? (kingside ? 7 : 0) : (kingside ? 63 : 56);
 		int rook_target = white ? (kingside ? 5 : 3) : (kingside ? 61 : 59);
 
-		// Update positional scores
-		positional_delta -= getPositionalScore(rook_origin, previous_game_phase, ROOK, white); // Clear old pos
-		positional_delta += getPositionalScore(rook_target, previous_game_phase, ROOK, white); // Update new pos
+		positional_delta -= getPositionalScore(rook_origin, previous_game_phase, ROOK, white);
+		positional_delta += getPositionalScore(rook_target, previous_game_phase, ROOK, white);
 	}
 
 	// Promotion
@@ -834,18 +830,14 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		else if (promotion == ROOK) game_phase_score += 2;
 		else if (promotion == BISHOP || promotion == KNIGHT) game_phase_score += 1;
 
-		// Update board scores
 		material_delta += PIECE_VALUES[promotion];
+		material_delta -= PIECE_VALUES[PAWN];
 
-		new_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
-		positional_delta += getPositionalScore(target, new_game_phase, promotion, white);
+		positional_delta += getPositionalScore(target, previous_game_phase, promotion, white);
 	}
 	else { // For the non promotion moves move source piece to target
 		piece_bitboards[!white][source_piece] |= (1ULL << target);
 		piece_at_square[target] = source_piece;
-
-		// Update positional score
-		positional_delta += getPositionalScore(target, new_game_phase, source_piece, white);
 	}
 
 	// Set en passant target if a pawn double pushes
@@ -856,10 +848,12 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		en_passant_target = UNASSIGNED;
 	}
 
-	// Now apply score deltas to scores
-	// Negate for black
+	// Apply score deltas
 	material_score += white ? material_delta : -material_delta;
 	positional_score += white ? positional_delta : -positional_delta;
+
+	// Compute new game phase (clamped 0-1 range)
+	float new_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
 
 	// **Check if the phase change is large enough for a full recalculation**
 	float phase_change = abs(new_game_phase - previous_game_phase);
@@ -1011,6 +1005,7 @@ void Bitboard::undoCastling(bool white, bool kingside) {
 
 int Bitboard::calculateMaterialScore(bool white) {
 	// Return the score depending on the turn
+	// For white, the score is positive, for black the score is negative
 	return white ? material_score : -material_score;
 }
 
@@ -1018,6 +1013,7 @@ int Bitboard::calculatePositionalScore(bool white) {
 	// Return the score depending on the turn
 	return white ? positional_score : -positional_score;
 }
+
 
 inline int Bitboard::getPositionalScore(int square, float game_phase, PieceType piece, bool white) {
 	return static_cast<int>(

@@ -146,7 +146,7 @@ constexpr int MVV_LVA[6][6] = {
 // Game phase recalculation threshold in range of 0-1
 // Meaning a phase change greater than this in percentages after applying a move results in full positional score recalculation
 // This way we can avoid unnecessary recalculations to prioritize evaluation speed
-constexpr float FULL_RECALC_THRESHOLD = 0.0f;
+constexpr float FULL_RECALC_THRESHOLD = 0.1f;
 
 // Piece-square tables for positional scoring evaluation (PSTs)
 // Separete tables for middle and endgame
