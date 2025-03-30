@@ -510,7 +510,7 @@ void Bitboard::getAttackSquares(int enemy_king, const uint64_t& white_pieces, co
 		}
 		// If move landed on enemy king get the pre-computed attack ray
 		if (moves & (1ULL << enemy_king)) {
-			attack_data.attack_ray |= BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
+			attack_data.attack_ray = BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
 			// Also update that the king is in check
 			state.flags |= (white ? BoardState::CHECK_BLACK : BoardState::CHECK_WHITE);
 		}
@@ -744,7 +744,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	MoveType move_type = ChessAI::moveType(move);
 	PieceType promotion = ChessAI::promotion(move);
 
-	int game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Get game phase (clamped to range 0-1)
+	int previous_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Get game phase (clamped to range 0-1)
 	int material_delta = 0; // Change of material score with move
 	int positional_delta = 0; // Change of positional score with move
 
@@ -762,7 +762,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	piece_bitboards[!white][source_piece] &= ~(1ULL << source);
 	piece_at_square[source] = EMPTY;
 	// Clear positional score of source square
-	positional_delta -= getPositionalScore(source, game_phase, source_piece, white);
+	positional_delta -= getPositionalScore(source, previous_game_phase, source_piece, white);
 
 	// Precompute whether castling is affected
 	bool castling_affected = (castling_rights & (white ? 0x03 : 0x0C)) != 0;
@@ -789,9 +789,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		material_delta -= PIECE_VALUES[target_piece];
 
 		// Update positional score
-		positional_delta -= getPositionalScore(target, game_phase, target_piece, !white);
-
-		game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // New game phase
+		positional_delta -= getPositionalScore(target, previous_game_phase, target_piece, !white);
 	}
 
 	// En passant
@@ -803,7 +801,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 
 		// Update board scores
 		material_delta -= PIECE_VALUES[PAWN];
-		positional_delta -= getPositionalScore(en_passant_square, game_phase, PAWN, !white);
+		positional_delta -= getPositionalScore(en_passant_square, previous_game_phase, PAWN, !white);
 	}
 
 	// Castling
@@ -818,8 +816,8 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		int rook_target = white ? (kingside ? 5 : 3) : (kingside ? 61 : 59);
 
 		// Update positional scores
-		positional_delta -= getPositionalScore(rook_origin, game_phase, ROOK, white); // Clear old pos
-		positional_delta += getPositionalScore(rook_target, game_phase, ROOK, white); // Update new pos
+		positional_delta -= getPositionalScore(rook_origin, previous_game_phase, ROOK, white); // Clear old pos
+		positional_delta += getPositionalScore(rook_target, previous_game_phase, ROOK, white); // Update new pos
 	}
 
 	// Promotion
@@ -833,18 +831,16 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		else if (promotion == ROOK) game_phase_score += 2;
 		else if (promotion == BISHOP || promotion == KNIGHT) game_phase_score += 1;
 
-		game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // New game phase
-
 		// Update board scores
 		material_delta += PIECE_VALUES[promotion];
-		positional_delta += getPositionalScore(target, game_phase, promotion, white);
+		positional_delta += getPositionalScore(target, previous_game_phase, promotion, white);
 	}
 	else { // For the non promotion moves move source piece to target
 		piece_bitboards[!white][source_piece] |= (1ULL << target);
 		piece_at_square[target] = source_piece;
 
 		// Update positional score
-		positional_delta += getPositionalScore(target, game_phase, source_piece, white);
+		positional_delta += getPositionalScore(target, previous_game_phase, source_piece, white);
 	}
 
 	// Set en passant target if a pawn double pushes
@@ -859,6 +855,15 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// Negate for black
 	material_score += white ? material_delta : -material_delta;
 	positional_score += white ? positional_delta : -positional_delta;
+
+	// Compute new game phase (clamped 0-1 range)
+	int new_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
+
+	// **Check if the phase change is large enough for a full recalculation**
+	int phase_change = abs(new_game_phase - previous_game_phase);
+	if (phase_change >= FULL_RECALC_THRESHOLD) {
+		updatePositionalScore();
+	}
 
 	updateBoardState(white); // Update board state after applied move (+promoted)
 }
@@ -1029,23 +1034,17 @@ int Bitboard::estimateCaptureValue(uint32_t move) {
 	PieceType attacking_piece = ChessAI::piece(move);
 
 	// Value of captured piece
-	int captured_value = PIECE_VALUES[captured_piece];
+	int capture_value = PIECE_VALUES[captured_piece];
 
-	// Handle promotions (add value of promoted piece minus pawn)
+	// Handle promotions
 	if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
 		PieceType promo_piece = ChessAI::promotion(move);
-		captured_value += PIECE_VALUES[promo_piece] - PIECE_VALUES[PAWN];
+		capture_value += PIECE_VALUES[promo_piece] - PIECE_VALUES[PAWN];
 	}
 
-	// Value of the attacking piece (what we're risking)
-	int attacker_value = PIECE_VALUES[attacking_piece];
+	// If we're losing the more valuable piece (bad trade)
+	int trade_delta = PIECE_VALUES[attacking_piece] - PIECE_VALUES[captured_piece];
 
-	// Net gain is: (value of what we capture) - (value of what we lose)
-	// For en passant, captured_piece will be EMPTY but we know it's a pawn
-	if (move_type == EN_PASSANT) {
-		return PIECE_VALUES[PAWN];  // Always gain a pawn, no risk to attacker
-	}
-
-	// For regular captures
-	return captured_value - attacker_value;
+	// Return net gain (could be negative for bad trades)
+	return capture_value - (trade_delta > 0 ? PIECE_VALUES[attacking_piece] : 0);
 }
