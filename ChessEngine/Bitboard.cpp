@@ -510,7 +510,7 @@ void Bitboard::getAttackSquares(int enemy_king, const uint64_t& white_pieces, co
 		}
 		// If move landed on enemy king get the pre-computed attack ray
 		if (moves & (1ULL << enemy_king)) {
-			attack_data.attack_ray = BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
+			attack_data.attack_ray |= BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
 			// Also update that the king is in check
 			state.flags |= (white ? BoardState::CHECK_BLACK : BoardState::CHECK_WHITE);
 		}
@@ -1029,17 +1029,23 @@ int Bitboard::estimateCaptureValue(uint32_t move) {
 	PieceType attacking_piece = ChessAI::piece(move);
 
 	// Value of captured piece
-	int capture_value = PIECE_VALUES[captured_piece];
+	int captured_value = PIECE_VALUES[captured_piece];
 
-	// Handle promotions
+	// Handle promotions (add value of promoted piece minus pawn)
 	if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
 		PieceType promo_piece = ChessAI::promotion(move);
-		capture_value += PIECE_VALUES[promo_piece] - PIECE_VALUES[PAWN];
+		captured_value += PIECE_VALUES[promo_piece] - PIECE_VALUES[PAWN];
 	}
 
-	// If we're losing the more valuable piece (bad trade)
-	int trade_delta = PIECE_VALUES[attacking_piece] - PIECE_VALUES[captured_piece];
+	// Value of the attacking piece (what we're risking)
+	int attacker_value = PIECE_VALUES[attacking_piece];
 
-	// Return net gain (could be negative for bad trades)
-	return capture_value - (trade_delta > 0 ? PIECE_VALUES[attacking_piece] : 0);
+	// Net gain is: (value of what we capture) - (value of what we lose)
+	// For en passant, captured_piece will be EMPTY but we know it's a pawn
+	if (move_type == EN_PASSANT) {
+		return PIECE_VALUES[PAWN];  // Always gain a pawn, no risk to attacker
+	}
+
+	// For regular captures
+	return captured_value - attacker_value;
 }
