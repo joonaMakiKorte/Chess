@@ -15,7 +15,7 @@ private:
     // Board state scores updated incrementally
     int material_score;
     int positional_score;
-    int game_phase;
+    int game_phase_score;
 
     // Store castling rights as a bitmask
     // Bit 0 : White kingside(K)
@@ -194,9 +194,7 @@ private:
 	// Calculate the positional score of the board
 	int calculatePositionalScore(bool white);
 
-	// Determine the game phase score (middle or endgame)
-    // Is based on the remaining pieces
-	int calculateGamePhase();
+    inline int getPositionalScore(int square, int game_phase,  PieceType piece, bool white);
 };
 
 #endif BITBOARD_H

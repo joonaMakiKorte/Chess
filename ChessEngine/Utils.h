@@ -53,6 +53,14 @@ namespace Utils
         return 8 * rank + file;
     }
 
+    static inline int getRow(int square, bool white) {
+        return white ? 7 - (square / 8) : square / 8;
+    }
+
+    static inline int getCol(int square, bool white) {
+        return white ? square % 8 : 7 - (square % 8);
+    }
+
     static inline void popBit(uint64_t& bn, int sq) { bn &= ~(1ULL << sq); }
 
     static inline int bitScanForward(uint64_t bb) {
