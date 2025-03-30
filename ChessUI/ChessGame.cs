@@ -20,11 +20,14 @@ namespace Chess
 
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
+        public string GameMode { get; private set; }
+        public string AIDifficulty { get; private set; }
 
-       
+
         public ChessGame(string gameMode, string aiDifficulty, string timer)
         {
-           
+            GameMode = gameMode;
+            AIDifficulty = aiDifficulty;
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
@@ -32,8 +35,7 @@ namespace Chess
                 throw new Exception("Failed to initialize the chess board from the engine.");
             }
 
-            // Initialize game settings
-            InitializeGameSettings(gameMode, aiDifficulty, timer);
+            
 
 
             // Get initial board state and apply to pieceLocations
@@ -42,13 +44,7 @@ namespace Chess
         }
 
 
-        private void InitializeGameSettings(string gameMode, string aiDifficulty, string timer)
-        {
-            // Implement logic to set game mode, AI difficulty, and timer
-            // Example: SetGameMode(gameMode);
-            // Example: SetAIDifficulty(aiDifficulty);
-            // Example: SetTimer(timer);
-        }
+        
 
         // this is to move halfmove updates
         public event Action<int> OnHalfMoveUpdated;
@@ -198,7 +194,15 @@ namespace Chess
 
         public void MakeBlackMove()
         {
-            ChessEngineInterop.MakeBestMove(board, 5);
+
+            // check AIDifficulty and give to cpp
+            int diff = 0;
+            if (AIDifficulty == "Easy") diff = 1;
+            else if (AIDifficulty == "Medium") diff = 3;
+            else if (AIDifficulty == "Hard") diff = 5;
+
+
+            ChessEngineInterop.MakeBestMove(board,diff);
 
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>
@@ -208,9 +212,9 @@ namespace Chess
                 LoadFromFEN(fen);
                 Console.WriteLine(fen);
 
-                string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
-                Console.WriteLine(debugMessage);
+       
             });
+
         }
 
         // Destroy board

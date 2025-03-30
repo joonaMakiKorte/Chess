@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using System.IO;
 
 namespace Chess
 {
@@ -11,20 +12,24 @@ namespace Chess
     {
         private MediaPlayer _mediaPlayer;
 
-        public void PlayBackgroundMusic(string filePath)
+        public void PlayBackgroundMusic()
         {
-            // Create a new MediaPlayer instance
-            _mediaPlayer = new MediaPlayer();
+            // Create a new MediaPlayer instance for the move sound
+            var backSoundPlayer = new MediaPlayer();
 
-            // Open the audio file
-            var uri = new Uri(filePath);
-            _mediaPlayer.Open(uri);
+            // Get the base directory of the application
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
+            // Construct the full path to the music file
+            string musicFilePath = Path.Combine(baseDirectory, "pics", "Lobbymusic.mp3");
+
+            var uri = new Uri(musicFilePath);
+            backSoundPlayer.Open(uri);
             // Play the audio file
-            _mediaPlayer.Play();
+            backSoundPlayer.Play();
 
             // Optionally, set the volume
-            _mediaPlayer.Volume = 0.5; // 50% volume
+            backSoundPlayer.Volume = 0.05; // 5% volume
         }
 
         public void StopMusic()
@@ -33,7 +38,6 @@ namespace Chess
             {
                 _mediaPlayer.Stop();
                 _mediaPlayer.Close();
-                _mediaPlayer = new MediaPlayer(); // Reset the player
             }
         }
 
@@ -42,11 +46,36 @@ namespace Chess
 
             // Stop any existing music before playing new music
             StopMusic();
+
             // Create a new MediaPlayer instance for the move sound
             var moveSoundPlayer = new MediaPlayer();
-            var uri = new Uri("C:\\chessproject\\Chess\\ChessUI\\pics\\piecemove.mp3");
-            moveSoundPlayer.Open(uri);
-            moveSoundPlayer.Play();
+
+            // Get the base directory of the application
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            // Construct the full path to the music file
+            string musicFilePath = Path.Combine(baseDirectory, "pics", "piecemove.mp3");
+
+            // Debug: Print the constructed path
+            Console.WriteLine("Constructed music file path: " + musicFilePath);
+
+            // check if file exists
+            if (File.Exists(musicFilePath))
+            {
+                // Create a URI for the full path
+                var uri = new Uri(musicFilePath);
+                moveSoundPlayer.Open(uri);
+
+                // play the sound
+                moveSoundPlayer.Play();
+
+            }
+
+            else
+            {
+                Console.WriteLine("Music not found");
+            }
+            
         }
     }
 }

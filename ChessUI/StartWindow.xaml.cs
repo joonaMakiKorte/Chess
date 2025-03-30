@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.IO;
 
 
 namespace Chess
@@ -27,7 +28,11 @@ namespace Chess
 
             _mediaPlayer = new AudioPlayer();
             this.Loaded += StartWindow_Loaded; // Ensure UI is fully loaded before modifying the slider
-            _mediaPlayer.PlayBackgroundMusic("C:\\chessproject\\Chess\\ChessUI\\pics\\Lobbymusic.mp3");
+
+
+
+            
+            _mediaPlayer.PlayBackgroundMusic();
 
         }
 
@@ -66,6 +71,10 @@ namespace Chess
 
                 // Change text to "Select Difficulty:"
                 SelectionTextBlock.Text = "Select Difficulty:";
+
+                // update disabled and abled button
+                Button1v1.IsEnabled = false;
+                ButtonAI.IsEnabled = true;
             }
             else if (sender == Button1v1)
             {
@@ -77,13 +86,28 @@ namespace Chess
 
                 // Change text back to "Select Timer (minutes):"
                 SelectionTextBlock.Text = "Select Timer (minutes):";
+
+                // Disable the AI button and enable the 1v1 button
+                Button1v1.IsEnabled = true;
+                ButtonAI.IsEnabled = false;
             }
 
         }
 
         private void StartGame_Click(object sender, RoutedEventArgs e)
         {
-            string gameMode = Button1v1.IsEnabled ? "1v1" : "AI";
+            string gameMode = "1v1";
+
+            if (Button1v1.IsEnabled && !ButtonAI.IsEnabled)
+            {
+                gameMode = "1v1";
+            }
+
+            else if (!Button1v1.IsEnabled && ButtonAI.IsEnabled)
+            {
+                gameMode = "AI";
+            }
+
             string aiDifficulty = (AIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
             string timer = TimerSlider.Value.ToString(); // Get the timer value
 

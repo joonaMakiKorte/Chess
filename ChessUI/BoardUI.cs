@@ -125,6 +125,7 @@ namespace Chess
             {
                 whiteTimer.Stop();
                 // Handle time out for white player
+
             }
         }
 

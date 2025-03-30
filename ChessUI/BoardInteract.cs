@@ -30,7 +30,6 @@ namespace Chess
 
             // Attach event handler directly to constructor
             this.pieceGrid.MouseDown += PieceGrid_MouseDown;
-            this.pieceGrid.KeyDown += PieceGrid_KeyDown;
 
             muteButton.Click += MuteButton_Click;
 
@@ -41,8 +40,14 @@ namespace Chess
 
 
         
-        public void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
+public async void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // Prevent selection if game mode is AI and it's Black's turn
+            if (chessGame.GameMode == "AI" && !chessGame.IsWhiteTURN())
+            {
+                return;
+                
+            }
             Point position = e.GetPosition(pieceGrid);
             double cellWidth = pieceGrid.ActualWidth / 8;
             double cellHeight = pieceGrid.ActualHeight / 8;
@@ -53,10 +58,10 @@ namespace Chess
             string[,] boardState = chessGame.GetBoardState();
             string piece = boardState[row, col];
 
-            // If no piece is selected, attempt to select one
+            // If no piece is selected, attempt to select one  
             if (selectedPiece == null)
             {
-                if (!string.IsNullOrEmpty(piece)) // Ensure it's not an empty square
+                if (!string.IsNullOrEmpty(piece)) // Ensure it's not an empty square  
                 {
                     if ((chessGame.IsWhiteTURN() && Char.IsUpper(piece[0])) ||
                         (!chessGame.IsWhiteTURN() && Char.IsLower(piece[0])))
@@ -64,8 +69,7 @@ namespace Chess
                         selectedPiece = (row, col);
                         boardUi.HighlightSquare(row, col, Brushes.LightBlue);
 
-
-                        // Highlight valid moves
+                        // Highlight valid moves  
                         int source = col + 8 * (7 - row);
                         ulong validMoves = chessGame.GetValidMoves(source);
                         boardUi.HighlightValidMoves(validMoves);
@@ -76,39 +80,56 @@ namespace Chess
             {
                 (int fromRow, int fromCol) = selectedPiece.Value;
 
-                // If clicking the same square again, deselect it
+                // If clicking the same square again, deselect it  
                 if (fromRow == row && fromCol == col)
                 {
-                    //Console.WriteLine("Deselected piece");
                     selectedPiece = null;
                     boardUi.ClearHighlights();
-                    boardUi.ClearValidMoveHighlights(); // Clear valid move highlights as well
+                    boardUi.ClearValidMoveHighlights(); // Clear valid move highlights as well  
                     return;
                 }
-              
-                // Print move in algebraic notation for debugging purposes
-                //Console.WriteLine($"{(char)('a' + fromCol)}{8 - fromRow} -> {(char)('a' + col)}{8 - row}");
 
-                // Convert squares to their little-endian ranking indexes
+                // Convert squares to their little-endian ranking indexes  
                 int source = fromCol + 8 * (7 - fromRow);
                 int target = col + 8 * (7 - row);
 
-                // Validate move by getting valid moves from source square as a bitboard
-                // and comparing target square with valid moves with bitwise OR
+                // Validate move by getting valid moves from source square as a bitboard  
+                // and comparing target square with valid moves with bitwise OR  
                 ulong validMoves = chessGame.GetValidMoves(source);
                 bool isValid = (validMoves & (1UL << target)) != 0;
 
-                // Make a move if valid
+                // Make a move if valid  
                 if (isValid)
                 {
                     chessGame.MovePiece(source, target);
                     boardUi.UpdateBoard(chessGame.GetBoardState());
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+
+                    // Prevent selection if game mode is AI and it's Black's turn
+                    if (chessGame.GameMode == "AI" && !chessGame.IsWhiteTURN())
+                    {
+                        await Task.Run(() =>
+                        {
+                            // Run AI move on a separate thread  
+                            chessGame.MakeBlackMove();
+                        });
+                        // Ensure UI updates happen on the main thread
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            boardUi.UpdateBoard(chessGame.GetBoardState());
+                            boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+                            boardUi.ClearHighlights();
+                            boardUi.ClearValidMoveHighlights();
+                            selectedPiece = null; // Deselect after move
+                        });
+
+                    }
+
                 }
 
                 boardUi.ClearHighlights();
                 boardUi.ClearValidMoveHighlights();
-                selectedPiece = null; // Deselect after move
+                selectedPiece = null; // Deselect after move  
             }
         }
         private void MuteButton_Click(object sender, RoutedEventArgs e)
@@ -121,28 +142,6 @@ namespace Chess
         }
 
 
-        // Temporary function
-        // Make AI move on Enter key press
-        private async void PieceGrid_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter && !chessGame.IsWhiteTURN()) // If it's Black's turn
-            {
-                Console.WriteLine("Pressed enter");
-                await Task.Run(() =>
-                {
-                    chessGame.MakeBlackMove(); // Run AI move on a separate thread
-                });
-
-                // Ensure UI updates happen on the main thread
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    boardUi.UpdateBoard(chessGame.GetBoardState());
-                    boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-                    boardUi.ClearHighlights();
-                    boardUi.ClearValidMoveHighlights();
-                    selectedPiece = null; // Deselect after move
-                });
-            }
-        }
+        
     }
 }
