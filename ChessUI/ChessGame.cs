@@ -170,8 +170,8 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
 
-            string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
-            Console.WriteLine(debugMessage);
+            //string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
+            //Console.WriteLine(debugMessage);
 
             if (gameState == "M")
             {
@@ -212,7 +212,8 @@ namespace Chess
                 LoadFromFEN(fen);
                 Console.WriteLine(fen);
 
-       
+                string message = ChessEngineInterop.GetDebugMessageString(board);
+                Console.WriteLine(message);
             });
 
         }
