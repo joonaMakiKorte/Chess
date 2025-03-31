@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Bitboard.h"
 #include "MoveTables.h"
+#include "ChessAI.h"
 #include "Tables.h"
 #include "Moves.h"
 #include "Utils.h"
@@ -510,7 +511,7 @@ void Bitboard::getAttackSquares(int enemy_king, const uint64_t& white_pieces, co
 		}
 		// If move landed on enemy king get the pre-computed attack ray
 		if (moves & (1ULL << enemy_king)) {
-			attack_data.attack_ray = BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
+			attack_data.attack_ray = Tables::BETWEEN[current_square][enemy_king] | (1ULL << current_square) | (1ULL << enemy_king);
 			// Also update that the king is in check
 			state.flags |= (white ? BoardState::CHECK_BLACK : BoardState::CHECK_WHITE);
 		}
@@ -617,7 +618,7 @@ void Bitboard::resetUndoStack() {
 * 
 */
 
-void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
+void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white) {
 	move_count = 0;
 	std::array<std::pair<uint32_t, int>, MAX_MOVES> move_scores; // Stack allocated array
 
@@ -639,12 +640,20 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 				PieceType victim = (move_type == EN_PASSANT) ? PAWN : target_piece;
 				score = MVV_LVA[victim][piece];
 			}
+			else if (depth != 0) { // If non-capture, prioritize killer moves and use history heuristic (not scored for depth 0)
+				// Killer move priority
+				if (ChessAI::isKillerMove(from, to, piece, depth)) {
+					score = KILLER_SCORE;
+				}
+				else {
+					score = ChessAI::getHistoryScore(from, to, piece);
+				}
+			}
 
 			// Encode move
 			// Promote only to queen
 			uint32_t move = ChessAI::encodeMove(from, to, piece, target_piece, move_type,
-				(move_type == PROMOTION || move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY,
-				move_type == EN_PASSANT);
+				(move_type == PROMOTION || move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY);
 
 			move_scores[move_count++] = { move, score };
 
@@ -690,13 +699,13 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 			}
 
 			if (move_type == PROMOTION_CAPTURE) {
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, QUEEN, false), score };
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, ROOK, false), score };
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, BISHOP, false), score };
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, KNIGHT, false), score };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, QUEEN), score };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, ROOK), score };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, BISHOP), score };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, KNIGHT), score };
 			}
 			else {
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, EMPTY, false), score };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, EMPTY), score };
 			}
 			Utils::popBit(captures, to);
 		}
@@ -706,7 +715,7 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 			uint64_t ep_mask = 1ULL << en_passant_target;
 			if (legal_moves & ep_mask) {
 				// Using score 0 for en passant (adjustable)
-				move_scores[move_count++] = { ChessAI::encodeMove(from, en_passant_target, PAWN, EMPTY, EN_PASSANT, EMPTY, true),0 };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, en_passant_target, PAWN, EMPTY, EN_PASSANT, EMPTY),0 };
 			}
 		}
 
@@ -715,10 +724,10 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 			uint64_t promotions = legal_moves & (white ? RANK_8 : RANK_1) & ~opponent_pieces;
 			while (promotions != 0) {
 				int to = Utils::findFirstSetBit(promotions);
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, QUEEN, false),0 };
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, ROOK, false),0 };
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, BISHOP, false),0 };
-				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, KNIGHT, false),0 };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, QUEEN),0 };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, ROOK),0 };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, BISHOP),0 };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, KNIGHT),0 };
 				Utils::popBit(promotions, to);
 			}
 		}

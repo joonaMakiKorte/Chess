@@ -1,17 +1,19 @@
 #include "pch.h"
 #include "ChessAI.h"
 #include "Bitboard.h"
+#include "Tables.h"
 
-uint64_t ChessAI::nodes_evaluated = 0; // Init
+// Initialize static members
+uint64_t ChessAI::nodes_evaluated = 0;
 
 uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark) {
-    nodes_evaluated = 0;
+    nodes_evaluated = 0; // Reset node count for benchmarking
 
     auto start = std::chrono::high_resolution_clock::now();
 
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateMoves(move_list, move_count, false); // Generate all legal moves for Black (AI player)
+    board.generateMoves(move_list, move_count, 0, false); // Generate all legal moves for Black (AI player)
 
     if (move_count == 0) {
         return 0; // No legal moves available
@@ -55,7 +57,8 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
 
     std::array<uint32_t, MAX_MOVES> move_list;
 	int move_count = 0;
-	board.generateMoves(move_list, move_count, maximizingPlayer);
+
+	board.generateMoves(move_list, move_count, depth, maximizingPlayer);
 
     if (maximizingPlayer) { // AI (Black) tries to maximize
         int maxEval = -INF;
@@ -67,8 +70,21 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
             board.undoMoveAI(move_list[i], maximizingPlayer);
 
 			maxEval = max(maxEval, eval);
-            alpha = max(alpha, eval);
-            if (beta <= alpha) break; // Alpha-beta pruning
+            if (eval > alpha) {
+                alpha = eval;
+                // Update history heuristic for improving moves
+                if (!isCapture(move_list[i])) {
+                    updateHistory(move_list[i], depth);
+                }
+            }
+
+            // Beta cutoff: store killer move
+            if (beta <= alpha) {
+                if (!isCapture(move_list[i])) {
+                    updateKillerMoves(move_list[i], depth);
+                }
+                break; // Prune remaining branches
+            }
         }
         return maxEval;
     }
@@ -82,8 +98,21 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
             board.undoMoveAI(move_list[i], maximizingPlayer);
 
             minEval = min(minEval, eval);
-            beta = min(beta, eval);
-            if (beta <= alpha) break; // Alpha-beta pruning
+            if (eval < beta) {
+                beta = eval;
+                // Update history heuristic for improving moves
+                if (!isCapture(move_list[i])) {
+                    // updateHistory(move, depth);
+                }
+            }
+            
+            // Beta cutoff: store killer move
+            if (beta <= alpha) {
+                if (!isCapture(move_list[i])) {
+                    // updateKillerMoves(move, depth);
+                }
+                break; // Prune remaining branches
+            }
         }
         return minEval;
     }
@@ -143,4 +172,45 @@ int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
     // Return the score
 	// No need for additional negation since already done in board.evaluateBoard()
     return score;
+}
+
+inline bool ChessAI::isCapture(uint32_t move) {
+    return capturedPiece(move) != EMPTY || moveType(move) == EN_PASSANT;
+}
+
+uint16_t ChessAI::moveKey(uint32_t move) {
+    int from = move & 0x3F;              // Extract from square (6 bits)
+    int to = (move >> 6) & 0x3F;         // Extract to square (6 bits)
+    int piece = ((move >> 12) & 0xF);    // Extract piece type (4 bits)
+
+    return (from << 10) | (to << 4) | (piece << 0);
+}
+
+uint16_t ChessAI::moveKey(int from, int to, PieceType piece) {
+    return (from << 10) | (to << 4) | (piece << 0);
+
+}
+
+void ChessAI::updateKillerMoves(uint32_t move, int depth) {
+    uint16_t key = moveKey(move); // Generate key
+
+    if (key != Tables::KILLER_MOVES[depth][0]) {
+        Tables::KILLER_MOVES[depth][1] = Tables::KILLER_MOVES[depth][0]; // Shift old move
+        Tables::KILLER_MOVES[depth][0] = key; // Store new move
+    }
+}
+
+void ChessAI::updateHistory(uint32_t move, int depth) {
+    uint16_t key = moveKey(move); // Generate key
+    Tables::HISTORY_TABLE[key] += depth * depth; // Higher weight for deeper cutoffs
+}
+
+bool ChessAI::isKillerMove(int from, int to, PieceType piece, int depth) {
+    uint16_t key = moveKey(from, to, piece); // Get key
+    return key == Tables::KILLER_MOVES[depth][0] || key == Tables::KILLER_MOVES[depth][1];
+}
+
+int ChessAI::getHistoryScore(int from, int to, PieceType piece) {
+    uint16_t key = moveKey(from, to, piece); // Get key
+    return Tables::HISTORY_TABLE[key];
 }

@@ -51,6 +51,9 @@
     <ClInclude Include="Tables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CustomTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

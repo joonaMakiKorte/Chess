@@ -1,10 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
+
 #include "pch.h"
 #include "BitboardConstants.h"
+#include "CustomTypes.h"
 
-namespace Utils
-{
+namespace Utils {
     // Helper to count the number of set bits in a bitboard
     static inline int countSetBits(const uint64_t& bitboard) {
         #if defined(_MSC_VER) // MSVC

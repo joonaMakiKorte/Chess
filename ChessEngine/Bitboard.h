@@ -2,7 +2,7 @@
 #define BITBOARD_H
 
 #include "BitboardConstants.h"
-#include "ChessAI.h"
+#include "CustomTypes.h"
 
 class Bitboard {
 private:
@@ -31,22 +31,12 @@ private:
     int half_moves; // Helps determine if a draw can be claimed
     int full_moves; // For game analysis and record keeping
 
-    // Save previous board states for faster state recovery in move undoing
-    struct UndoInfo {
-        // Save castling and en passant
-        uint8_t castling_rights;
-        int en_passant_target;
-
-        // Flags of the game state
-        uint8_t flags;
-
-        // Board evaluation scores
-        int material_score;
-        int positional_score;
-        int game_phase_score;
-    };
-    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack
+    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack for move undoing
     int undo_stack_top; // Index of stack top
+
+    PinData pin_data;
+
+    AttackData attack_data;
 
 public:
     // Initialize each piece with starting pos
@@ -54,24 +44,6 @@ public:
 
     // Store the game state as a bitmask
     BoardState state;
-
-    // Pinned piece data
-    struct PinData {
-        uint64_t pinned;       // All pinned pieces
-        uint64_t pin_rays[64]; // Store pin ray for each pinned square
-    };
-
-    // Attack data, store enemy attacks squares and attacker ray
-    struct AttackData {
-        uint64_t attack_squares;
-        uint64_t attack_ray;
-    };
-
-    // Store the pin data
-    PinData pin_data;
-
-    // Store the attack data
-    AttackData attack_data;
 
     // Helper to get the piece type at a given square
     char getPieceTypeChar(int square) const;
@@ -155,7 +127,7 @@ public:
     // Only handle queen promotions, underpromotions deferred to quiescence
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
 	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
-    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
 
 	// Function for ChessAI to generate noisy moves
 	// Used for quiescence search to reduce horizon effect
@@ -204,8 +176,6 @@ private:
 
 	// Calculate the positional score of the board
 	int calculatePositionalScore(bool white);
-
-    int calculateGamePhase();
 
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
 };

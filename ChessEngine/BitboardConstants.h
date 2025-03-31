@@ -22,14 +22,21 @@ constexpr int INF = 2147483647; // Infinity
 
 constexpr int UNASSIGNED = -1; // Sentinel value for unassigned variables
 
+constexpr uint16_t NULL_MOVE = 0xFFFF; // An impossible move (all bits set)
+constexpr int MAX_HISTORY_KEY = 65536; // Max value for history table key (max 16-bit int)
+
 constexpr int MAX_MOVES = 256; // Max number of legal moves for a player turn
 // Absolute theoretical maximum would be 218 but we use 256 (a power of 2) for efficient memory alignment
 
 constexpr int MAX_GAME_PHASE = 24; // Maximum game phase (total number of pieces on board)
 // Game phase is used to determine if we are in the middle or endgame
 
+constexpr int MAX_DEPTH = 64;  // Maximum playsible search depth for minimax
+
 constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
 // 128 for alignment + would be an extreme case which is near impossible
+
+constexpr int KILLER_SCORE = 9000; // Score to prioritize killer moves
 
 // Masks for castling rights
 constexpr uint64_t WHITE_KINGSIDE_CASTLE_SQUARES = (1ULL << 5) | (1ULL << 6); // (f1, g1)
@@ -49,76 +56,6 @@ constexpr uint64_t ROOK_D8 = (1ULL << 59); // (d8)
 constexpr uint64_t ROOK_F8 = (1ULL << 61); // (f8)
 constexpr uint64_t ROOK_H8 = (1ULL << 63); // (h8)
 
-// Sides are assigned an enum
-const enum Color : uint8_t {
-    WHITE = 0,
-    BLACK = 1
-};
-
-// Each piece is assigned a unique integer (4 bits)
-const enum PieceType : uint8_t {
-    PAWN = 0,
-    KNIGHT = 1,
-    BISHOP = 2,
-    ROOK = 3,
-    QUEEN = 4,
-    KING = 5,
-    EMPTY = 6   // No piece
-};
-
-// Defines the type of move (4 bits)
-const enum MoveType : uint8_t {
-    NORMAL = 0,        // Standard move
-    CAPTURE = 1,       // Capturing a piece
-    CASTLING = 2,      // Castling (O-O, O-O-O)
-    EN_PASSANT = 3,    // En passant capture
-    PROMOTION = 4,     // Pawn promotion
-    PROMOTION_CAPTURE = 5  // Pawn promotion with capture
-};
-
-// Direction type (8 possible directions + 0 for no direction)
-const enum Direction : int8_t {
-    NORTH = 8,
-    SOUTH = -8,
-    EAST = 1,
-    WEST = -1,
-    NORTH_EAST = 9,
-    NORTH_WEST = 7,
-    SOUTH_EAST = -7,
-    SOUTH_WEST = -9,
-    NONE = 0
-};
-
-// Board state is stored as a bitmask
-struct BoardState {
-    uint8_t flags = 0; // 8-bit bitfield to store state flags
-
-    static constexpr uint8_t CHECK_WHITE = 1 << 0; // 0000 0001
-    static constexpr uint8_t CHECK_BLACK = 1 << 1; // 0000 0010
-    static constexpr uint8_t STALEMATE = 1 << 2; // 0000 0100
-    static constexpr uint8_t CHECKMATE_WHITE = 1 << 3; // 0000 1000
-    static constexpr uint8_t CHECKMATE_BLACK = 1 << 4; // 0001 0000
-
-    bool isCheckWhite() const {
-        return flags & CHECK_WHITE;
-    }
-
-    bool isCheckBlack() const {
-        return flags & CHECK_BLACK;
-    }
-
-    bool isStalemate() const {
-        return flags & STALEMATE;
-    }
-
-    bool isCheckmateWhite() const {
-        return flags & CHECKMATE_WHITE;
-    }
-
-    bool isCheckmateBlack() const {
-        return flags & CHECKMATE_BLACK;
-    }
-};
 
 // Piece values for board evaluation
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function

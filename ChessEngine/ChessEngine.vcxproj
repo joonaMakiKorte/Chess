@@ -172,6 +172,7 @@ if "$(Platform)"=="x64" (
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CustomTypes.h" />
     <ClInclude Include="Magic.h" />
     <ClInclude Include="Moves.h" />
     <ClInclude Include="BitboardConstants.h" />

@@ -2,6 +2,7 @@
 #define CHESSAI_H
 
 #include "BitboardConstants.h"
+#include "CustomTypes.h"
 
 // Forward declaration of Bitboard class
 class Bitboard;
@@ -15,7 +16,7 @@ The ChessAI structures a move in 32 bits:
 0000 0000 0000 1111 0000 0000 0000 0000  -> captured piece type (4 bits)
 0000 0000 1111 0000 0000 0000 0000 0000  -> move type (4 bits)
 0000 1111 0000 0000 0000 0000 0000 0000  -> promotion type (4 bits)
-0001 0000 0000 0000 0000 0000 0000 0000  -> special flags (1 bit for en passant)
+0000 0000 0000 0000 0000 0000 0000 0000  -> 4 bits free space
 
 */
 
@@ -26,14 +27,13 @@ private:
 public:
     // Pack a move into an integer
 	// Must be static since used in Bitboard.cpp without an instance
-    static uint32_t encodeMove(int from, int to, PieceType piece, PieceType captured, MoveType type, PieceType promotion, bool enPassant) {
+    static uint32_t encodeMove(int from, int to, PieceType piece, PieceType captured, MoveType type, PieceType promotion) {
         return (from & 0x3F) |
             ((to & 0x3F) << 6) |
             ((piece & 0xF) << 12) |
             ((captured & 0xF) << 16) |
             ((type & 0xF) << 20) |
-            ((promotion & 0xF) << 24) |
-            ((enPassant ? 1 : 0) << 28);
+            ((promotion & 0xF) << 24);
     }
 
     // Extract data from a packed move
@@ -43,7 +43,9 @@ public:
     static PieceType capturedPiece(uint32_t move) { return static_cast<PieceType>((move >> 16) & 0xF); }
     static MoveType moveType(uint32_t move) { return static_cast<MoveType>((move >> 20) & 0xF); }
     static PieceType promotion(uint32_t move) { return static_cast<PieceType>((move >> 24) & 0xF); }
-    static bool isEnPassant(uint32_t move) { return (move >> 28) & 1; }
+
+    static bool isKillerMove(int from, int to, PieceType piece, int depth); // Check if move is a killer move by depth
+    static int getHistoryScore(int from, int to, PieceType piece); // Get history score of a move
 
 private:
 	// Minimax algorithm with alpha-beta pruning
@@ -60,6 +62,18 @@ private:
 	// Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
 	// Advantegeous positions are assigned higher scores for prioritization
 	static int evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer);
+
+    // Helper to determine if a move is capture
+    static inline bool isCapture(uint32_t move);
+
+    // Extract a compressed key derived from the move structure for killer-move/history heuristics hashing
+    // 16-bit key, efficient and avoids collisions
+    static uint16_t moveKey(uint32_t move);
+    static uint16_t moveKey(int from, int to, PieceType piece); // Overloaded to generate move without decoding move
+
+    // Update killer moves and history heuristics
+    static void updateKillerMoves(uint32_t move, int depth);
+    static void updateHistory(uint32_t move, int depth);
 
 public:
     // Get the best move for the current board state

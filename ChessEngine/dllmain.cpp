@@ -13,15 +13,16 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH: 
         // Create moving tables during engine init
-        initMoveTables();
-        initTables();
+        MoveTables::initMoveTables();
+        Tables::initTables();
         break;
     case DLL_THREAD_ATTACH:
         break;
     case DLL_THREAD_DETACH:
         break;
     case DLL_PROCESS_DETACH:
-        teardown(); // Deallocate space
+        MoveTables::teardownMoveTables(); // Deallocate space
+        Tables::teardownTables();
         break;
     }
     return TRUE;
