@@ -166,11 +166,28 @@ int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
 	score += (white_king_mobility - black_king_mobility) * 10; // Mobility bonus
 
     // Encourage attacking the opponent’s king
-    if (board.state.isCheckWhite()) score -= 30; // White in check
-    if (board.state.isCheckBlack()) score += 30; // Black in check
+    if (board.state.isCheckWhite()) score -= 50; // White in check
+    if (board.state.isCheckBlack()) score += 50; // Black in check
 
+    // Endgame-specific evaluation
+    if (board.isEndgame()) {
+        int endgame_score = 0;
+
+        // King proximity bonus
+        int distance = board.calculateKingDistance();
+        endgame_score += (14 - distance) * 20; // Closer kings get higher bonus
+
+        // Passed pawn bonus
+        endgame_score += board.evaluatePassedPawns(maximizingPlayer);
+
+        // Opponent's king on edge/corner penalty
+        int edge_distance = board.calculateKingEdgeDistance(maximizingPlayer);
+        endgame_score -= edge_distance * 30; // Penalize opponents king being near center
+
+        // Add/substract depending on turn
+        score += maximizingPlayer ? endgame_score : -endgame_score;
+    }
     // Return the score
-	// No need for additional negation since already done in board.evaluateBoard()
     return score;
 }
 

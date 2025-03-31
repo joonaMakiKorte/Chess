@@ -85,6 +85,12 @@ constexpr int MVV_LVA[6][6] = {
 // This way we can avoid unnecessary recalculations to prioritize evaluation speed
 constexpr float FULL_RECALC_THRESHOLD = 0.1f;
 
+// Threshold for game phase score for which after we start using the endgame board evaluation in quiescence
+// Opening 22-24     // Most pieces still on the board
+// Middlegame 10-21 // Some exhanges, queens often present
+// Endgame 0-9     // Few pieces left, kings active
+constexpr int ENDGAME_THRESHOLD = 9; 
+
 // Piece-square tables for positional scoring evaluation (PSTs)
 // Separete tables for middle and endgame
 // Tables are designed to be used with white pieces, to use with black pieces, flip the tables

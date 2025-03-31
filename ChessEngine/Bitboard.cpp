@@ -1031,6 +1031,25 @@ inline int Bitboard::getPositionalScore(int square, float game_phase, PieceType 
 	);
 }
 
+bool Bitboard::isPassedPawn(int pawn, bool white) {
+	// Early exit if pawn is already on promotion rank
+	if (white ? (pawn >= 48) : (pawn <= 16)) return true;
+
+	// Get pawn promotion path mask
+	// Pawn promotion path includes the pawn file itself and adjacent (left/right) files
+	int file = pawn % 8;
+	int final_sq = (white ? 48 : 8) + file; // The final square in pawns file where enemy pawn cannot be (e.g., 30 -> 54)
+
+	uint64_t promotion_path = Tables::BETWEEN[pawn][final_sq] | (1ULL << final_sq); // Main file path
+
+	promotion_path |= (file > 0) ? Tables::BETWEEN[white ? (pawn + 7) : (pawn - 9)][final_sq - 1] | (1ULL << (final_sq - 1)) : 0;
+	promotion_path |= (file < 7) ? Tables::BETWEEN[white ? (pawn + 9) : (pawn - 7)][final_sq + 1] | (1ULL << (final_sq + 1)) : 0;
+
+	// Get enemy pawns and check if any line up with our mask
+	uint64_t enemy_pawns = white ? piece_bitboards[BLACK][PAWN] : piece_bitboards[WHITE][PAWN];
+	return (enemy_pawns & promotion_path) == 0; // No enemy pawns in mask
+}
+
 
 int Bitboard::estimateCaptureValue(uint32_t move) {
 	// Extract move information
@@ -1056,4 +1075,52 @@ int Bitboard::estimateCaptureValue(uint32_t move) {
 
 	// Return net gain (could be negative for bad trades)
 	return capture_value - (trade_delta > 0 ? PIECE_VALUES[attacking_piece] : 0);
+}
+
+bool Bitboard::isEndgame() {
+	return game_phase_score <= ENDGAME_THRESHOLD; // Compare to threshold
+}
+
+int Bitboard::calculateKingDistance() {
+	int white_king_sq = Utils::findFirstSetBit(piece_bitboards[WHITE][KING]);
+	int black_king_sq = Utils::findFirstSetBit(piece_bitboards[BLACK][KING]);
+	return Utils::calculateDistance(white_king_sq, black_king_sq);
+}
+
+int Bitboard::calculateKingEdgeDistance(bool white) {
+	int opponent_king_sq = white ? piece_bitboards[BLACK][KING] : piece_bitboards[WHITE][KING]; // Get opposing king
+	int file = opponent_king_sq % 8;
+	int rank = opponent_king_sq / 8;
+	// Kings near the edge -> 0 penalty
+	// Kings in the center -> higher penalty
+	return (4 - min(min(file, 7 - file), min(rank, 7 - rank))) * 10;
+}
+
+int Bitboard::evaluatePassedPawns(bool white) {
+	uint64_t pawns = white ? piece_bitboards[WHITE][PAWN] : piece_bitboards[BLACK][PAWN]; // Get friendly pawns
+	int score = 0;
+
+	while (pawns) {
+		int pawn_sq = Utils::findFirstSetBit(pawns);
+		Utils::popBit(pawns, pawn_sq);
+
+		if (!isPassedPawn(pawn_sq, white)) continue; // Skip non-passed pawns
+
+		int rank = white ? (pawn_sq / 8) : (7 - (pawn_sq / 8)); // Relative rank (0=start, 7=promotion
+		int file = pawn_sq % 8;
+
+		score += (10 + (rank * rank) * 5); // Quadratic scaling
+
+		// Bonus if supported by friendly king
+		int king_sq = Utils::findFirstSetBit(white ? piece_bitboards[WHITE][KING] : piece_bitboards[BLACK][KING]);
+		int king_dist = Utils::calculateDistance(pawn_sq, king_sq);
+		score += (7 - king_dist) * 10; // Closer king = better
+
+		// Penalty if blocked by enemy king
+		int enemy_king_sq = Utils::findFirstSetBit(white ? piece_bitboards[BLACK][KING] : piece_bitboards[WHITE][KING]);
+		int enemy_king_dist = Utils::calculateDistance(pawn_sq, enemy_king_sq);
+		if (enemy_king_dist <= 2) score -= 100; // Enemy king can intercept
+		if (king_dist < enemy_king_dist) score += 50; // King is closer than opponent (protecting passed pawn)
+	}
+	return score;
 }

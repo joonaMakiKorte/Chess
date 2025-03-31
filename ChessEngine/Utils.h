@@ -93,18 +93,6 @@ namespace Utils {
         return occupancy;
     }
 
-    static inline int get_piece_value(PieceType piece) {
-        assert(piece >= PAWN && piece <= EMPTY); // Ensure piece is within valid range
-        return PIECE_VALUES[static_cast<int>(piece)];
-    }
-
-    static inline int get_mvv_lva_score(PieceType attacker, PieceType victim) {
-        int attacker_value = get_piece_value(attacker);
-        int victim_value = get_piece_value(victim);
-
-        return (victim_value * 10) - attacker_value;  // Higher value captures come first
-    }
-
     inline int get_direction(int diff) {
         if (diff % 8 == 0) return (diff > 0) ? 8 : -8;  // Vertical
         if (diff % 7 == 0) return (diff > 0) ? 7 : -7;  // Diagonal
@@ -112,6 +100,12 @@ namespace Utils {
         if (diff % 1 == 0) return (diff > 0) ? 1 : -1;  // Horizontal
 
         return 0;  // Invalid (should not happen if called correctly)
+    }
+
+    inline int calculateDistance(int sq1, int sq2) {
+        int dx = abs((sq1 % 8) - (sq2 % 8));
+        int dy = abs((sq2 % 8) - (sq2 % 8));
+        return max(dx, dy); // Chebyshev distance (also known as chessboard distance)
     }
 }
 

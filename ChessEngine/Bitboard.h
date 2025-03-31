@@ -158,6 +158,24 @@ public:
     // Used in quiescence search for delta pruning
     int estimateCaptureValue(uint32_t move);
 
+    // Evaluate if we are in endgame
+    // Done by comparing current game phase score to endgame threshold
+    bool isEndgame();
+
+    // Get distance between kings
+    // Used in endgame eval heuristic
+    // Closer kings get higher bonus
+    int calculateKingDistance();
+
+    // Calculate opponent's kings distance from the closest board edge
+    // Used in endgame eval heuristic
+    int calculateKingEdgeDistance(bool white);
+
+    // Evaluate passed pawns
+    // Used in endgame eval heuristic
+    // Critical in endgame evaluations
+    int evaluatePassedPawns(bool white);
+
 private: 
     // Helper to get the correct piece bitboard as a reference from enum
 	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
@@ -178,6 +196,10 @@ private:
 	int calculatePositionalScore(bool white);
 
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
+
+    // Helper to determine if a pawn if passed
+    // Passed pawns = pawns with no opposing pawns blocking their promoting path
+    bool isPassedPawn(int pawn, bool white);
 };
 
 #endif BITBOARD_H
