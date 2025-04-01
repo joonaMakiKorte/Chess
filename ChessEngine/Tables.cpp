@@ -11,8 +11,13 @@ namespace Tables {
 	uint16_t KILLER_MOVES[MAX_DEPTH][2] = { NULL_MOVE };
 	int* HISTORY_TABLE = new int[MAX_HISTORY_KEY](); // Zero-initialized array
 
+	uint64_t PIECE_KEYS[2][6][64];
+	uint64_t SIDE_TO_MOVE_KEY;
+	uint64_t CASTLING_KEYS[16];
+	uint64_t EN_PASSANT_KEYS[8];
+
 	// Compute direction between squares
-	Direction get_direction(int sq1, int sq2) {
+	Direction getDirection(int sq1, int sq2) {
 		int dx = Utils::getFile(sq2) - Utils::getFile(sq1);
 		int dy = Utils::getRank(sq2) - Utils::getRank(sq1);
 
@@ -32,8 +37,8 @@ namespace Tables {
 	}
 
 	// Compute squares between two squares (exclusive)
-	uint64_t compute_between(int sq1, int sq2) {
-		Direction d = get_direction(sq1, sq2);
+	uint64_t computeBetween(int sq1, int sq2) {
+		Direction d = getDirection(sq1, sq2);
 		if (d == NONE) return 0ULL;
 
 		uint64_t result = 0ULL;
@@ -55,8 +60,8 @@ namespace Tables {
 	}
 
 	// Compute entire line through two squares (inclusive)
-	uint64_t compute_line(int sq1, int sq2) {
-		Direction d = get_direction(sq1, sq2);
+	uint64_t computeLine(int sq1, int sq2) {
+		Direction d = getDirection(sq1, sq2);
 		if (d == NONE) return 1ULL << sq1;  // Single square
 
 		uint64_t result = 0ULL;
@@ -87,15 +92,45 @@ namespace Tables {
 		return result;
 	}
 
+	void initZobristKeys() {
+		// Random number generator
+		std::mt19937_64 rng(123456789);
+		std::uniform_int_distribution<uint64_t> dist;
+
+		// Init piece keys
+		for (int color = BLACK; color <= WHITE; ++color) { // 0 = Black, 1 = White
+			for (int piece = PAWN; piece <= KING; ++piece) {
+				for (int square = 0; square < 64; ++square) {
+					PIECE_KEYS[color][piece][square] = dist(rng);
+				}
+			}
+		}
+
+		// Init castling keys (one per bitmask value)
+		for (int i = 0; i < 16; i++) {
+			CASTLING_KEYS[i] = dist(rng);
+		}
+
+		// Init en passant keys (one per file)
+		for (int i = 0; i < 8; i++) {
+			EN_PASSANT_KEYS[i] = dist(rng);
+		}
+
+		// Side to move key
+		SIDE_TO_MOVE_KEY = dist(rng);
+	}
+
 	void initTables() {
 		// Initialize rays
 		for (int sq1 = 0; sq1 < 64; sq1++) {
 			for (int sq2 = 0; sq2 < 64; sq2++) {
-				DIR[sq1][sq2] = get_direction(sq1, sq2);
-				BETWEEN[sq1][sq2] = uint64_t(compute_between(sq1, sq2));
-				LINE[sq1][sq2] = uint64_t(compute_line(sq1, sq2));
+				DIR[sq1][sq2] = getDirection(sq1, sq2);
+				BETWEEN[sq1][sq2] = uint64_t(computeBetween(sq1, sq2));
+				LINE[sq1][sq2] = uint64_t(computeLine(sq1, sq2));
 			}
 		}
+
+		initZobristKeys();
 	}
 
 	void teardownTables() {

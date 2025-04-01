@@ -20,5 +20,7 @@
 #include <vector>
 #include <cassert>
 #include <chrono>
+#include <random>
+#include <unordered_map>
 
 #endif //PCH_H

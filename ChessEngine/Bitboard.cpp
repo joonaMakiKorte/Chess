@@ -12,22 +12,13 @@ Bitboard::Bitboard():
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	half_moves(0),                         // Initially 0
-	full_moves(0)                          // Initially 0
+	full_moves(0),                         // Initially 0
+	hash_key(0)                           
 {
-	// Initialize undo_stack
-	for (int i = 0; i < MAX_SEARCH_DEPTH; ++i) {
-		undo_stack[i] = { 0, UNASSIGNED, 0 };
-	}
+	initBoard();
+}
 
-	// Initialize pin-data (initially none)
-	for (int i = 0; i < 64; ++i) {
-		pin_data.pin_rays[i] = 0xFFFFFFFFFFFFFFFFULL;
-	}
-
-	// Initialize attack data
-	attack_data.attack_ray = 0xFFFFFFFFFFFFFFFFULL;
-	attack_data.attack_squares = 0ULL;
-
+void Bitboard::initBoard() {
 	// Standard little-endian rank-file mapping (LSB = a1, MSB = h8)
 	piece_bitboards[WHITE][PAWN] = 0x000000000000FF00;  // a2-h2
 	piece_bitboards[BLACK][PAWN] = 0x00FF000000000000;  // a7-h7
@@ -55,12 +46,54 @@ Bitboard::Bitboard():
 		}
 	}
 
+	// Initialize undo-stack
+	for (int i = 0; i < MAX_SEARCH_DEPTH; ++i) {
+		undo_stack[i] = { 0, UNASSIGNED, 0 };
+	}
+
+	// Initialize pin-data (initially none)
+	for (int i = 0; i < 64; ++i) {
+		pin_data.pin_rays[i] = 0xFFFFFFFFFFFFFFFFULL;
+	}
+
+	// Initialize attack-data
+	attack_data.attack_ray = 0xFFFFFFFFFFFFFFFFULL;
+	attack_data.attack_squares = 0ULL;
+
 	// Material and positonal scores are initially 0 since equal amount of pieces
 	material_score = 0;
 	positional_score = 0;
 	game_phase_score = MAX_GAME_PHASE; // Max game phase == beginning
 
 	state.flags = 0; // Empty game state at beginning (no check, no checkmate, no stalemate)
+
+	// Compute initial Zobrist key which we update incrementally onwards
+	hash_key = computeZobristHash();
+	position_history[hash_key]++; // Save initial state
+}
+
+uint64_t Bitboard::computeZobristHash() {
+	uint64_t hash = 0;
+
+	// XOR piece keys
+	for (int color = BLACK; color <= WHITE; ++color) {
+		for (int piece = PAWN; piece <= KING; ++piece) {
+			uint64_t bitboard = piece_bitboards[color][piece];
+			while (bitboard) {
+				int square = Utils::findFirstSetBit(bitboard);  // Get least significant set bit
+				hash ^= Tables::PIECE_KEYS[color][piece][square];
+				bitboard &= bitboard - 1;  // Clear LSB
+			}
+		}
+	}
+
+	// XOR castling rights
+	hash ^= Tables::CASTLING_KEYS[castling_rights];
+
+	// No need to XOR EN_PASSANT_KEY since no en passant target initially
+	// No need to XOR SIDE_TO_MOVE_KEY since White starts
+
+	return hash;
 }
 
 char Bitboard::getPieceTypeChar(int square_int) const {
@@ -111,6 +144,9 @@ std::string Bitboard::getGameState(bool white) {
 	}
 	else if (state.isStalemate()) {
 		game_state = "S";
+	}
+	else if (state.isDraw()) {
+		game_state = "D";
 	}
 	else {
 		game_state = "-";
@@ -220,137 +256,143 @@ uint64_t Bitboard::getLegalMoves(int from, bool white) {
 }
 
 void Bitboard::applyMove(int source, int target, bool white) {
-	uint64_t source_square = 1ULL << source; // Convert source to bitboard
-	uint64_t target_square = 1ULL << target; // Convert target
-
 	// Get piece types at squares
 	PieceType source_piece = piece_at_square[source];
 	PieceType target_piece = piece_at_square[target];
+	MoveType move_type = getMoveType(source, target, source_piece, target_piece, white);
 
-	// Determine if target square was originally empty
-	bool empty = (target_piece == EMPTY);
+	full_moves++; // Increment full-move count
 
-	// Select bitboard to update
-	uint64_t* moving_bitboard = nullptr;
-	uint64_t* opponent_bitboard = nullptr;
+	// Clear the source square
+	piece_bitboards[white][source_piece] &= ~(1ULL << source);
+	piece_at_square[source] = EMPTY;
+	hash_key ^= Tables::PIECE_KEYS[white][source_piece][source]; 
 
 	// Precompute whether castling is affected
 	bool castling_affected = (castling_rights & (white ? 0x03 : 0x0C)) != 0;
+	hash_key ^= Tables::CASTLING_KEYS[castling_rights]; // Clear old castling rights from hash
 
-	// Update half- and full-move counters
-	++half_moves;
-	++full_moves;
-
-	// Move the piece from source to target using a switch on source_piece
-	switch (source_piece) {
-	case PAWN:
-		moving_bitboard = white ? &piece_bitboards[WHITE][PAWN] : &piece_bitboards[BLACK][PAWN];
-		half_moves = 0;  // Resets half moves
-		if (target == en_passant_target) {
-			target_piece = PAWN;  // Mark as pawn capture
-			empty = false;
-		}
-		break;
-	case KNIGHT: moving_bitboard = white ? &piece_bitboards[WHITE][KNIGHT] : &piece_bitboards[BLACK][KNIGHT]; break;
-	case BISHOP: moving_bitboard = white ? &piece_bitboards[WHITE][BISHOP] : &piece_bitboards[BLACK][BISHOP]; break;
-	case QUEEN:  moving_bitboard = white ? &piece_bitboards[WHITE][QUEEN] : &piece_bitboards[BLACK][QUEEN]; break;
-	case ROOK:
-		moving_bitboard = white ? &piece_bitboards[WHITE][ROOK] : &piece_bitboards[BLACK][ROOK];
-		if (castling_affected) updateRookCastling(white, source);
-		break;
-	case KING:
-		moving_bitboard = white ? &piece_bitboards[WHITE][KING] : &piece_bitboards[BLACK][KING];
-		if (castling_affected) {
-			castling_rights &= ~(white ? 0x03 : 0x0C);  // Disable castling rights
-			if (abs(source - target) == 2) handleCastling(white, target);
-		}
-		break;
-	default:
-		throw std::invalid_argument("Invalid piece type");
+	// If a rook or knight moved, update castling rights
+	if (castling_affected && (source_piece == ROOK || source_piece == KING)) {
+		if (source_piece == ROOK) updateRookCastling(white, source);
+		else if (source_piece == KING) castling_rights &= ~(white ? 0x03 : 0x0C);  // Disable castling rights
 	}
 
-	// Move the piece
-	*moving_bitboard = (*moving_bitboard & ~source_square) | target_square;
+	// If capture, clear target square and update scores
+	if (move_type == CAPTURE || move_type == PROMOTION_CAPTURE) {
+		piece_bitboards[!white][target_piece] &= ~(1ULL << target);
+		hash_key ^= Tables::PIECE_KEYS[!white][target_piece][target];
 
-	// Update piece types at squares
-	piece_at_square[source] = EMPTY;
-	piece_at_square[target] = source_piece;
-
-	// Update target square if was en passant capture so that we capture the correct pawn
-	if (target == en_passant_target && source_piece == PAWN) {
-		int en_passant_square = white ? (target - 8) : (target + 8);
-		target_square = 1ULL << en_passant_square;
-		piece_at_square[en_passant_square] = EMPTY; // Clear type at capture square
-	}
-
-	// Handle normal and en passant captures
-	if (!empty) {
-		switch (target_piece) {
-		case PAWN: opponent_bitboard = white ? &piece_bitboards[BLACK][PAWN] : &piece_bitboards[WHITE][PAWN]; break;
-		case KNIGHT: opponent_bitboard = white ? &piece_bitboards[BLACK][KNIGHT] : &piece_bitboards[WHITE][KNIGHT]; game_phase_score -= 1; break;
-		case BISHOP: opponent_bitboard = white ? &piece_bitboards[BLACK][BISHOP] : &piece_bitboards[WHITE][BISHOP]; game_phase_score -= 1; break;
-		case ROOK:
-			opponent_bitboard = white ? &piece_bitboards[BLACK][ROOK] : &piece_bitboards[WHITE][ROOK];
-			if ((castling_rights & (white ? 0x0C : 0x03)) != 0) updateRookCastling(!white, target);
+		// Update game phase
+		if (target_piece == QUEEN) game_phase_score -= 4;
+		else if (target_piece == ROOK) {
+			if ((castling_rights & (white ? 0x0C : 0x03)) != 0) updateRookCastling(!white, target); // Update castling
 			game_phase_score -= 2;
-			break;
-		case QUEEN:  opponent_bitboard = white ? &piece_bitboards[BLACK][QUEEN] : &piece_bitboards[WHITE][QUEEN]; game_phase_score -= 4; break;
-		default: throw std::invalid_argument("Invalid piece type");
 		}
-		*opponent_bitboard &= ~target_square;  // Capture the piece
-		half_moves = 0;  // Captures reset halfmove-clock
+		else if (target_piece == KNIGHT || target_piece == BISHOP) game_phase_score -= 1;
 
-		// Captures decrease the material score
+		// Update material score
 		material_score += white ? PIECE_VALUES[target_piece] : -PIECE_VALUES[target_piece];
 	}
 
-	// Set en passant target if a pawn double moves
-	if (source_piece == PAWN && abs(source - target) == 16) {
-		en_passant_target = white ? (source + 8) : (target + 8);
-	}
-	else {
-		en_passant_target = UNASSIGNED;
+	// En passant
+	if (move_type == EN_PASSANT) {
+		// Compute the pawn captured by en passant
+		int en_passant_square = white ? (target - 8) : (target + 8);
+		piece_bitboards[!white][PAWN] &= ~(1ULL << en_passant_square); // Capture pawn
+		piece_at_square[en_passant_square] = EMPTY;
+		hash_key ^= Tables::PIECE_KEYS[!white][PAWN][en_passant_square];
+
+		material_score += white ? PIECE_VALUES[PAWN] : -PIECE_VALUES[PAWN];
 	}
 
-	// Update board state and calculate new positional scores
+	// Castling
+	if (move_type == CASTLING) {
+		handleCastling(white, target);
+
+		// Determine if kingside or queenside castling
+		bool kingside = target == 6 || target == 62;
+
+		// Get rook origin and target
+		int rook_origin = white ? (kingside ? 7 : 0) : (kingside ? 63 : 56);
+		int rook_target = white ? (kingside ? 5 : 3) : (kingside ? 61 : 59);
+
+		// Update hash
+		hash_key ^= Tables::PIECE_KEYS[white][ROOK][rook_origin]; // Clear origin
+		hash_key ^= Tables::PIECE_KEYS[white][ROOK][rook_target]; // Set target
+	}
+
+	// Clear previous en passant if available
+	if (en_passant_target != UNASSIGNED) {
+		hash_key ^= Tables::EN_PASSANT_KEYS[en_passant_target % 8];
+	}
+
+	// Set en passant target if a pawn double pushes
+	if (move_type == PAWN_DOUBLE_PUSH) {
+		en_passant_target = white ? (source + 8) : (target + 8);
+		hash_key ^= Tables::EN_PASSANT_KEYS[target % 8]; // Set new en passant file
+	}
+	else {
+		en_passant_target = UNASSIGNED; // Reset en passant
+	}
+
+	// Toggle side-to-move key
+	hash_key ^= Tables::SIDE_TO_MOVE_KEY;
+
+	// Update board state and calculate new positional scores if not promotion, else updated after applying promotion
 	// Expensive function calls performance-wise but called only after human moves so no visible effect on performance
+	if (move_type != PROMOTION && move_type != PROMOTION_CAPTURE) {
+		// Move source piece to target
+		piece_bitboards[white][source_piece] |= (1ULL << target);
+		piece_at_square[target] = source_piece;
+		hash_key ^= Tables::PIECE_KEYS[white][source_piece][target]; // Set new location in hash
+	}
+	else {
+		// Rest is done in applyPromotion
+		return;
+	}
+
+	// For reversible moves increment position counts
+	if (!(source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING)) {
+		position_history[hash_key]++;
+		half_moves++;
+	}
+	else {
+		half_moves = 0; // Reset halfmoves if irreversable
+		position_history.clear(); // Reset threefold tracking
+		position_history[hash_key]++; // Save new state
+	}
+
 	updateBoardState(white);
 	updatePositionalScore();
 }
 
 void Bitboard::applyPromotion(int target, char promotion_char, bool white) {
-	uint64_t target_square = 1ULL << target; // Convert target to bitboard
 	// Update the bitboard of the piece moved
 	// Clears target square using bitwise AND with the negation target_square
 	// Sets the target using bitwise OR with target_square
-	
-	// Select bitboard to update
-	uint64_t* moving_bitboard = nullptr;
 	PieceType promotion = EMPTY;
 
 	switch (promotion_char)
 	{
-	case 'n': moving_bitboard = white ? &piece_bitboards[WHITE][KNIGHT] : &piece_bitboards[BLACK][KNIGHT];
-		piece_at_square[target] = KNIGHT; game_phase_score += 1; promotion = KNIGHT; break;
-	case 'b': moving_bitboard = white ? &piece_bitboards[WHITE][BISHOP] : &piece_bitboards[BLACK][BISHOP];
-		piece_at_square[target] = BISHOP; game_phase_score += 1; promotion = BISHOP; break;
-	case 'r': moving_bitboard = white ? &piece_bitboards[WHITE][ROOK] : &piece_bitboards[BLACK][ROOK];
-		piece_at_square[target] = ROOK; game_phase_score += 2; promotion = ROOK; break;
-	case 'q': moving_bitboard = white ? &piece_bitboards[WHITE][QUEEN] : &piece_bitboards[BLACK][QUEEN];
-		piece_at_square[target] = QUEEN; game_phase_score += 4; promotion = QUEEN; break;
+	case 'n': promotion = KNIGHT; game_phase_score += 1; break;
+	case 'b': promotion = BISHOP; game_phase_score += 1; break;
+	case 'r': promotion = ROOK; game_phase_score += 2; break;
+	case 'q': promotion = QUEEN; game_phase_score += 4; break;
 	default: throw std::invalid_argument("Invalid promotion type");
 	}
 
-	// Add the piece
-	*moving_bitboard |= target_square;
-
-	// Clear pawn from target square
-	uint64_t* pawn_bitboard = white ? &piece_bitboards[WHITE][PAWN] : &piece_bitboards[BLACK][PAWN];
-	*pawn_bitboard &= ~target_square;
+	piece_bitboards[white][promotion] |= (1ULL << target);
+	piece_at_square[target] = promotion;
+	hash_key ^= Tables::PIECE_KEYS[white][promotion][target];
 
 	// Update board state
 	material_score += white ? PIECE_VALUES[promotion] : -PIECE_VALUES[promotion];
 	material_score += white ? -PIECE_VALUES[PAWN] : PIECE_VALUES[PAWN];
+
+	half_moves = 0; // Reset halfmoves
+	position_history.clear(); // Reset threefold tracking
+	position_history[hash_key]++; // Save new state
 
 	updateBoardState(white);
 	updatePositionalScore();
@@ -572,9 +614,11 @@ void Bitboard::updateBoardState(bool white) {
 		state.flags |= BoardState::STALEMATE;
 	}
 
-	// TODO
-	// Additional state updates
-	// Like Zobrist
+	// Check if ended in draw
+	// Possible by threefold and halfmove rule
+	if (position_history[hash_key] >= 3 || half_moves >= 50) {
+		state.flags |= BoardState::DRAW;
+	}
 }
 
 void Bitboard::updatePositionalScore() {
@@ -770,12 +814,14 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// Clear the source square, doesn't differ for any move
 	piece_bitboards[white][source_piece] &= ~(1ULL << source);
 	piece_at_square[source] = EMPTY;
+	hash_key ^= Tables::PIECE_KEYS[white][source_piece][source];
 
 	// Clear positional score of source square
 	positional_delta -= getPositionalScore(source, previous_game_phase, source_piece, white);
 
 	// Precompute whether castling is affected
 	bool castling_affected = (castling_rights & (white ? 0x03 : 0x0C)) != 0;
+	hash_key ^= Tables::CASTLING_KEYS[castling_rights];
 
 	// If a rook or knight moved, update castling rights
 	if (castling_affected && (source_piece == ROOK || source_piece == KING)) {
@@ -786,6 +832,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// If capture, clear target square and update scores
 	if (move_type == CAPTURE || move_type == PROMOTION_CAPTURE) {
 		piece_bitboards[!white][target_piece] &= ~(1ULL << target);
+		hash_key ^= Tables::PIECE_KEYS[!white][target_piece][target];
 
 		// Update game phase
 		if (target_piece == QUEEN) game_phase_score -= 4;
@@ -808,6 +855,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		int en_passant_square = white ? (target - 8) : (target + 8);
 		piece_bitboards[!white][PAWN] &= ~(1ULL << en_passant_square); // Capture pawn
 		piece_at_square[en_passant_square] = EMPTY;
+		hash_key ^= Tables::PIECE_KEYS[!white][PAWN][en_passant_square];
 
 		material_delta += PIECE_VALUES[PAWN];
 		positional_delta += getPositionalScore(en_passant_square, previous_game_phase, PAWN, !white);
@@ -824,6 +872,9 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		int rook_origin = white ? (kingside ? 7 : 0) : (kingside ? 63 : 56);
 		int rook_target = white ? (kingside ? 5 : 3) : (kingside ? 61 : 59);
 
+		hash_key ^= Tables::PIECE_KEYS[white][ROOK][rook_origin];
+		hash_key ^= Tables::PIECE_KEYS[white][ROOK][rook_target];
+
 		positional_delta -= getPositionalScore(rook_origin, previous_game_phase, ROOK, white);
 		positional_delta += getPositionalScore(rook_target, previous_game_phase, ROOK, white);
 	}
@@ -833,6 +884,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		// Update promoted pieces bitboard
 		piece_bitboards[white][promotion] |= (1ULL << target);
 		piece_at_square[target] = promotion;
+		hash_key ^= Tables::PIECE_KEYS[white][promotion][target];
 
 		// Update game phase score
 		if (promotion == QUEEN) game_phase_score += 4;
@@ -847,14 +899,32 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	else { // For the non promotion moves move source piece to target
 		piece_bitboards[white][source_piece] |= (1ULL << target);
 		piece_at_square[target] = source_piece;
+		hash_key ^= Tables::PIECE_KEYS[white][source_piece][target];
+	}
+
+	// Clear previous en passant
+	if (en_passant_target != UNASSIGNED) {
+		hash_key ^= Tables::EN_PASSANT_KEYS[en_passant_target % 8];
 	}
 
 	// Set en passant target if a pawn double pushes
 	if (move_type == PAWN_DOUBLE_PUSH) {
 		en_passant_target = white ? (source + 8) : (target + 8);
+		hash_key ^= Tables::EN_PASSANT_KEYS[target % 8];
 	}
 	else {
 		en_passant_target = UNASSIGNED;
+	}
+
+	// For reversible moves increment position counts
+	if (!(source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING)) {
+		position_history[hash_key]++;
+		half_moves++;
+	}
+	else {
+		half_moves = 0; // Reset halfmoves if irreversable
+		position_history.clear(); // Reset threefold tracking
+		position_history[hash_key]++; // Save new state
 	}
 
 	// Apply score deltas

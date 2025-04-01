@@ -53,6 +53,7 @@ struct BoardState {
     static constexpr uint8_t STALEMATE = 1 << 2; // 0000 0100
     static constexpr uint8_t CHECKMATE_WHITE = 1 << 3; // 0000 1000
     static constexpr uint8_t CHECKMATE_BLACK = 1 << 4; // 0001 0000
+    static constexpr uint8_t DRAW = 1 << 5; // 0010 0000
 
     constexpr bool isCheckWhite() const noexcept {
         return flags & CHECK_WHITE;
@@ -72,6 +73,10 @@ struct BoardState {
 
     constexpr bool isCheckmateBlack() const noexcept {
         return flags & CHECKMATE_BLACK;
+    }
+
+    constexpr bool isDraw() const noexcept {
+        return flags & DRAW;
     }
 };
 

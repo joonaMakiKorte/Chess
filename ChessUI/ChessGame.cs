@@ -185,6 +185,10 @@ namespace Chess
             {
                 Console.WriteLine("Stalemate!");
             }
+            else if (gameState == "D")
+            {
+                Console.WriteLine("Draw by threefold!");
+            }
             else
             {
                 Console.WriteLine("The game is safe. No check or checkmate.");

@@ -34,9 +34,12 @@ private:
     UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack for move undoing
     int undo_stack_top; // Index of stack top
 
-    PinData pin_data;
+    PinData pin_data; // Data of pinned pieces
+    AttackData attack_data; // Data of attack squares and attack ray to king
 
-    AttackData attack_data;
+    // Zobrist hashing for threefold repetition detection
+    uint64_t hash_key; // Unique key updated incrementally after each move
+    std::unordered_map<uint64_t, int> position_history;
 
 public:
     // Initialize each piece with starting pos
@@ -80,6 +83,13 @@ public:
 	void applyPromotion(int target, char promotion, bool white);
 
 private:
+    // Initialize board data at the beginning of the game
+    void initBoard();
+
+    // Compute Zobrist hash-key at the beginning of the game
+    // Updated incrementally during game, meaning no need for full re-calculation
+    uint64_t computeZobristHash();
+
     // Get locations of white or black pieces (bitboard)
     // Uses bitwise OR operation to combine occupancy of all pieces of same color
     // To get all occupied squares, combine these two functions with bitwise OR
