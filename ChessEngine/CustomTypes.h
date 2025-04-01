@@ -5,8 +5,8 @@
 
 // Sides are assigned an enum
 enum Color : uint8_t {
-    WHITE = 0,
-    BLACK = 1
+    BLACK = 0,
+    WHITE = 1
 };
 
 // Each piece is assigned a unique integer (4 bits)
@@ -27,7 +27,8 @@ enum MoveType : uint8_t {
     CASTLING = 2,      // Castling (O-O, O-O-O)
     EN_PASSANT = 3,    // En passant capture
     PROMOTION = 4,     // Pawn promotion
-    PROMOTION_CAPTURE = 5  // Pawn promotion with capture
+    PROMOTION_CAPTURE = 5,  // Pawn promotion with capture
+    PAWN_DOUBLE_PUSH = 6
 };
 
 // Direction type (8 possible directions + 0 for no direction)

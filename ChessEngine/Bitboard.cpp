@@ -44,7 +44,7 @@ Bitboard::Bitboard():
 
 	// Initialize the piece_at_square lookup table
 	std::fill(std::begin(piece_at_square), std::end(piece_at_square), EMPTY);
-	for (int color = WHITE; color <= BLACK; ++color) { // 0 = WHITE, 1 = BLACK
+	for (int color = BLACK; color <= WHITE; ++color) { // 0 = BLACK, 1 = WHITE
 		for (int piece = PAWN; piece <= KING; ++piece) {
 			uint64_t bitboard = piece_bitboards[color][piece];
 			while (bitboard) {
@@ -768,7 +768,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	int positional_delta = 0; // Change of positional score with move
 
 	// Clear the source square, doesn't differ for any move
-	piece_bitboards[!white][source_piece] &= ~(1ULL << source);
+	piece_bitboards[white][source_piece] &= ~(1ULL << source);
 	piece_at_square[source] = EMPTY;
 
 	// Clear positional score of source square
@@ -785,7 +785,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	
 	// If capture, clear target square and update scores
 	if (move_type == CAPTURE || move_type == PROMOTION_CAPTURE) {
-		piece_bitboards[white][target_piece] &= ~(1ULL << target);
+		piece_bitboards[!white][target_piece] &= ~(1ULL << target);
 
 		// Update game phase
 		if (target_piece == QUEEN) game_phase_score -= 4;
@@ -806,7 +806,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	if (move_type == EN_PASSANT) {
 		// Compute the pawn captured by en passant
 		int en_passant_square = white ? (target - 8) : (target + 8);
-		piece_bitboards[white][PAWN] &= ~(1ULL << en_passant_square); // Capture pawn
+		piece_bitboards[!white][PAWN] &= ~(1ULL << en_passant_square); // Capture pawn
 		piece_at_square[en_passant_square] = EMPTY;
 
 		material_delta += PIECE_VALUES[PAWN];
@@ -831,7 +831,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// Promotion
 	if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
 		// Update promoted pieces bitboard
-		piece_bitboards[!white][promotion] |= (1ULL << target);
+		piece_bitboards[white][promotion] |= (1ULL << target);
 		piece_at_square[target] = promotion;
 
 		// Update game phase score
@@ -845,12 +845,12 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		positional_delta += getPositionalScore(target, previous_game_phase, promotion, white);
 	}
 	else { // For the non promotion moves move source piece to target
-		piece_bitboards[!white][source_piece] |= (1ULL << target);
+		piece_bitboards[white][source_piece] |= (1ULL << target);
 		piece_at_square[target] = source_piece;
 	}
 
 	// Set en passant target if a pawn double pushes
-	if (source_piece == PAWN && abs(source - target) == 16) {
+	if (move_type == PAWN_DOUBLE_PUSH) {
 		en_passant_target = white ? (source + 8) : (target + 8);
 	}
 	else {
@@ -894,7 +894,7 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 
 	// Move source piece back to source square
 	// Doesn't differ for any move type
-	piece_bitboards[!white][source_piece] |= 1ULL << source; // Move to original position
+	piece_bitboards[white][source_piece] |= 1ULL << source; // Move to original position
 
 	piece_at_square[source] = source_piece; // Restore piece type
 	piece_at_square[target] = target_piece; // Restore target
@@ -903,14 +903,14 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 
 	// Restore captured piece if move was a capture
 	if (move_type == CAPTURE || move_type == PROMOTION_CAPTURE) {
-		piece_bitboards[white][target_piece] |= 1ULL << target; // Restore captured piece
+		piece_bitboards[!white][target_piece] |= 1ULL << target; // Restore captured piece
 	}
 
 	// Restore en passant pawn if move was en passant
 	if (move_type == EN_PASSANT) {
 		// Determine en passant square
 		int en_passant_square = white ? (target - 8) : (target + 8);
-		piece_bitboards[white][PAWN] |= 1ULL << en_passant_square; // Restore captured pawn
+		piece_bitboards[!white][PAWN] |= 1ULL << en_passant_square; // Restore captured pawn
 		piece_at_square[en_passant_square] = PAWN; // Also restore piece type
 	}
 
@@ -923,10 +923,10 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 
 	// Restore promotion piece if move was promotion
 	if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
-		piece_bitboards[!white][promotion] &= ~(1ULL << target); // Clear promotion square
+		piece_bitboards[white][promotion] &= ~(1ULL << target); // Clear promotion square
 	}
 	else { // Recover source piece, applies to non promotions
-		piece_bitboards[!white][source_piece] &= ~(1ULL << target);
+		piece_bitboards[white][source_piece] &= ~(1ULL << target);
 	}
 }
 
@@ -950,20 +950,6 @@ int Bitboard::calculateKingMobility(bool white) {
 	return Utils::countSetBits(getLegalMoves(king_sq, white));
 }
 
-uint64_t& Bitboard::getPieceBitboard(PieceType piece, bool white) {
-	// Return the correct piece bitboard depending on the piece and color
-	switch (piece)
-	{
-	case PAWN: return white ? piece_bitboards[WHITE][PAWN] : piece_bitboards[BLACK][PAWN];
-	case KNIGHT: return white ? piece_bitboards[WHITE][KNIGHT] : piece_bitboards[BLACK][KNIGHT];
-	case BISHOP: return white ? piece_bitboards[WHITE][BISHOP] : piece_bitboards[BLACK][BISHOP];
-	case ROOK: return white ? piece_bitboards[WHITE][ROOK] : piece_bitboards[BLACK][ROOK];
-	case QUEEN: return white ? piece_bitboards[WHITE][QUEEN] : piece_bitboards[BLACK][QUEEN];
-	case KING: return white ? piece_bitboards[WHITE][KING] : piece_bitboards[BLACK][KING];
-	default: throw std::invalid_argument("Invalid piece type");
-	}
-}
-
 MoveType Bitboard::getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const {
 	// Determine move type
 	if (piece == PAWN) {
@@ -971,6 +957,7 @@ MoveType Bitboard::getMoveType(int source_square, int target_square, PieceType p
 		if ((white && target_square >= 56) || (!white && target_square <= 7)) {
 			return (target_piece == EMPTY) ? PROMOTION : PROMOTION_CAPTURE;
 		}
+		if (abs(source_square - target_square) == 16) return PAWN_DOUBLE_PUSH;
 	}
 	if (piece == KING && abs(source_square - target_square) == 2) return CASTLING;
 	if (target_piece != EMPTY) return CAPTURE;

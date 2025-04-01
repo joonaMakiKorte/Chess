@@ -177,10 +177,6 @@ public:
     int evaluatePassedPawns(bool white);
 
 private: 
-    // Helper to get the correct piece bitboard as a reference from enum
-	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
-	uint64_t& getPieceBitboard(PieceType piece, bool white);
-
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
 	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
