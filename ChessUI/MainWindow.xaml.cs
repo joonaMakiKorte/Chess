@@ -48,6 +48,8 @@ namespace Chess
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
             chessGame.OnHalfMoveUpdated += boardUI.UpdateHalfMoveCount;
 
+            // Update BoardUI with ChessGame reference
+            boardUI.SetChessGame(chessGame);
 
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);

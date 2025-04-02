@@ -12,6 +12,7 @@ namespace Chess
 {
     public class ChessGame : IDisposable
     {
+        private BoardUI boardUI;
         private bool isWhiteTurn = true; // White moves first
         private bool whiteKingside, whiteQueenside, blackKingside, blackQueenside; // Store castling rights
         private string enPassantTarget; // Store en passant target square using algebraic notation
@@ -23,11 +24,14 @@ namespace Chess
         public string GameMode { get; private set; }
         public string AIDifficulty { get; private set; }
 
+        // Event to notify about game over conditions
+        public event Action<string> GameOver;
 
         public ChessGame(string gameMode, string aiDifficulty, string timer)
         {
             GameMode = gameMode;
             AIDifficulty = aiDifficulty;
+            
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
@@ -175,6 +179,7 @@ namespace Chess
             if (gameState == "M")
             {
                Console.WriteLine("Checkmate! The game is over.");
+                GameOver?.Invoke("Checkmate!");
             }
             else if (gameState == "C")
             {
@@ -183,6 +188,7 @@ namespace Chess
             else if (gameState == "S")
             {
                 Console.WriteLine("Stalemate!");
+                GameOver?.Invoke("Stalemate!");
             }
             else
             {
@@ -215,6 +221,8 @@ namespace Chess
             });
 
         }
+
+        
 
         // Destroy board
         public void Dispose()
