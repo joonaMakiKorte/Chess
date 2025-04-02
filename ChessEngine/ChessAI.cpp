@@ -65,8 +65,13 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
         for (int i = 0; i < move_count; i++) {
             board.applyMoveAI(move_list[i], maximizingPlayer);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            // Return 0 for this branch if results in draw
+            if (board.state.isDraw()) {
+                board.undoMoveAI(move_list[i], maximizingPlayer);
+                return 0;
+            }
 
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
             board.undoMoveAI(move_list[i], maximizingPlayer);
 
 			maxEval = max(maxEval, eval);
@@ -93,8 +98,13 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
         for (int i = 0; i < move_count; i++) {
             board.applyMoveAI(move_list[i], maximizingPlayer);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            // Return 0 for this branch if results in draw
+            if (board.state.isDraw()) {
+                board.undoMoveAI(move_list[i], maximizingPlayer);
+                return 0;
+            }
 
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
             board.undoMoveAI(move_list[i], maximizingPlayer);
 
             minEval = min(minEval, eval);
@@ -155,7 +165,7 @@ int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
 
     if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
 	if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
-    if (board.state.isStalemate()) return 0; // Draw -> neutral outcome
+    if (board.state.isStalemate() || board.state.isDraw()) return 0; // Draw -> neutral outcome
 
     // Evaluate material and positional score of the board
     int score = board.evaluateBoard(maximizingPlayer);

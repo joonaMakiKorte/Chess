@@ -84,15 +84,18 @@ struct BoardState {
 struct UndoInfo {
     // Save castling and en passant
     uint8_t castling_rights;
-    int en_passant_target;
+    int8_t en_passant_target;
 
     // Flags of the game state
     uint8_t flags;
 
     // Board evaluation scores
-    int material_score;
-    int positional_score;
-    int game_phase_score;
+    int material_delta;
+    int positional_delta;
+    int game_phase_delta;
+
+    // Halfmove counter
+    int half_moves;
 };
 
 // Pinned piece data
