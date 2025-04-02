@@ -57,7 +57,7 @@ namespace Chess
             string musicFilePath = Path.Combine(baseDirectory, "pics", "piecemove.mp3");
 
             // Debug: Print the constructed path
-            Console.WriteLine("Constructed music file path: " + musicFilePath);
+            //Console.WriteLine("Constructed music file path: " + musicFilePath);
 
             // check if file exists
             if (File.Exists(musicFilePath))

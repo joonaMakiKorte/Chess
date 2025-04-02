@@ -162,6 +162,7 @@ namespace Chess
 
             // Temporary pawn promotion logic
             // Is promotion when pawn reaches the last rank
+            // Queen = 'q', rook = 'r', bishop = 'b', knight = 'k'
             if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) || 
                ( pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
             {
@@ -173,8 +174,8 @@ namespace Chess
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
 
-            string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
-            Console.WriteLine(debugMessage);
+            //string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
+            //Console.WriteLine(debugMessage);
 
             if (gameState == "M")
             {
@@ -189,6 +190,10 @@ namespace Chess
             {
                 Console.WriteLine("Stalemate!");
                 GameOver?.Invoke("Stalemate!");
+            }
+            else if (gameState == "D")
+            {
+                Console.WriteLine("Draw by threefold!");
             }
             else
             {
@@ -217,7 +222,8 @@ namespace Chess
                 LoadFromFEN(fen);
                 Console.WriteLine(fen);
 
-       
+                string message = ChessEngineInterop.GetDebugMessageString(board);
+                Console.WriteLine(message);
             });
 
         }

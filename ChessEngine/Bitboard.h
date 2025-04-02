@@ -2,12 +2,20 @@
 #define BITBOARD_H
 
 #include "BitboardConstants.h"
-#include "ChessAI.h"
+#include "CustomTypes.h"
 
 class Bitboard {
 private:
     // Piece bitboards indexed by [color][pieceType]
     uint64_t piece_bitboards[2][6];
+
+    // Lookup table for fast piece type checking
+    PieceType piece_at_square[64];
+
+    // Board state scores updated incrementally
+    int material_score;
+    int positional_score;
+    int game_phase_score;
 
     // Store castling rights as a bitmask
     // Bit 0 : White kingside(K)
@@ -23,17 +31,15 @@ private:
     int half_moves; // Helps determine if a draw can be claimed
     int full_moves; // For game analysis and record keeping
 
-    // Save previous board states for faster state recovery in move undoing
-    struct UndoInfo {
-        // Save castling and en passant
-        uint8_t castling_rights;
-        int en_passant_target;
-
-        // Flags of the game state
-        uint8_t flags;
-    };
-    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack
+    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack for move undoing
     int undo_stack_top; // Index of stack top
+
+    PinData pin_data; // Data of pinned pieces
+    AttackData attack_data; // Data of attack squares and attack ray to king
+
+    // Zobrist hashing for threefold repetition detection
+    uint64_t hash_key; // Unique key updated incrementally after each move
+    std::unordered_map<uint64_t, int> position_history;
 
 public:
     // Initialize each piece with starting pos
@@ -41,24 +47,6 @@ public:
 
     // Store the game state as a bitmask
     BoardState state;
-
-    // Pinned piece data
-    struct PinData {
-        uint64_t pinned;       // All pinned pieces
-        uint64_t pin_rays[64]; // Store pin ray for each pinned square
-    };
-
-    // Attack data, store enemy attacks squares and attacker ray
-    struct AttackData {
-        uint64_t attack_squares;
-        uint64_t attack_ray;
-    };
-
-    // Store the pin data
-    PinData pin_data;
-
-    // Store the attack data
-    AttackData attack_data;
 
     // Helper to get the piece type at a given square
     char getPieceTypeChar(int square) const;
@@ -85,19 +73,23 @@ public:
     // Apply move by updating bitboards
     // Takes the source and target as parameters
     // Move is applied only after making sure its legal, meaning no need to check for validity
+    // Incrementally updates game phase and material scores
     void applyMove(int source, int target, bool white);
 
     // Apply promotion by updating bitboards
 	// Move has already been applied , so only need to promote the pawn
 	// Takes the target square and promotion piece as parameters
+    // Incrementally updates game phase and material scores
 	void applyPromotion(int target, char promotion, bool white);
 
-    // Each time after applying a move set the new board state
-    // Includes check, checkmate and stalemate information
-    // Only updating the necessary side
-    void updateBoardState(bool white);
-
 private:
+    // Initialize board data at the beginning of the game
+    void initBoard();
+
+    // Compute Zobrist hash-key at the beginning of the game
+    // Updated incrementally during game, meaning no need for full re-calculation
+    uint64_t computeZobristHash();
+
     // Get locations of white or black pieces (bitboard)
     // Uses bitwise OR operation to combine occupancy of all pieces of same color
     // To get all occupied squares, combine these two functions with bitwise OR
@@ -127,6 +119,15 @@ private:
     bool isCheckmate(bool white);
     bool isStalemate(bool white);
 
+    // Each time after applying a move set the new board state
+    // Includes check, checkmate and stalemate information
+    // Only updating the necessary side
+    void updateBoardState(bool white);
+
+    // Calculate positional scores of pieces
+    // Expensive function call since iterates over every piece, but only called after human applied move so no visible effect
+    void updatePositionalScore();
+
 public:
     // Reset undo stack
     // Sets top element index to 0
@@ -136,7 +137,7 @@ public:
     // Only handle queen promotions, underpromotions deferred to quiescence
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
 	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
-    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
 
 	// Function for ChessAI to generate noisy moves
 	// Used for quiescence search to reduce horizon effect
@@ -167,15 +168,25 @@ public:
     // Used in quiescence search for delta pruning
     int estimateCaptureValue(uint32_t move);
 
+    // Evaluate if we are in endgame
+    // Done by comparing current game phase score to endgame threshold
+    bool isEndgame();
+
+    // Get distance between kings
+    // Used in endgame eval heuristic
+    // Closer kings get higher bonus
+    int calculateKingDistance();
+
+    // Calculate opponent's kings distance from the closest board edge
+    // Used in endgame eval heuristic
+    int calculateKingEdgeDistance(bool white);
+
+    // Evaluate passed pawns
+    // Used in endgame eval heuristic
+    // Critical in endgame evaluations
+    int evaluatePassedPawns(bool white);
+
 private: 
-	// Helper to get correct piece enum corresponding to the piece type
-	// Used for encoding moves
-	PieceType getPieceType(int square) const;
-
-    // Helper to get the correct piece bitboard as a reference from enum
-	// For example if piece is PAWN, returns white_pawns or black_pawns depending on the color
-	uint64_t& getPieceBitboard(PieceType piece, bool white);
-
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
 	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
@@ -190,9 +201,11 @@ private:
 	// Calculate the positional score of the board
 	int calculatePositionalScore(bool white);
 
-	// Determine the game phase score (middle or endgame)
-    // Is based on the remaining pieces
-	int calculateGamePhase();
+    inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
+
+    // Helper to determine if a pawn if passed
+    // Passed pawns = pawns with no opposing pawns blocking their promoting path
+    bool isPassedPawn(int pawn, bool white);
 };
 
 #endif BITBOARD_H

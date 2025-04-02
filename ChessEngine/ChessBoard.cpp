@@ -22,15 +22,14 @@ void ChessBoard::MovePiece(int source, int target) {
 
     // Apply move in bitboard
     board.applyMove(source, target, white);
-    
-    board.updateBoardState(white); // Update board state
 
     white = !white; // Switch turn
 }
 
 void ChessBoard::MakeMoveAI(int depth) {
     // Get best move in encoded form
-    uint32_t best_move = ChessAI::getBestMove(board, depth);
+    std::string message;
+    uint32_t best_move = ChessAI::getBestMove(board, depth, message);
 
 	if (best_move == 0) {
 		UpdateDebugMessage("No legal moves available");
@@ -40,7 +39,7 @@ void ChessBoard::MakeMoveAI(int depth) {
     // Apply move
 	board.applyMoveAI(best_move, white);
 	white = !white; // Switch turn
-
+    UpdateDebugMessage(message);
 }
 
 void ChessBoard::MakePromotion(int target, char promotion) {
@@ -53,9 +52,6 @@ void ChessBoard::MakePromotion(int target, char promotion) {
 	// Piece has already been moved and turn has changed,
 	// so we negate the turn to apply the promotion to correct side
 	board.applyPromotion(target, promotion, !white);
-
-    // Promotion is done separately after move applying, so update state again
-    board.updateBoardState(!white);
 }
 
 std::string ChessBoard::GetBoardState() {
