@@ -791,6 +791,30 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 	}
 }
 
+void Bitboard::generateQuietMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
+	move_count = 0;
+
+	uint64_t friendly_pieces = white ? whitePieces() : blackPieces();
+	uint64_t opponent_pieces = white ? blackPieces() : whitePieces();
+
+	while (friendly_pieces) {
+		int from = Utils::findFirstSetBit(friendly_pieces);
+		PieceType piece = piece_at_square[from];
+		uint64_t legal_moves = getLegalMoves(from, white);
+		uint64_t quiet = legal_moves & ~opponent_pieces;
+
+		// Process moves that don't land on enemy pieces
+		while (quiet) {
+			int to = Utils::findFirstSetBit(quiet);
+			MoveType move_type = getMoveType(from, to, piece, EMPTY, white);
+
+			move_list[move_count++] = ChessAI::encodeMove(from, to, piece, EMPTY, move_type, EMPTY);
+			Utils::popBit(quiet, to);
+		}
+		Utils::popBit(friendly_pieces, from);
+	}
+}
+
 void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// Decode the move
 	int source = ChessAI::from(move);

@@ -110,4 +110,11 @@ struct AttackData {
     uint64_t attack_ray;
 };
 
+// Each direction king can get attacked from
+struct KingDanger {
+    uint64_t orthogonal;
+    uint64_t diagonal;
+    uint64_t knight;
+};
+
 #endif

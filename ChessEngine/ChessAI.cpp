@@ -52,7 +52,7 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark
 
 int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
 	if (depth == 0 || board.isGameOver()) {
-		return quiescenceSearch(board, alpha, beta, maximizingPlayer);
+		return quiescenceSearch(board, depth, alpha, beta, maximizingPlayer);
 	}
 
     std::array<uint32_t, MAX_MOVES> move_list;
@@ -128,30 +128,37 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     }
 }
 
-int ChessAI::quiescenceSearch(Bitboard& board, int alpha, int beta, bool maximizingPlayer) {
-    const int DELTA_MARGIN = 900; // Value of a queen
-    int eval = evaluateBoard(board, 0, maximizingPlayer);  // Get a static evaluation of the current position
+int ChessAI::quiescenceSearch(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
+    int eval = evaluateBoard(board, depth, maximizingPlayer);  // Get a static evaluation of the current position
 
     // Stand pat: if this position is already better than beta, cut off search (pruning)
     if (eval >= beta) return beta;
     if (eval > alpha) alpha = eval;  // Update alpha if we find a better move
 
-    // Generate only capture moves (no quiet moves)
-    std::array<uint32_t, MAX_MOVES> capture_list;
-    int capture_count = 0;
-    board.generateNoisyMoves(capture_list, capture_count, maximizingPlayer);
+    // Generate captures + promotions (non quiet moves)
+    std::array<uint32_t, MAX_MOVES> move_list;
+    int move_count = 0;
+    board.generateNoisyMoves(move_list, move_count, maximizingPlayer);
 
-    for (int i = 0; i < capture_count; i++) {
+    // Allow quiet moves in a near-mate endgame
+    // Done when no captures/promotions left to extend search
+    // This way we can find forced mates
+    if (move_count == 0 && board.isEndgame()) {
+        // Use fixed depth 0 to avoid killer move heuristics for deeper moves
+        board.generateMoves(move_list, move_count, 0, maximizingPlayer);
+    }
+
+    for (int i = 0; i < move_count; i++) {
         // Delta pruning - skip moves that can't possibly raise alpha
-        int move_value = board.estimateCaptureValue(capture_list[i]);
+        int move_value = board.estimateCaptureValue(move_list[i]);
         if (eval + move_value + DELTA_MARGIN <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }
-        board.applyMoveAI(capture_list[i], maximizingPlayer);
+        board.applyMoveAI(move_list[i], maximizingPlayer);
 
-        int score = -quiescenceSearch(board, -beta, -alpha, !maximizingPlayer);  // Negamax approach
+        int score = -quiescenceSearch(board, 0, -beta, -alpha, !maximizingPlayer);  // Negamax approach
 
-        board.undoMoveAI(capture_list[i], maximizingPlayer);
+        board.undoMoveAI(move_list[i], maximizingPlayer);
 
         if (score >= beta) return beta;  // Beta cutoff
         if (score > alpha) alpha = score;  // Improve alpha

@@ -100,8 +100,6 @@ uint64_t Moves::getRookMoves(int rook, uint64_t occ) {
 }
 
 uint64_t Moves::getQueenMoves(int queen, uint64_t occupied) {
-	uint64_t queen_bb = 1ULL << queen;
-
 	uint64_t occ = occupied;
 
 	// Get rook moves
@@ -158,4 +156,23 @@ void Moves::computePinnedPieces(PinData& pin_data, const int& king_sq,
 			pin_data.pin_rays[pinned_sq] = Tables::LINE[king_sq][slider_sq]; // Get the pin ray
 		}
 	}
+}
+
+void Moves::computeKingDanger(KingDanger& king_danger, const int& king_sq, const uint64_t& occupied) {
+	// Diagonal danger
+	uint64_t occ = occupied;
+	occ &= Magic::MAGIC_TABLE_ROOK[king_sq].mask;
+	occ *= Magic::MAGIC_TABLE_ROOK[king_sq].magic;
+	occ >>= Magic::MAGIC_TABLE_ROOK[king_sq].shift;
+	king_danger.diagonal = MoveTables::ATTACKS_ROOK[king_sq][occ];
+
+	// Orthogonal
+	occ = occupied;
+	occ &= Magic::MAGIC_TABLE_BISHOP[king_sq].mask;
+	occ *= Magic::MAGIC_TABLE_BISHOP[king_sq].magic;
+	occ >>= Magic::MAGIC_TABLE_BISHOP[king_sq].shift;
+	king_danger.orthogonal = MoveTables::ATTACKS_BISHOP[king_sq][occ];
+
+	// Knight attacks
+	king_danger.knight = MoveTables::KNIGHT_MOVES[king_sq].moves;
 }

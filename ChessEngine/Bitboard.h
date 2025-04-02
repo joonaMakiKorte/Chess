@@ -144,6 +144,10 @@ public:
 	// Noisy moves are captures and promotions
 	void generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
+    // Generate quiet moves when deep in the endgame
+    // Quiet moves are regular moves that do not promote or capture
+    void generateQuietMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
     // Also saves the en passant target and castling rights before applying move for later undoign

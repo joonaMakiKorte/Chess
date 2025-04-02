@@ -36,6 +36,9 @@ constexpr int MAX_DEPTH = 64;  // Maximum playsible search depth for minimax
 constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
 // 128 for alignment + would be an extreme case which is near impossible
 
+// Margin for delta pruning in quiescence search (value of queen
+constexpr int DELTA_MARGIN = 900;
+
 constexpr int KILLER_SCORE = 9000; // Score to prioritize killer moves
 
 // Masks for castling rights
