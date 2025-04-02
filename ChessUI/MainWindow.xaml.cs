@@ -24,7 +24,7 @@ namespace Chess
     /// </summary>
     /// 
     public partial class MainWindow : Window
-    {      
+    {
         private ChessGame chessGame;
         private Images images = new Images();
         private BoardUI boardUI;
@@ -41,7 +41,7 @@ namespace Chess
 
             // Initialize AudioPlayer
             audioPlayer = new AudioPlayer();
-            
+
             // Init UI
             boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, WhiteTimerLabel, BlackTimerLabel, images, audioPlayer, int.Parse(timer));
             boardUI.UpdateBoard(chessGame.GetBoardState());
@@ -52,6 +52,9 @@ namespace Chess
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);
         }
+
+        
+
 
     }
 }

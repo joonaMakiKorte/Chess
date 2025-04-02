@@ -34,6 +34,9 @@ namespace Chess
         private TimeSpan whiteTimeRemaining;
         private TimeSpan blackTimeRemaining;
 
+        // Define an event to notify loss
+        public event Action<string> LossOccurred;
+
         public BoardUI(AudioPlayer audioPlayer)
         {
             _audioPlayer = audioPlayer;
@@ -125,6 +128,7 @@ namespace Chess
             {
                 whiteTimer.Stop();
                 // Handle time out for white player
+                ShowLossPopup("White player ran out of time!");
 
             }
         }
@@ -140,6 +144,7 @@ namespace Chess
             {
                 blackTimer.Stop();
                 // Handle time out for black player
+                ShowLossPopup("Black player ran out of time!");
             }
         }
         private void UpdateTimerLabels()
@@ -278,6 +283,18 @@ namespace Chess
         public void UpdateHalfMoveCount(int halfMoveCount)
         {
             halfMoveLabel.Content = "Halfmoves(Tie at 50): " + halfMoveCount;
+        }
+
+        private void ShowLossPopup(string reason)
+        {
+            // Freeze the chess board
+            pieceGrid.IsEnabled = false;
+
+            // Create and show the popup window
+            LossPopup lossPopup = new LossPopup(reason);
+            lossPopup.ShowDialog();
+
+            // Optionally, reset the game or perform other actions after the popup is closed
         }
 
         public void ClearValidMoveHighlights()
