@@ -193,7 +193,8 @@ namespace Chess
             }
             else if (gameState == "D")
             {
-                Console.WriteLine("Draw by threefold!");
+                Console.WriteLine("Draw!");
+                GameOver?.Invoke("Draw!");
             }
             else
             {
