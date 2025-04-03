@@ -401,6 +401,23 @@ void Bitboard::applyPromotion(int target, char promotion_char, bool white) {
 	updatePositionalScore();
 }
 
+bool Bitboard::isEndgame() {
+	// Condition 1: No queens or only one side has a queen
+	int queens = Utils::countSetBits(piece_bitboards[WHITE][QUEEN]) + Utils::countSetBits(piece_bitboards[BLACK][QUEEN]);
+	if (queens <= 1) return true;
+
+	// Condition 2: Few total non-pawn pieces (e.g., 4 or fewer)
+	int total = Utils::countSetBits(whitePieces() | blackPieces());
+	int pawns = Utils::countSetBits(piece_bitboards[WHITE][PAWN]) + Utils::countSetBits(piece_bitboards[BLACK][PAWN]);
+	if (total - pawns <= 4) return true;
+
+	// Condition 3: Only pawns + kings remain
+	int kings = Utils::countSetBits(piece_bitboards[WHITE][KING]) + Utils::countSetBits(piece_bitboards[BLACK][KING]);
+	if (total == kings + pawns) return true;
+
+	return false; // No conditions filled
+}
+
 uint64_t Bitboard::whitePieces() {
 	return piece_bitboards[WHITE][PAWN] | piece_bitboards[WHITE][ROOK] | piece_bitboards[WHITE][KNIGHT] |
 		piece_bitboards[WHITE][BISHOP] | piece_bitboards[WHITE][QUEEN] | piece_bitboards[WHITE][KING];
@@ -567,7 +584,7 @@ void Bitboard::getAttackSquares(int enemy_king, const uint64_t& white_pieces, co
 bool Bitboard::canBlock(bool white) {
 	// Get own pieces depending on the turn
 	uint64_t friendly = white ? whitePieces() : blackPieces();
-	friendly &= ~(white ? piece_bitboards[WHITE][KING] : piece_bitboards[BLACK][KING]); // Exclude own king
+	friendly &= ~piece_bitboards[white][KING]; // Exclude own king
 
 	// Loop over own pieces and get their possible attacks at the current square
 	// If the move is able to block the attack ray returns true
@@ -592,14 +609,11 @@ void Bitboard::updateBoardState(bool white) {
 	uint64_t white_pieces = whitePieces();
 	uint64_t black_pieces = blackPieces();
 
-	uint64_t enemy_king = white ? piece_bitboards[BLACK][KING] : piece_bitboards[WHITE][KING];
+	uint64_t enemy_king = piece_bitboards[!white][KING];
 	int king_bb = Utils::findFirstSetBit(enemy_king);
 
-	uint64_t bishops = white ? piece_bitboards[WHITE][BISHOP] : piece_bitboards[BLACK][BISHOP];
-	uint64_t rooks = white ? piece_bitboards[WHITE][ROOK] : piece_bitboards[BLACK][ROOK];
-	uint64_t queen = white ? piece_bitboards[WHITE][QUEEN] : piece_bitboards[BLACK][QUEEN];
-
-	Moves::computePinnedPieces(pin_data, king_bb, white_pieces | black_pieces, bishops, rooks, queen);
+	Moves::computePinnedPieces(pin_data, king_bb, white_pieces | black_pieces, 
+		piece_bitboards[white][BISHOP], piece_bitboards[white][ROOK], piece_bitboards[white][QUEEN]);
 
 	// Now we calculate attack squares of the previously moved side
 	// Exclude enemy king from calculation so we get the rays that pass through king
@@ -687,14 +701,12 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 				PieceType victim = (move_type == EN_PASSANT) ? PAWN : target_piece;
 				score = MVV_LVA[victim][piece];
 			}
-			else if (depth != 0) { // If non-capture, prioritize killer moves and use history heuristic (not scored for depth 0)
+			else if (depth > 0) { // If non-capture, prioritize killer moves and use history heuristic (not scored for depth 0)
 				// Killer move priority
 				if (ChessAI::isKillerMove(from, to, piece, depth)) {
 					score = KILLER_SCORE;
 				}
-				else {
-					score = ChessAI::getHistoryScore(from, to, piece);
-				}
+				score = ChessAI::getHistoryScore(from, to, piece);
 			}
 
 			// Encode move
@@ -777,6 +789,76 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 				move_scores[move_count++] = { ChessAI::encodeMove(from, to, PAWN, EMPTY, PROMOTION, KNIGHT),0 };
 				Utils::popBit(promotions, to);
 			}
+		}
+		Utils::popBit(friendly_pieces, from);
+	}
+
+	// Sort only the portion containing actual moves
+	std::sort(move_scores.begin(), move_scores.begin() + move_count,
+		[](const auto& a, const auto& b) { return a.second > b.second; });
+
+	// Extract just the moves
+	for (int i = 0; i < move_count; ++i) {
+		move_list[i] = move_scores[i].first;
+	}
+}
+
+void Bitboard::generateEndgameMoves(std::array<uint32_t, MAX_MOVES>&move_list, int& move_count, int depth, bool white) {
+	move_count = 0;
+	std::array<std::pair<uint32_t, int>, MAX_MOVES> move_scores; // Stack allocated array
+
+	// Generate all moves directly into move_scores with scoring
+	uint64_t friendly_pieces = white ? whitePieces() : blackPieces();
+	uint64_t opponent_pieces = white ? blackPieces() : whitePieces();
+
+	// Get squares where we can check the enemy king
+	int enemy_king = Utils::findFirstSetBit(piece_bitboards[!white][KING]);
+	KingDanger king_danger = Moves::computeKingDanger(enemy_king, friendly_pieces | opponent_pieces, white);
+
+	while (friendly_pieces) {
+		int from = Utils::findFirstSetBit(friendly_pieces);
+		PieceType piece = piece_at_square[from];
+		uint64_t legal_moves = getLegalMoves(from, white);
+
+		while (legal_moves) {
+			int to = Utils::findFirstSetBit(legal_moves);
+			Utils::popBit(legal_moves, to);
+			PieceType target_piece = piece_at_square[to];
+			MoveType move_type = getMoveType(from, to, piece, EMPTY, white);
+
+			int score = 0;
+
+			// Checks are absolute priorities, gives highest score
+			if (isCheckMove(king_danger, to, piece)) score += 15000;
+
+			// Encourage promotion
+			if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) score += 12000;
+
+			// Score captures with endgame specific MVV-LVA
+			if (move_type == CAPTURE || move_type == PROMOTION_CAPTURE || move_type == EN_PASSANT) {
+				PieceType victim = (move_type == EN_PASSANT) ? PAWN : target_piece;
+				score += MVV_LVA_ENDGAME[victim][piece];
+
+				// TODO	
+				// Penalize bad trades when winning
+			}
+			// Killer moves and history heuristics for quiet moves
+			else if (depth > 0) {
+				if (ChessAI::isKillerMove(from, to, piece, depth)) {
+					score += (piece == PAWN) ? 3500 : (piece == KING) ? 2500 : 1500;
+				}
+				score += ChessAI::getHistoryScore(from, to, piece) / 16; // History score is scaled down (prevent domination)
+			}
+
+			if (piece == PAWN && isPassedPawn(to, white)) score += 4000 + 200 * (white ? (to / 8) : (7 - to / 8)); // Passed pawn push
+			if (piece == KING) score += 600 * (4 - CENTRALITY_DISTANCE[to]); // King activity
+
+			// Encode move
+			// Promote only to queen
+			uint32_t move = ChessAI::encodeMove(from, to, piece, target_piece, move_type,
+				(move_type == PROMOTION || move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY);
+
+			move_scores[move_count++] = { move, score };
 		}
 		Utils::popBit(friendly_pieces, from);
 	}
@@ -1063,7 +1145,7 @@ bool Bitboard::isGameOver() {
 int Bitboard::calculateKingMobility(bool white) {
 	// Determine king square and get king moves
 	// Return the set bits of the moves bitboard (amount of legal moves)
-	int king_sq = Utils::findFirstSetBit((white ? piece_bitboards[WHITE][KING] : piece_bitboards[BLACK][KING]));
+	int king_sq = Utils::findFirstSetBit(piece_bitboards[white][KING]);
 	return Utils::countSetBits(getLegalMoves(king_sq, white));
 }
 
@@ -1135,6 +1217,12 @@ inline int Bitboard::getPositionalScore(int square, float game_phase, PieceType 
 	);
 }
 
+inline float Bitboard::calculateEndgameWeight() {
+	// Linear interpolation between middlegame and endgame
+	return 1.0f - (float)(game_phase_score - ENDGAME_THRESHOLD) /
+		(float)(MAX_GAME_PHASE - ENDGAME_THRESHOLD);
+}
+
 bool Bitboard::isPassedPawn(int pawn, bool white) {
 	// Early exit if pawn is already on promotion rank
 	if (white ? (pawn >= 48) : (pawn <= 16)) return true;
@@ -1152,6 +1240,15 @@ bool Bitboard::isPassedPawn(int pawn, bool white) {
 	// Get enemy pawns and check if any line up with our mask
 	uint64_t enemy_pawns = white ? piece_bitboards[BLACK][PAWN] : piece_bitboards[WHITE][PAWN];
 	return (enemy_pawns & promotion_path) == 0; // No enemy pawns in mask
+}
+
+bool Bitboard::isCheckMove(const KingDanger& king_danger, int to, PieceType piece) {
+	if (piece == KING) return false; // King cannot check
+	if (piece == PAWN) return (king_danger.pawn & (1ULL << to)) != 0;
+	if (piece == KNIGHT) return (king_danger.knight & (1ULL << to)) != 0;
+	if (piece == BISHOP) return (king_danger.diagonal & (1ULL << to)) != 0;
+	if (piece == ROOK) return (king_danger.orthogonal & (1ULL << to)) != 0;
+	return ((king_danger.orthogonal | king_danger.diagonal) & (1ULL << to)) != 0; // Queen
 }
 
 
@@ -1181,8 +1278,30 @@ int Bitboard::estimateCaptureValue(uint32_t move) {
 	return capture_value - (trade_delta > 0 ? PIECE_VALUES[attacking_piece] : 0);
 }
 
-bool Bitboard::isEndgame() {
-	return game_phase_score <= ENDGAME_THRESHOLD; // Compare to threshold
+int Bitboard::evaluateQuietMove(uint32_t move, bool white) {
+	int score = 0;
+	int from = ChessAI::from(move);
+	int to = ChessAI::to(move);
+	PieceType piece = ChessAI::piece(move);
+
+	// King: Linear scaling (0 to 600 cp)
+	if (piece == KING) {
+		int centrality = KING_CENTRALITY_BONUS[to];
+		score += centrality * 15;  // 40 * 15 = 600
+	}
+	// Passed pawns: 300–600 cp
+	else if (piece == PAWN && isPassedPawn(to, white)) {
+		int rank = white ? (to / 8) : (7 - (to / 8));
+		score += 300 + 50 * rank;  // Max: 300 + 50*6 = 600
+	}
+	// Other pieces: Minor bonus (0–280 cp)
+	else {
+		score += 30 * (4 - CENTRALITY_DISTANCE[to]);
+		score += 20 * (8 - Utils::calculateDistance(to, piece_bitboards[!white][KING]));
+	}
+
+	// Scale by endgame weight (0.0 to 1.0)
+	return static_cast<int>(score * calculateEndgameWeight());
 }
 
 int Bitboard::calculateKingDistance() {
@@ -1192,7 +1311,7 @@ int Bitboard::calculateKingDistance() {
 }
 
 int Bitboard::calculateKingEdgeDistance(bool white) {
-	int opponent_king_sq = white ? piece_bitboards[BLACK][KING] : piece_bitboards[WHITE][KING]; // Get opposing king
+	int opponent_king_sq = piece_bitboards[!white][KING]; // Get opposing king
 	int file = opponent_king_sq % 8;
 	int rank = opponent_king_sq / 8;
 	// Kings near the edge -> 0 penalty
@@ -1201,7 +1320,7 @@ int Bitboard::calculateKingEdgeDistance(bool white) {
 }
 
 int Bitboard::evaluatePassedPawns(bool white) {
-	uint64_t pawns = white ? piece_bitboards[WHITE][PAWN] : piece_bitboards[BLACK][PAWN]; // Get friendly pawns
+	uint64_t pawns = piece_bitboards[white][PAWN]; // Get friendly pawns
 	int score = 0;
 
 	while (pawns) {
@@ -1212,16 +1331,16 @@ int Bitboard::evaluatePassedPawns(bool white) {
 
 		int rank = white ? (pawn_sq / 8) : (7 - (pawn_sq / 8)); // Relative rank (0=start, 7=promotion
 		int file = pawn_sq % 8;
-
+		
 		score += (10 + (rank * rank) * 5); // Quadratic scaling
 
 		// Bonus if supported by friendly king
-		int king_sq = Utils::findFirstSetBit(white ? piece_bitboards[WHITE][KING] : piece_bitboards[BLACK][KING]);
+		int king_sq = Utils::findFirstSetBit(piece_bitboards[white][KING]);
 		int king_dist = Utils::calculateDistance(pawn_sq, king_sq);
 		score += (7 - king_dist) * 10; // Closer king = better
 
 		// Penalty if blocked by enemy king
-		int enemy_king_sq = Utils::findFirstSetBit(white ? piece_bitboards[BLACK][KING] : piece_bitboards[WHITE][KING]);
+		int enemy_king_sq = Utils::findFirstSetBit(piece_bitboards[!white][KING]);
 		int enemy_king_dist = Utils::calculateDistance(pawn_sq, enemy_king_sq);
 		if (enemy_king_dist <= 2) score -= 100; // Enemy king can intercept
 		if (king_dist < enemy_king_dist) score += 50; // King is closer than opponent (protecting passed pawn)

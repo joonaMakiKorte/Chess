@@ -36,6 +36,11 @@ constexpr int MAX_DEPTH = 64;  // Maximum playsible search depth for minimax
 constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
 // 128 for alignment + would be an extreme case which is near impossible
 
+constexpr int MAX_QUIET_MOVES = 4; // Cap to limit the number of quiet moves stored
+
+// Margin for delta pruning in quiescence search (value of queen
+constexpr int DELTA_MARGIN = 900;
+
 constexpr int KILLER_SCORE = 9000; // Score to prioritize killer moves
 
 // Masks for castling rights
@@ -80,6 +85,18 @@ constexpr int MVV_LVA[6][6] = {
     /* KING    */ { 0,    0,     0,     0,     0,     0 } // Illegal captures
 };
 
+// Endgame MVV_LVA[victim][aggressor] = (VictimValue * 6) - AggressorValue
+// Scaled down to prioritize checks/promotions over raw captures.
+constexpr int MVV_LVA_ENDGAME[6][6] = {
+    // Aggressor: PAWN  KNIGHT BISHOP ROOK   QUEEN  KING
+    /* PAWN    */ { 500,  480,   470,   300,    50,  -100 }, // Penalize KxP
+    /* KNIGHT  */ { 1800, 1500,  1490,  1300,   900,  -200 }, // Discourage KxN
+    /* BISHOP  */ { 1900, 1600,  1590,  1400,  1000,  -200 }, // Discourage KxB
+    /* ROOK    */ { 3000, 2700,  2690,  2500,  2100,  -500 }, // Rarely trade R
+    /* QUEEN   */ { 5400, 5100,  5090,  4900,  4500, -1000 }, // Keep queens
+    /* KING    */ {    0,    0,     0,     0,     0,     0 }  // Illegal
+};
+
 // Game phase recalculation threshold in range of 0-1
 // Meaning a phase change greater than this in percentages after applying a move results in full positional score recalculation
 // This way we can avoid unnecessary recalculations to prioritize evaluation speed
@@ -89,7 +106,7 @@ constexpr float FULL_RECALC_THRESHOLD = 0.1f;
 // Opening 22-24     // Most pieces still on the board
 // Middlegame 10-21 // Some exhanges, queens often present
 // Endgame 0-9     // Few pieces left, kings active
-constexpr int ENDGAME_THRESHOLD = 9; 
+constexpr int ENDGAME_THRESHOLD = 6; 
 
 // Piece-square tables for positional scoring evaluation (PSTs)
 // Separete tables for middle and endgame
@@ -243,5 +260,30 @@ constexpr int PIECE_TABLE_END[6][8][8] = {
     {-30,-30,  0,  0,  0,  0,-30,-30},
     {-50,-30,-30,-30,-30,-30,-30,-50}
 }};
+
+// In the endgame active king is crucial
+// King centralization is encouraged with this bonus table
+constexpr int KING_CENTRALITY_BONUS[64] = {
+    0,  5, 10, 15, 15, 10,  5,  0,
+    5, 10, 15, 20, 20, 15, 10,  5,
+   10, 15, 20, 30, 30, 20, 15, 10,
+   15, 20, 30, 40, 40, 30, 20, 15,
+   15, 20, 30, 40, 40, 30, 20, 15,
+   10, 15, 20, 30, 30, 20, 15, 10,
+    5, 10, 15, 20, 20, 15, 10,  5,
+    0,  5, 10, 15, 15, 10,  5,  0
+};
+
+constexpr int CENTRALITY_DISTANCE[64] = {
+    // Precomputed min Chebyshev distance to center (d4,e4,d5,e5)
+    4, 4, 4, 3, 3, 4, 4, 4,  // a1-h1
+    4, 3, 3, 2, 2, 3, 3, 4,  // a2-h2
+    4, 3, 2, 1, 1, 2, 3, 4,  // a3-h3
+    3, 2, 1, 0, 0, 1, 2, 3,  // a4-h4 (d4=0, e4=0)
+    3, 2, 1, 0, 0, 1, 2, 3,  // a5-h5 (d5=0, e5=0)
+    4, 3, 2, 1, 1, 2, 3, 4,  // a6-h6
+    4, 3, 3, 2, 2, 3, 3, 4,  // a7-h7
+    4, 4, 4, 3, 3, 4, 4, 4   // a8-h8
+};
 
 #endif // BITBOARD_CONSTANTS_H

@@ -8,7 +8,6 @@ uint64_t ChessAI::nodes_evaluated = 0;
 
 uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark) {
     nodes_evaluated = 0; // Reset node count for benchmarking
-
     auto start = std::chrono::high_resolution_clock::now();
 
     std::array<uint32_t, MAX_MOVES> move_list;
@@ -50,25 +49,74 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark
     return bestMove;
 }
 
+uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark) {
+    nodes_evaluated = 0; // Reset node count for benchmarking
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::array<uint32_t, MAX_MOVES> move_list;
+    int move_count = 0;
+    board.generateEndgameMoves(move_list, move_count, 0, false); // Generate all legal moves for Black (AI player)
+
+    if (move_count == 0) {
+        return 0; // No legal moves available
+    }
+
+    int bestScore = INF; // Black wants to minimize White's evaluation
+    uint32_t bestMove = 0;
+
+    board.resetUndoStack(); // Reset undo stack before new search
+    for (int i = 0; i < move_count; i++) {
+        // Apply the move
+        board.applyMoveAI(move_list[i], false);
+
+        // Call minimax (assuming AI plays as Black)
+        // Call with maximizingPlayer = true since AI wants to minimize White's score
+        int score = endgameMinimax(board, depth - 1, -INF, INF, true);
+
+        // Undo move
+        board.undoMoveAI(move_list[i], false);
+
+        // Black wants to minimize White's score
+        if (score < bestScore) {
+            bestScore = score;
+            bestMove = move_list[i];
+        }
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    double duration = std::chrono::duration<double>(end - start).count(); // Evaluation time
+    benchmark = "Depth: " + std::to_string(depth) + " | Nodes: " + std::to_string(nodes_evaluated)
+        + " | Time: " + std::to_string(duration) + "s"
+        + " | Nodes/sec: " + std::to_string(nodes_evaluated / duration);
+
+    return bestMove;
+}
+
 int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
-	if (depth == 0 || board.isGameOver()) {
-		return quiescenceSearch(board, alpha, beta, maximizingPlayer);
+    // Check for terminal conditions (mate/draw)
+	if (board.isGameOver()) {
+        return evaluateBoard(board, depth, maximizingPlayer);
 	}
+
+    // Quiescence search at depth 0 (with checks)
+    if (depth <= 0) {
+        return quiescenceSearch(board, alpha, beta, maximizingPlayer);
+    }
 
     std::array<uint32_t, MAX_MOVES> move_list;
 	int move_count = 0;
 
-	board.generateMoves(move_list, move_count, depth, maximizingPlayer);
+    board.generateMoves(move_list, move_count, depth, maximizingPlayer);
 
     if (maximizingPlayer) { // AI (Black) tries to maximize
         int maxEval = -INF;
         for (int i = 0; i < move_count; i++) {
             board.applyMoveAI(move_list[i], maximizingPlayer);
 
-            // Return 0 for this branch if results in draw
+            // Prune out branches that result in draw
             if (board.state.isDraw()) {
                 board.undoMoveAI(move_list[i], maximizingPlayer);
-                return 0;
+                return 0; 
             }
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
@@ -83,7 +131,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
                 }
             }
 
-            // Beta cutoff: store killer move
+            // Beta cutoff: store killer move (not in endgame)
             if (beta <= alpha) {
                 if (!isCapture(move_list[i])) {
                     updateKillerMoves(move_list[i], depth);
@@ -98,7 +146,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
         for (int i = 0; i < move_count; i++) {
             board.applyMoveAI(move_list[i], maximizingPlayer);
 
-            // Return 0 for this branch if results in draw
+            // Prune out branches that result in draw
             if (board.state.isDraw()) {
                 board.undoMoveAI(move_list[i], maximizingPlayer);
                 return 0;
@@ -116,7 +164,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
                 }
             }
             
-            // Beta cutoff: store killer move
+            // Beta cutoff: store killer move (not in endgame
             if (beta <= alpha) {
                 if (!isCapture(move_list[i])) {
                     updateKillerMoves(move_list[i], depth);
@@ -129,29 +177,29 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
 }
 
 int ChessAI::quiescenceSearch(Bitboard& board, int alpha, int beta, bool maximizingPlayer) {
-    const int DELTA_MARGIN = 900; // Value of a queen
     int eval = evaluateBoard(board, 0, maximizingPlayer);  // Get a static evaluation of the current position
 
     // Stand pat: if this position is already better than beta, cut off search (pruning)
     if (eval >= beta) return beta;
     if (eval > alpha) alpha = eval;  // Update alpha if we find a better move
 
-    // Generate only capture moves (no quiet moves)
-    std::array<uint32_t, MAX_MOVES> capture_list;
-    int capture_count = 0;
-    board.generateNoisyMoves(capture_list, capture_count, maximizingPlayer);
+    // Generate captures + promotions (non quiet moves)
+    std::array<uint32_t, MAX_MOVES> move_list;
+    int move_count = 0;
+    board.generateNoisyMoves(move_list, move_count, maximizingPlayer);
 
-    for (int i = 0; i < capture_count; i++) {
+    for (int i = 0; i < move_count; i++) {
+        int move_value = board.estimateCaptureValue(move_list[i]);
+
         // Delta pruning - skip moves that can't possibly raise alpha
-        int move_value = board.estimateCaptureValue(capture_list[i]);
         if (eval + move_value + DELTA_MARGIN <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }
-        board.applyMoveAI(capture_list[i], maximizingPlayer);
+        board.applyMoveAI(move_list[i], maximizingPlayer);
 
         int score = -quiescenceSearch(board, -beta, -alpha, !maximizingPlayer);  // Negamax approach
 
-        board.undoMoveAI(capture_list[i], maximizingPlayer);
+        board.undoMoveAI(move_list[i], maximizingPlayer);
 
         if (score >= beta) return beta;  // Beta cutoff
         if (score > alpha) alpha = score;  // Improve alpha
@@ -179,26 +227,97 @@ int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
     if (board.state.isCheckWhite()) score -= 50; // White in check
     if (board.state.isCheckBlack()) score += 50; // Black in check
 
-    // Endgame-specific evaluation
-    if (board.isEndgame()) {
-        int endgame_score = 0;
-
-        // King proximity bonus
-        int distance = board.calculateKingDistance();
-        endgame_score += (14 - distance) * 20; // Closer kings get higher bonus
-
-        // Passed pawn bonus
-        endgame_score += board.evaluatePassedPawns(maximizingPlayer);
-
-        // Opponent's king on edge/corner penalty
-        int edge_distance = board.calculateKingEdgeDistance(maximizingPlayer);
-        endgame_score -= edge_distance * 30; // Penalize opponents king being near center
-
-        // Add/substract depending on turn
-        score += maximizingPlayer ? endgame_score : -endgame_score;
-    }
     // Return the score
     return score;
+}
+
+int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
+    // Check for terminal conditions (mate/draw)
+    if (board.isGameOver()) {
+        return evaluateBoard(board, depth, maximizingPlayer);
+    }
+
+    // Check extension: Extend if current player is in check
+    if (maximizingPlayer ? board.state.isCheckBlack() : board.state.isCheckWhite()) {
+        depth += 1; // Standard extension
+    }
+
+    // Quiescence search at depth 0 (with checks)
+    if (depth <= 0) {
+        return quiescenceSearch(board, alpha, beta, maximizingPlayer);
+    }
+
+    std::array<uint32_t, MAX_MOVES> move_list;
+    int move_count = 0;
+
+    board.generateEndgameMoves(move_list, move_count, depth, maximizingPlayer);
+
+    if (maximizingPlayer) { // AI (Black) tries to maximize
+        int maxEval = -INF;
+        for (int i = 0; i < move_count; i++) {
+            board.applyMoveAI(move_list[i], maximizingPlayer);
+
+            // Prune out branches that result in draw
+            if (board.state.isDraw()) {
+                board.undoMoveAI(move_list[i], maximizingPlayer);
+                return 0;
+            }
+
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizingPlayer);
+
+            maxEval = max(maxEval, eval);
+            if (eval > alpha) {
+                alpha = eval;
+                // Update history heuristic for improving moves
+                if (!isCapture(move_list[i])) {
+                    updateHistory(move_list[i], depth);
+                }
+            }
+
+            // Beta cutoff: store killer move (not in endgame)
+            if (beta <= alpha) {
+                if (!isCapture(move_list[i])) {
+                    updateKillerMoves(move_list[i], depth);
+                }
+                break; // Prune remaining branches
+            }
+        }
+        return maxEval;
+    }
+    else { // Opponent (White) tries to minimize
+        int minEval = INF;
+        for (int i = 0; i < move_count; i++) {
+            board.applyMoveAI(move_list[i], maximizingPlayer);
+
+            // Prune out branches that result in draw
+            if (board.state.isDraw()) {
+                board.undoMoveAI(move_list[i], maximizingPlayer);
+                return 0;
+            }
+
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizingPlayer);
+
+            minEval = min(minEval, eval);
+            if (eval < beta) {
+                beta = eval;
+                // Update history heuristic for improving moves
+                if (!isCapture(move_list[i])) {
+                    updateHistory(move_list[i], depth);
+                }
+            }
+
+            // Beta cutoff: store killer move (not in endgame
+            if (beta <= alpha) {
+                if (!isCapture(move_list[i])) {
+                    updateKillerMoves(move_list[i], depth);
+                }
+                break; // Prune remaining branches
+            }
+        }
+        return minEval;
+    }
 }
 
 inline bool ChessAI::isCapture(uint32_t move) {

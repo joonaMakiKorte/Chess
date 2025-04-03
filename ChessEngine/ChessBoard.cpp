@@ -2,9 +2,10 @@
 #include "ChessBoard.h"
 #include "ChessAI.h"
 
-ChessBoard::ChessBoard() : 
+ChessBoard::ChessBoard() :
     board(Bitboard()),
     white(true), // White starts
+    isEndgame(false),
     debugMessage("Initial debug message")
 {}
 
@@ -24,6 +25,10 @@ void ChessBoard::MovePiece(int source, int target) {
     board.applyMove(source, target, white);
 
     white = !white; // Switch turn
+
+    // Check if triggered endgame
+    if (isEndgame) return; // Skip if already endgame
+    isEndgame = board.isEndgame();
 }
 
 void ChessBoard::MakeMoveAI(int depth) {
@@ -40,6 +45,10 @@ void ChessBoard::MakeMoveAI(int depth) {
 	board.applyMoveAI(best_move, white);
 	white = !white; // Switch turn
     UpdateDebugMessage(message);
+
+    // Check if triggered endgame
+    if (isEndgame) return; // Skip if already endgame
+    isEndgame = board.isEndgame();
 }
 
 void ChessBoard::MakePromotion(int target, char promotion) {

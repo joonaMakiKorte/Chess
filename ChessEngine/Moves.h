@@ -27,6 +27,10 @@ public:
     // Fills into pin_data reference param
     static void computePinnedPieces(PinData& pin_data, const int& king_sq, const uint64_t& occupied,
         const uint64_t& bishops, const uint64_t& rooks, const uint64_t& queen);
+
+    // Compute squares where enemy can check the king
+    // 
+    static KingDanger computeKingDanger(const int& king_sq, uint64_t occupied, bool white);
 };
 
 #endif
