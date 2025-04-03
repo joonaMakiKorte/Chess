@@ -36,6 +36,9 @@ constexpr int MAX_DEPTH = 64;  // Maximum playsible search depth for minimax
 constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
 // 128 for alignment + would be an extreme case which is near impossible
 
+constexpr int MAX_QUIET_MOVES = 4; // Cap to limit the number of quiet moves stored
+// Used for preventing undo stack overflow in endgame quiescence
+
 // Margin for delta pruning in quiescence search (value of queen
 constexpr int DELTA_MARGIN = 900;
 
@@ -246,5 +249,30 @@ constexpr int PIECE_TABLE_END[6][8][8] = {
     {-30,-30,  0,  0,  0,  0,-30,-30},
     {-50,-30,-30,-30,-30,-30,-30,-50}
 }};
+
+// In the endgame active king is crucial
+// King centralization is encouraged with this bonus table
+constexpr int KING_CENTRALITY_BONUS[64] = {
+    0,  5, 10, 15, 15, 10,  5,  0,
+    5, 10, 15, 20, 20, 15, 10,  5,
+   10, 15, 20, 30, 30, 20, 15, 10,
+   15, 20, 30, 40, 40, 30, 20, 15,
+   15, 20, 30, 40, 40, 30, 20, 15,
+   10, 15, 20, 30, 30, 20, 15, 10,
+    5, 10, 15, 20, 20, 15, 10,  5,
+    0,  5, 10, 15, 15, 10,  5,  0
+};
+
+constexpr int CENTRALITY_DISTANCE[64] = {
+    // Precomputed min Chebyshev distance to center (d4,e4,d5,e5)
+    4, 4, 4, 3, 3, 4, 4, 4,  // a1-h1
+    4, 3, 3, 2, 2, 3, 3, 4,  // a2-h2
+    4, 3, 2, 1, 1, 2, 3, 4,  // a3-h3
+    3, 2, 1, 0, 0, 1, 2, 3,  // a4-h4 (d4=0, e4=0)
+    3, 2, 1, 0, 0, 1, 2, 3,  // a5-h5 (d5=0, e5=0)
+    4, 3, 2, 1, 1, 2, 3, 4,  // a6-h6
+    4, 3, 3, 2, 2, 3, 3, 4,  // a7-h7
+    4, 4, 4, 3, 3, 4, 4, 4   // a8-h8
+};
 
 #endif // BITBOARD_CONSTANTS_H

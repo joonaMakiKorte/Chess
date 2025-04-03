@@ -169,8 +169,11 @@ public:
     // Used for evaluating the king mobility
 	int calculateKingMobility(bool white);
 
-    // Used in quiescence search for delta pruning
+    // Used in quiescence search for delta pruning noisy moves
     int estimateCaptureValue(uint32_t move);
+
+    // Used in quiescence search for delta pruning quiet moves
+    int evaluateQuietMove(uint32_t move, bool white);
 
     // Evaluate if we are in endgame
     // Done by comparing current game phase score to endgame threshold
@@ -207,9 +210,14 @@ private:
 
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
 
+    inline float calculateEndgameWeight();
+
     // Helper to determine if a pawn if passed
     // Passed pawns = pawns with no opposing pawns blocking their promoting path
     bool isPassedPawn(int pawn, bool white);
+
+    // Compute whether move gets the enemy king in check
+    bool isCheckMove(const KingDanger& king_danger, int to, PieceType piece);
 };
 
 #endif BITBOARD_H

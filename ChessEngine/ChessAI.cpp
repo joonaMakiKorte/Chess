@@ -112,14 +112,14 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
                 beta = eval;
                 // Update history heuristic for improving moves
                 if (!isCapture(move_list[i])) {
-                    // updateHistory(move, depth);
+                    updateHistory(move_list[i], depth);
                 }
             }
             
             // Beta cutoff: store killer move
             if (beta <= alpha) {
                 if (!isCapture(move_list[i])) {
-                    // updateKillerMoves(move, depth);
+                    updateKillerMoves(move_list[i], depth);
                 }
                 break; // Prune remaining branches
             }
@@ -140,17 +140,10 @@ int ChessAI::quiescenceSearch(Bitboard& board, int depth, int alpha, int beta, b
     int move_count = 0;
     board.generateNoisyMoves(move_list, move_count, maximizingPlayer);
 
-    // Allow quiet moves in a near-mate endgame
-    // Done when no captures/promotions left to extend search
-    // This way we can find forced mates
-    if (move_count == 0 && board.isEndgame()) {
-        // Use fixed depth 0 to avoid killer move heuristics for deeper moves
-        board.generateMoves(move_list, move_count, 0, maximizingPlayer);
-    }
-
     for (int i = 0; i < move_count; i++) {
-        // Delta pruning - skip moves that can't possibly raise alpha
         int move_value = board.estimateCaptureValue(move_list[i]);
+
+        // Delta pruning - skip moves that can't possibly raise alpha
         if (eval + move_value + DELTA_MARGIN <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }

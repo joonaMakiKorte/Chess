@@ -104,7 +104,7 @@ namespace Utils {
 
     inline int calculateDistance(int sq1, int sq2) {
         int dx = abs((sq1 % 8) - (sq2 % 8));
-        int dy = abs((sq2 % 8) - (sq2 % 8));
+        int dy = abs((sq1 / 8) - (sq2 / 8));
         return max(dx, dy); // Chebyshev distance (also known as chessboard distance)
     }
 }

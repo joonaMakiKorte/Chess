@@ -20,8 +20,6 @@ uint64_t Moves::getPseudoLegalMoves(int square, PieceType piece, uint64_t occupi
 }
 
 uint64_t Moves::getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white, int en_passant) {
-	uint64_t pawn_bb = 1ULL << pawn; // Convert index to bitboard
-
 	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
 	// Initialize moves
@@ -50,8 +48,6 @@ uint64_t Moves::getPawnMoves(int pawn, const uint64_t& white_pieces, const uint6
 }
 
 uint64_t Moves::getPawnCaptures(int pawn, bool white) {
-	uint64_t pawn_bb = 1ULL << pawn; // Convert index to bitboard
-
 	// Initialize captures
 	uint64_t captures = 0ULL;
 
@@ -139,8 +135,8 @@ void Moves::computePinnedPieces(PinData& pin_data, const int& king_sq,
 
 		if (!direction) continue; // Not aligned
 
-		// Bishop cannot pin vertically/horizontally
-		// Rook cannot pin orthogonally
+		// Bishop cannot pin orthogonally
+		// Rook cannot pin diagonally
 		// Queen can pin in every direction
 		if ((direction == NORTH || direction == WEST || direction == SOUTH || direction == EAST) && bishops & (1ULL << slider_sq)) continue;
 		if ((direction == NORTH_EAST || direction == NORTH_WEST || direction == SOUTH_EAST || direction == SOUTH_WEST) && rooks & (1ULL << slider_sq)) continue;
@@ -158,21 +154,29 @@ void Moves::computePinnedPieces(PinData& pin_data, const int& king_sq,
 	}
 }
 
-void Moves::computeKingDanger(KingDanger& king_danger, const int& king_sq, const uint64_t& occupied) {
-	// Diagonal danger
+void Moves::computeKingDanger(KingDanger& king_danger, const int& king_sq, uint64_t occupied, bool white) {
+	// Orthogonal danger
 	uint64_t occ = occupied;
 	occ &= Magic::MAGIC_TABLE_ROOK[king_sq].mask;
 	occ *= Magic::MAGIC_TABLE_ROOK[king_sq].magic;
 	occ >>= Magic::MAGIC_TABLE_ROOK[king_sq].shift;
-	king_danger.diagonal = MoveTables::ATTACKS_ROOK[king_sq][occ];
+	king_danger.orthogonal = MoveTables::ATTACKS_ROOK[king_sq][occ];
 
-	// Orthogonal
+	// Diagonal
 	occ = occupied;
 	occ &= Magic::MAGIC_TABLE_BISHOP[king_sq].mask;
 	occ *= Magic::MAGIC_TABLE_BISHOP[king_sq].magic;
 	occ >>= Magic::MAGIC_TABLE_BISHOP[king_sq].shift;
-	king_danger.orthogonal = MoveTables::ATTACKS_BISHOP[king_sq][occ];
+	king_danger.diagonal = MoveTables::ATTACKS_BISHOP[king_sq][occ];
 
 	// Knight attacks
 	king_danger.knight = MoveTables::KNIGHT_MOVES[king_sq].moves;
+
+	// Pawn attacks
+	if (white) { // White pawns can attack from squares where black pawns could attack to from king square
+		king_danger.pawn = MoveTables::BLACK_PAWN_MOVES[king_sq].captures;
+	}
+	else { // Opposite to white logic
+		king_danger.pawn = MoveTables::WHITE_PAWN_MOVES[king_sq].captures;
+	}
 }

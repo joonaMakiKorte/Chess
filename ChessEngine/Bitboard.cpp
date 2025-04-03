@@ -793,25 +793,50 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 
 void Bitboard::generateQuietMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white) {
 	move_count = 0;
+	std::array<std::pair<uint32_t, int>, MAX_MOVES> move_scores;  // Stack-allocated array
 
 	uint64_t friendly_pieces = white ? whitePieces() : blackPieces();
 	uint64_t opponent_pieces = white ? blackPieces() : whitePieces();
+
+	// Get squares vulnerable for enemy king to determine if a move gets king in check
+	int enemy_king = piece_bitboards[!white][KING];
+	KingDanger king_danger;
+	Moves::computeKingDanger(king_danger, enemy_king, friendly_pieces | opponent_pieces, white);
 
 	while (friendly_pieces) {
 		int from = Utils::findFirstSetBit(friendly_pieces);
 		PieceType piece = piece_at_square[from];
 		uint64_t legal_moves = getLegalMoves(from, white);
-		uint64_t quiet = legal_moves & ~opponent_pieces;
+		legal_moves &= ~opponent_pieces;
 
-		// Process moves that don't land on enemy pieces
-		while (quiet) {
-			int to = Utils::findFirstSetBit(quiet);
+		// All moves processed land on empty pieces (confirmed)
+		while (legal_moves) {
+			int to = Utils::findFirstSetBit(legal_moves);
 			MoveType move_type = getMoveType(from, to, piece, EMPTY, white);
 
-			move_list[move_count++] = ChessAI::encodeMove(from, to, piece, EMPTY, move_type, EMPTY);
-			Utils::popBit(quiet, to);
+			// Score moves with endgame heuristics
+			// Prioritize moves that get the king in check / passed pawns
+			int score = 0;
+			if (isCheckMove(king_danger, to, piece)) score += 1000; // Checks are highest priority
+			if (piece == PAWN && isPassedPawn(to, white)) score += 800; // Passed pawn push
+			if (piece == KING) score += KING_CENTRALITY_BONUS[to] * 50; // King activity
+
+			move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, EMPTY, move_type, EMPTY), score };
+			Utils::popBit(legal_moves, to);
 		}
 		Utils::popBit(friendly_pieces, from);
+	}
+
+	// Sort only the portion containing actual moves
+	std::sort(move_scores.begin(), move_scores.begin() + move_count,
+		[](const auto& a, const auto& b) { return a.second > b.second; });
+
+	// Apply the quiet move cap
+	move_count = min(move_count, MAX_QUIET_MOVES);
+
+	// Extract just the moves
+	for (int i = 0; i < move_count; ++i) {
+		move_list[i] = move_scores[i].first;
 	}
 }
 
@@ -1159,6 +1184,12 @@ inline int Bitboard::getPositionalScore(int square, float game_phase, PieceType 
 	);
 }
 
+inline float Bitboard::calculateEndgameWeight() {
+	// Linear interpolation between middlegame and endgame
+	return  1.0f - (float)(game_phase_score - ENDGAME_THRESHOLD) /
+		(float)(MAX_GAME_PHASE - ENDGAME_THRESHOLD);
+}
+
 bool Bitboard::isPassedPawn(int pawn, bool white) {
 	// Early exit if pawn is already on promotion rank
 	if (white ? (pawn >= 48) : (pawn <= 16)) return true;
@@ -1176,6 +1207,15 @@ bool Bitboard::isPassedPawn(int pawn, bool white) {
 	// Get enemy pawns and check if any line up with our mask
 	uint64_t enemy_pawns = white ? piece_bitboards[BLACK][PAWN] : piece_bitboards[WHITE][PAWN];
 	return (enemy_pawns & promotion_path) == 0; // No enemy pawns in mask
+}
+
+bool Bitboard::isCheckMove(const KingDanger& king_danger, int to, PieceType piece) {
+	if (piece == KING) return false; // King cannot check
+	if (piece == PAWN) return (king_danger.pawn & (1ULL << to)) != 0;
+	if (piece == KNIGHT) return (king_danger.knight & (1ULL << to)) != 0;
+	if (piece == BISHOP) return (king_danger.diagonal & (1ULL << to)) != 0;
+	if (piece == ROOK) return (king_danger.orthogonal & (1ULL << to)) != 0;
+	return ((king_danger.orthogonal | king_danger.diagonal) & (1ULL << to)) != 0; // Queen
 }
 
 
@@ -1203,6 +1243,32 @@ int Bitboard::estimateCaptureValue(uint32_t move) {
 
 	// Return net gain (could be negative for bad trades)
 	return capture_value - (trade_delta > 0 ? PIECE_VALUES[attacking_piece] : 0);
+}
+
+int Bitboard::evaluateQuietMove(uint32_t move, bool white) {
+	int score = 0;
+	int from = ChessAI::from(move);
+	int to = ChessAI::to(move);
+	PieceType piece = ChessAI::piece(move);
+
+	// King: Quadratic scaling (0 to 3200 cp)
+	if (piece == KING) {
+		int centrality = KING_CENTRALITY_BONUS[to];
+		score += centrality * centrality * 2;
+	}
+	// Passed pawns: 500–1500 cp
+	else if (piece == PAWN && isPassedPawn(to, white)) {
+		int rank = white ? (to / 8) : (7 - (to / 8));
+		score += 500 + 100 * rank;
+	}
+	// Other pieces: Minor bonus (0–300 cp)
+	else {
+		score += 30 * (4 - CENTRALITY_DISTANCE[to]);
+		score += 20 * (8 - Utils::calculateDistance(to, piece_bitboards[!white][KING]));
+	}
+
+	// Scale by endgame weight (0.0 to 1.0)
+	return static_cast<int>(score * calculateEndgameWeight());
 }
 
 bool Bitboard::isEndgame() {
@@ -1236,7 +1302,7 @@ int Bitboard::evaluatePassedPawns(bool white) {
 
 		int rank = white ? (pawn_sq / 8) : (7 - (pawn_sq / 8)); // Relative rank (0=start, 7=promotion
 		int file = pawn_sq % 8;
-
+		
 		score += (10 + (rank * rank) * 5); // Quadratic scaling
 
 		// Bonus if supported by friendly king

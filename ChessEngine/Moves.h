@@ -30,7 +30,7 @@ public:
 
     // Compute squares where enemy can check the king
     // 
-    static void computeKingDanger(KingDanger& king_danger, const int& king_sq, const uint64_t& occupied);
+    static void computeKingDanger(KingDanger& king_danger, const int& king_sq, uint64_t occupied, bool white);
 };
 
 #endif
