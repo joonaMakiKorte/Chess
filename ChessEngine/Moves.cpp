@@ -154,29 +154,36 @@ void Moves::computePinnedPieces(PinData& pin_data, const int& king_sq,
 	}
 }
 
-void Moves::computeKingDanger(KingDanger& king_danger, const int& king_sq, uint64_t occupied, bool white) {
+KingDanger Moves::computeKingDanger(const int& king_sq, uint64_t occupied, bool white) {
 	// Orthogonal danger
 	uint64_t occ = occupied;
 	occ &= Magic::MAGIC_TABLE_ROOK[king_sq].mask;
 	occ *= Magic::MAGIC_TABLE_ROOK[king_sq].magic;
 	occ >>= Magic::MAGIC_TABLE_ROOK[king_sq].shift;
-	king_danger.orthogonal = MoveTables::ATTACKS_ROOK[king_sq][occ];
+	uint64_t orthogonal = MoveTables::ATTACKS_ROOK[king_sq][occ];
 
 	// Diagonal
 	occ = occupied;
 	occ &= Magic::MAGIC_TABLE_BISHOP[king_sq].mask;
 	occ *= Magic::MAGIC_TABLE_BISHOP[king_sq].magic;
 	occ >>= Magic::MAGIC_TABLE_BISHOP[king_sq].shift;
-	king_danger.diagonal = MoveTables::ATTACKS_BISHOP[king_sq][occ];
+	uint64_t diagonal = MoveTables::ATTACKS_BISHOP[king_sq][occ];
 
 	// Knight attacks
-	king_danger.knight = MoveTables::KNIGHT_MOVES[king_sq].moves;
+	uint64_t knight = MoveTables::KNIGHT_MOVES[king_sq].moves;
 
 	// Pawn attacks
-	if (white) { // White pawns can attack from squares where black pawns could attack to from king square
-		king_danger.pawn = MoveTables::BLACK_PAWN_MOVES[king_sq].captures;
+	uint64_t pawn = 0ULL;
+	uint64_t king_mask = (1ULL << king_sq);
+	if (white && king_sq >= 16) {
+		if (!(king_mask & FILE_A)) pawn |= (king_mask << 7);
+		if (!(king_mask & FILE_H)) pawn |= (king_mask << 9);
 	}
-	else { // Opposite to white logic
-		king_danger.pawn = MoveTables::WHITE_PAWN_MOVES[king_sq].captures;
+	if (!white && king_sq <= 47) {
+		if (!(king_mask & FILE_A)) pawn |= (king_mask >> 9);
+		if (!(king_mask & FILE_H)) pawn |= (king_mask >> 7);
 	}
+	
+	// Return as struct
+	return { orthogonal, diagonal, knight, pawn };
 }

@@ -37,7 +37,6 @@ constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth f
 // 128 for alignment + would be an extreme case which is near impossible
 
 constexpr int MAX_QUIET_MOVES = 4; // Cap to limit the number of quiet moves stored
-// Used for preventing undo stack overflow in endgame quiescence
 
 // Margin for delta pruning in quiescence search (value of queen
 constexpr int DELTA_MARGIN = 900;
@@ -86,6 +85,18 @@ constexpr int MVV_LVA[6][6] = {
     /* KING    */ { 0,    0,     0,     0,     0,     0 } // Illegal captures
 };
 
+// Endgame MVV_LVA[victim][aggressor] = (VictimValue * 6) - AggressorValue
+// Scaled down to prioritize checks/promotions over raw captures.
+constexpr int MVV_LVA_ENDGAME[6][6] = {
+    // Aggressor: PAWN  KNIGHT BISHOP ROOK   QUEEN  KING
+    /* PAWN    */ { 500,  480,   470,   300,    50,  -100 }, // Penalize KxP
+    /* KNIGHT  */ { 1800, 1500,  1490,  1300,   900,  -200 }, // Discourage KxN
+    /* BISHOP  */ { 1900, 1600,  1590,  1400,  1000,  -200 }, // Discourage KxB
+    /* ROOK    */ { 3000, 2700,  2690,  2500,  2100,  -500 }, // Rarely trade R
+    /* QUEEN   */ { 5400, 5100,  5090,  4900,  4500, -1000 }, // Keep queens
+    /* KING    */ {    0,    0,     0,     0,     0,     0 }  // Illegal
+};
+
 // Game phase recalculation threshold in range of 0-1
 // Meaning a phase change greater than this in percentages after applying a move results in full positional score recalculation
 // This way we can avoid unnecessary recalculations to prioritize evaluation speed
@@ -95,7 +106,7 @@ constexpr float FULL_RECALC_THRESHOLD = 0.1f;
 // Opening 22-24     // Most pieces still on the board
 // Middlegame 10-21 // Some exhanges, queens often present
 // Endgame 0-9     // Few pieces left, kings active
-constexpr int ENDGAME_THRESHOLD = 9; 
+constexpr int ENDGAME_THRESHOLD = 6; 
 
 // Piece-square tables for positional scoring evaluation (PSTs)
 // Separete tables for middle and endgame

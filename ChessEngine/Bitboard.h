@@ -48,22 +48,12 @@ public:
     // Store the game state as a bitmask
     BoardState state;
 
-    // Helper to get the piece type at a given square
+    // Helpers for FEN-string creation
     char getPieceTypeChar(int square) const;
-
-    // Helper function to get castling rights as a string
     std::string getCastlingRightsString() const;
-
-    // Get en passant target square as a string
     std::string getEnPassantString() const;
-
-    // Get game state as a string
     std::string getGameState(bool white);
-
-    // Get half moves
-    int getHalfMoveClock() const;
-
-    // Get full moves 
+    int getHalfMoveClock() const; 
     int getFullMoveNumber() const;
 
     // Get all legal moves from a square as a bitboard
@@ -82,6 +72,9 @@ public:
     // Incrementally updates game phase and material scores
 	void applyPromotion(int target, char promotion, bool white);
 
+    // Evaluate if we are in the endgame
+    bool isEndgame();
+
 private:
     // Initialize board data at the beginning of the game
     void initBoard();
@@ -99,14 +92,11 @@ private:
     // Helper function to convert a square index to algebraic notation
     std::string squareToString(int square) const;
 
-    // Helper to get castling moves for a king
-    uint64_t getCastlingMoves(bool white);
-
-    // Update castling rights when rook was moved or captured
-    void updateRookCastling(bool white, int source);
-
-    // Perform castling by moving king and rook in correct places
-    void handleCastling(bool white, int target);
+    // Functions for castling
+    uint64_t getCastlingMoves(bool white); // Get currently possible castling moves for a king
+    void updateRookCastling(bool white, int source); // Update castling rights when rook was moved or captured
+    void handleCastling(bool white, int target); // Perform castling by moving king and rook in correct places
+    void undoCastling(bool white, bool kingside); // Undo castling, used by AI
 
     // Helper to get all the attack squares of opponent (squares that are possible to attack)
     // Also determines if king is in check and calculates the attack ray
@@ -116,8 +106,8 @@ private:
     // Returns bool indicating result
     bool canBlock(bool white);
 
-    bool isCheckmate(bool white);
-    bool isStalemate(bool white);
+    bool isCheckmate(bool white); // If in check, must be checked if in checkmate
+    bool isStalemate(bool white); // If not in check/mate, check for possibility of stalemate
 
     // Each time after applying a move set the new board state
     // Includes check, checkmate and stalemate information
@@ -129,6 +119,10 @@ private:
     void updatePositionalScore();
 
 public:
+    /**************************************************************
+    The functions below are used directly by the chessAI in minimax
+    **************************************************************/
+
     // Reset undo stack
     // Sets top element index to 0
     void resetUndoStack();
@@ -144,9 +138,9 @@ public:
 	// Noisy moves are captures and promotions
 	void generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
-    // Generate quiet moves when deep in the endgame
-    // Quiet moves are regular moves that do not promote or capture
-    void generateQuietMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
+    // Generate all legal moves sorted with endgame heuristic
+    // Check moves are highest priority, also prioritize passed pawn advancement and king centrality
+    void generateEndgameMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
 
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
@@ -158,7 +152,7 @@ public:
 	void undoMoveAI(uint32_t move, bool white);
 
     // Function to assign a score to the board
-	// Used for evaluation of the board state
+	// Used for evaluation of the board state in midgame
 	int evaluateBoard(bool white);
 
 	// Function to check if the game is over
@@ -174,10 +168,6 @@ public:
 
     // Used in quiescence search for delta pruning quiet moves
     int evaluateQuietMove(uint32_t move, bool white);
-
-    // Evaluate if we are in endgame
-    // Done by comparing current game phase score to endgame threshold
-    bool isEndgame();
 
     // Get distance between kings
     // Used in endgame eval heuristic
@@ -197,17 +187,14 @@ private:
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
 	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
-
-	// Helper for undoing castling, moves rook back to original position
-	// Takes the active color and castling side as parameters
-	void undoCastling(bool white, bool kingside);
-
-    // Calculate the material score of the board
+	
+    // Get material score depending on active turn 
 	int calculateMaterialScore(bool white);
 
-	// Calculate the positional score of the board
+	// Get material score depending on active turn
 	int calculatePositionalScore(bool white);
 
+    // Calculate positional score of a piece
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
 
     inline float calculateEndgameWeight();

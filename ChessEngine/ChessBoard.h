@@ -11,6 +11,10 @@ private:
     // Keep track of player turns
     bool white;
 
+    // Flag to track game state
+    // Once endgame, calls different AI function for getting best move
+    bool isEndgame;
+
     // Debug
     std::string debugMessage;
 
