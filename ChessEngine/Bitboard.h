@@ -38,7 +38,6 @@ private:
     AttackData attack_data; // Data of attack squares and attack ray to king
 
     // Zobrist hashing for threefold repetition detection
-    uint64_t hash_key; // Unique key updated incrementally after each move
     std::unordered_map<uint64_t, int> position_history;
 
 public:
@@ -47,6 +46,7 @@ public:
 
     // Store the game state as a bitmask
     BoardState state;
+    uint64_t hash_key; // Unique key updated incrementally after each move
 
     // Helpers for FEN-string creation
     char getPieceTypeChar(int square) const;
@@ -128,19 +128,23 @@ public:
     void resetUndoStack();
 
     // Function for ChessAI to generate the legal moves
-    // Only handle queen promotions, underpromotions deferred to quiescence
+    // Only handle queen promotions
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
 	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
-    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
+    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white, uint32_t move_hint);
 
 	// Function for ChessAI to generate noisy moves
 	// Used for quiescence search to reduce horizon effect
-	// Noisy moves are captures and promotions
+	// Consider only captures to resolve immediate tactical volatility
 	void generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
     // Generate all legal moves sorted with endgame heuristic
     // Check moves are highest priority, also prioritize passed pawn advancement and king centrality
     void generateEndgameMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
+
+	// Generate noisy moves sorted with endgame heuristic
+	// Noisy moves are captures and promotions + all check moves
+	void generateEndgameNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
@@ -153,21 +157,19 @@ public:
 
     // Function to assign a score to the board
 	// Used for evaluation of the board state in midgame
-	int evaluateBoard(bool white);
+	int evaluateBoard();
+
+    // Score king safety in the midgame
+    // Bonus for non-open king file and pawn shields
+    // +white safety, -black safety
+    int evaluateKingSafety();
 
 	// Function to check if the game is over
 	// Checkmate or stalemate for either side
 	bool isGameOver();
 
-    // Calculate legal moves for the king
-    // Used for evaluating the king mobility
-	int calculateKingMobility(bool white);
-
     // Used in quiescence search for delta pruning noisy moves
     int estimateCaptureValue(uint32_t move);
-
-    // Used in quiescence search for delta pruning quiet moves
-    int evaluateQuietMove(uint32_t move, bool white);
 
     // Get distance between kings
     // Used in endgame eval heuristic
@@ -187,17 +189,9 @@ private:
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
 	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
-	
-    // Get material score depending on active turn 
-	int calculateMaterialScore(bool white);
-
-	// Get material score depending on active turn
-	int calculatePositionalScore(bool white);
 
     // Calculate positional score of a piece
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
-
-    inline float calculateEndgameWeight();
 
     // Helper to determine if a pawn if passed
     // Passed pawns = pawns with no opposing pawns blocking their promoting path

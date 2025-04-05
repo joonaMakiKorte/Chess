@@ -34,7 +34,14 @@ void ChessBoard::MovePiece(int source, int target) {
 void ChessBoard::MakeMoveAI(int depth) {
     // Get best move in encoded form
     std::string message;
-    uint32_t best_move = ChessAI::getBestMove(board, depth, message);
+
+    uint32_t best_move;
+	if (isEndgame) {
+		best_move = ChessAI::getBestMove(board, depth, message);
+	}
+	else {
+		best_move = ChessAI::getBestMove(board, depth, message);
+	}
 
 	if (best_move == 0) {
 		UpdateDebugMessage("No legal moves available");
