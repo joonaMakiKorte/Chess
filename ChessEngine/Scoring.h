@@ -7,6 +7,12 @@ constexpr int QUEEN_PROMOTION = 20000; // Huge priority for queen promotion
 constexpr int ROOK_PROMOTION = 8000; // Priority for rook promotion, lower than queen but higher than most captures
 constexpr int BN_PROMOTION = 1500; // Bishop/knight promotions equal to minor captures (tactical)
 
+// --- King safety scoring ---
+constexpr int OPEN_FILE_PENALTY = 25;
+constexpr int HEAVY_PIECE_MULTIPLIER = 2;
+constexpr int PAWN_SHIELD_PENALTY = 15;
+constexpr int PAWN_STORM_PENALTY = 20;
+
 
 // Piece values for board evaluation
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function

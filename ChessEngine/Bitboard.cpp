@@ -9,7 +9,6 @@
 
 
 Bitboard::Bitboard():
-	undo_stack_top(0),
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	half_moves(0),                         // Initially 0
@@ -47,11 +46,6 @@ void Bitboard::initBoard() {
 		}
 	}
 
-	// Initialize undo-stack
-	for (int i = 0; i < MAX_SEARCH_DEPTH; ++i) {
-		undo_stack[i] = { 0, UNASSIGNED, 0, 0, 0, 0, 0 };
-	}
-
 	// Initialize pin-data (initially none)
 	for (int i = 0; i < 64; ++i) {
 		pin_data.pin_rays[i] = 0xFFFFFFFFFFFFFFFFULL;
@@ -67,6 +61,10 @@ void Bitboard::initBoard() {
 	game_phase_score = MAX_GAME_PHASE; // Max game phase == beginning
 
 	state.flags = 0; // Empty game state at beginning (no check, no checkmate, no stalemate)
+
+	// Reserve space for undo-stacks
+	undo_stack.reserve(MAX_SEARCH_DEPTH);
+	search_history.reserve(MAX_SEARCH_DEPTH);
 
 	// Compute initial Zobrist key which we update incrementally onwards
 	hash_key = computeZobristHash();
@@ -682,13 +680,13 @@ void Bitboard::updatePositionalScore() {
 * 
 */
 
-void Bitboard::resetUndoStack() {
-	undo_stack_top = 0;
-}
-
 void Bitboard::startNewSearch() {
+	// Clear stacks
+	undo_stack.clear();
 	search_history.clear();
+
 	// Also reserve space for all the new potential elements to avoid dynamic resizing (causes overhead)
+	undo_stack.reserve(MAX_SEARCH_DEPTH);
 	search_history.reserve(MAX_SEARCH_DEPTH);
 }
 
@@ -986,13 +984,13 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	MoveType move_type = ChessAI::moveType(move);
 	PieceType promotion = ChessAI::promotion(move);
 
-	// Save state to undo stack (hot path - optimized)
-	assert(undo_stack_top < MAX_SEARCH_DEPTH);
-	UndoInfo& current = undo_stack[undo_stack_top++];
+	// Save state to undo stack
+	UndoInfo current;
 	current.castling_rights = castling_rights;
 	current.en_passant_target = en_passant_target;
 	current.flags = state.flags;
 	current.half_moves = half_moves;
+	// Board score deltas are stored after move has been applied
 
 	// Save current state hash in history before making the move
 	search_history.push_back(hash_key);
@@ -1131,9 +1129,11 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	positional_score += positional_delta;
 	game_phase_score += game_phase_delta;
 
+	// Save deltas and undo-info to stack
 	current.material_delta = material_delta;
 	current.positional_delta = positional_delta;
 	current.game_phase_delta = game_phase_delta;
+	undo_stack.push_back(current);
 
 	// Compute new game phase (clamped 0-1 range)
 	float new_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
@@ -1167,8 +1167,7 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 	hash_key ^= Tables::CASTLING_KEYS[castling_rights];
 
 	// Restore board state
-	assert(undo_stack_top > 0);
-	const UndoInfo& prev = undo_stack[--undo_stack_top];
+	const UndoInfo& prev = undo_stack.back();
 	castling_rights = prev.castling_rights;
 	en_passant_target = prev.en_passant_target;
 	state.flags = prev.flags;
@@ -1176,6 +1175,7 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 	positional_score -= prev.positional_delta;
 	game_phase_score -= prev.game_phase_delta;
 	half_moves = prev.half_moves;
+	undo_stack.pop_back(); // Pop the undo stack
 
 	// Apply restored castling rights and en passant
 	if (en_passant_target != UNASSIGNED) {
@@ -1243,84 +1243,8 @@ int Bitboard::evaluateKingSafety() {
 	int white_king = Utils::findFirstSetBit(piece_bitboards[WHITE][KING]);
 	int black_king = Utils::findFirstSetBit(piece_bitboards[BLACK][KING]);
 
-	// Score white king first
-	int white_penalty = 0;
-	
-	// Define kings file and adjacent files
-	int white_king_file = white_king % 8;
-	uint64_t white_file = Utils::getFile(white_king);
-	if (white_king_file > 0) white_file |= Utils::getFile(white_king - 1);
-	if (white_king_file < 7) white_file |= Utils::getFile(white_king + 1);
-
-	// Look for pawn presence on the file
-	bool white_pawns_present = (white_file & piece_bitboards[WHITE][PAWN]) != 0;
-	bool black_pawns_present = (white_file & piece_bitboards[BLACK][PAWN]) != 0;
-
-	if (!white_pawns_present && !black_pawns_present) {
-		// Fully Open files near king (BAD)
-		white_penalty += 100;
-	}
-	else if (!white_pawns_present && black_pawns_present) {
-		// Semi-open for Black (BAD for White King Safety)
-		white_penalty += 75; // Penalty should be significant
-	}
-	else if (white_pawns_present && !black_pawns_present) {
-		// Semi-open for White (still potentially unsafe)
-		white_penalty += 50; // Small penalty
-	}
-	else {
-		// Files are cluttered/closed near king (small bonus)
-		white_penalty -= 20;
-	}
-
-	// Bonus score for pawn shield on the first two ranks
-	if (white_king / 8 <= 1) {
-		if (white_king_file <= 2) {
-			white_penalty -= Utils::countSetBits(piece_bitboards[WHITE][PAWN] & WHITE_QUEENSIDE_SHIELD) * 30;
-		}
-		else if (white_king_file <= 4) {
-			white_penalty -= Utils::countSetBits(piece_bitboards[WHITE][PAWN] & WHITE_MIDDLE_SHIELD) * 30;
-		}
-		else {
-			white_penalty -= Utils::countSetBits(piece_bitboards[WHITE][PAWN] & WHITE_KINGSIDE_SHIELD) * 30;
-		}
-	}
-
-	// Score black king safety
-	int black_penalty = 0;
-
-	int black_king_file = black_king % 8;
-	uint64_t black_file = Utils::getFile(black_king);
-	if (black_king_file > 0) black_file |= Utils::getFile(black_king - 1);
-	if (black_king_file < 7) black_file |= Utils::getFile(black_king + 1);
-
-	white_pawns_present = (black_file & piece_bitboards[WHITE][PAWN]) != 0;
-	black_pawns_present = (black_file & piece_bitboards[BLACK][PAWN]) != 0;
-
-	if (!white_pawns_present && !black_pawns_present) {
-		black_penalty += 100;
-	}
-	else if (white_pawns_present && !black_pawns_present) {
-		black_penalty += 75;
-	}
-	else if (!white_pawns_present && black_pawns_present) {
-		black_penalty += 50;
-	}
-	else {
-		black_penalty -= 20;
-	}
-
-	if (black_king / 8 >= 6) { // ranks 7-8
-		if (black_king_file <= 2) {
-			black_penalty -= Utils::countSetBits(piece_bitboards[BLACK][PAWN] & BLACK_QUEENSIDE_SHIELD) * 30;
-		}
-		else if (black_king_file <= 4) {
-			black_penalty -= Utils::countSetBits(piece_bitboards[BLACK][PAWN] & BLACK_MIDDLE_SHIELD) * 30;
-		}
-		else {
-			black_penalty -= Utils::countSetBits(piece_bitboards[BLACK][PAWN] & BLACK_KINGSIDE_SHIELD) * 30;
-		}
-	}
+	int white_penalty = evaluateSingleKingSafety(white_king, true);
+	int black_penalty = evaluateSingleKingSafety(black_king, false);
 
 	// Return penalty diff
 	return white_penalty - black_penalty;
@@ -1436,6 +1360,58 @@ bool Bitboard::isCheckMove(const KingDanger& king_danger, int to, PieceType piec
 	return ((king_danger.orthogonal | king_danger.diagonal) & (1ULL << to)) != 0; // Queen
 }
 
+int Bitboard::evaluateSingleKingSafety(int king_sq, bool white) {
+	int penalty = 0;
+
+	uint64_t friendly_pawns = piece_bitboards[white][PAWN];
+	uint64_t enemy_pawns = piece_bitboards[!white][PAWN];
+
+	// Define kings file and adjacent files
+	int king_file = king_sq % 8;
+	uint64_t file_mask = Utils::getFile(king_sq);
+	if (king_file > 0) file_mask |= Utils::getFile(king_sq - 1);
+	if (king_file < 7) file_mask |= Utils::getFile(king_sq + 1);
+
+	// Open file penalty
+	if (!(file_mask & friendly_pawns)) { // File is open or semi-open for the enemy
+		int file_mask_penalty = OPEN_FILE_PENALTY; // Set penalty base
+		// Multiply penalty by heavy piece factor if present
+		if ((file_mask & (piece_bitboards[!white][QUEEN] | piece_bitboards[!white][ROOK])) != 0) {
+			file_mask_penalty *= HEAVY_PIECE_MULTIPLIER;
+		}
+		// If fully open, slightly higher penalty
+		if (!(file_mask & enemy_pawns)) {
+			file_mask_penalty += OPEN_FILE_PENALTY / 2;
+		}
+		penalty += file_mask_penalty; // Apply file penalty
+	}
+
+	int shield_penalty = 0;
+	// Penalty for missing pawn shields
+	// Check for ranks 4 or below (absolute), else open file penalty for agressive advancing
+	int king_rank = white ? (king_sq / 8) : 7 - (king_sq / 8);
+	if (king_rank <= 3) {
+		int front_sq = white ? (king_sq + 8) : (king_sq - 8);
+		if (!(friendly_pawns & (1ULL << front_sq))) shield_penalty += PAWN_SHIELD_PENALTY; // Front square
+		if (king_sq % 8 > 0) {
+			if (!(friendly_pawns & (1ULL << (front_sq - 1)))) shield_penalty += PAWN_SHIELD_PENALTY; // Front-left square
+		}
+		if (king_sq % 8 < 7) {
+			if (!(friendly_pawns & (1ULL << (front_sq + 1)))) shield_penalty += PAWN_SHIELD_PENALTY; // Front-right square
+		}
+	}
+	else {
+		shield_penalty += OPEN_FILE_PENALTY;
+	}
+
+	// Penalize pawn storms (enemy pawns near the king)
+	uint64_t storm_zone = MoveTables::KING_MOVES->moves;
+	shield_penalty += Utils::countSetBits(enemy_pawns & storm_zone) * PAWN_STORM_PENALTY;
+
+	penalty += shield_penalty; // Apply shield penalty
+
+	return penalty;
+}
 
 int Bitboard::estimateCaptureValue(uint32_t move) {
 	// Extract move information

@@ -31,9 +31,6 @@ private:
     int half_moves; // Helps determine if a draw can be claimed
     int full_moves; // For game analysis and record keeping
 
-    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack for move undoing
-    int undo_stack_top; // Index of stack top
-
     PinData pin_data; // Data of pinned pieces
     AttackData attack_data; // Data of attack squares and attack ray to king
 
@@ -42,6 +39,10 @@ private:
     // Zobrist hashing for threefold repetition detection
     // Updated after applying an actual move (not ai searches)
     std::unordered_map<uint64_t, int> position_history;
+
+    // Stack to store undo-info for efficient board state restoring
+    // Used by ai in minimax and q-search
+    std::vector<UndoInfo> undo_stack;
 
     // Stack to hold the position history for the current search path
     // Used by ai for draw detection in search paths
@@ -132,11 +133,7 @@ public:
     The functions below are used directly by the chessAI in minimax
     **************************************************************/
 
-    // Reset undo stack
-    // Sets top element index to 0
-    void resetUndoStack();
-
-    // Search history is cleared
+    // Undo stack and search history are cleared
     void startNewSearch();
 
     // Used for draw detection
@@ -217,6 +214,8 @@ private:
 
     // Compute whether move gets the enemy king in check
     bool isCheckMove(const KingDanger& king_danger, int to, PieceType piece);
+
+    int evaluateSingleKingSafety(int king_sq, bool white);
 };
 
 #endif BITBOARD_H

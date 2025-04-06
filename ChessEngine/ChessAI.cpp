@@ -21,7 +21,6 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark
     int bestScore = INF; // Black wants to minimize White's evaluation
     uint32_t bestMove = 0;
 
-    board.resetUndoStack(); // Reset undo stack before new search
     board.startNewSearch(); // Clear previous search history
 
     for (int i = 0; i < move_count; i++) {
@@ -66,7 +65,6 @@ uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& be
     int bestScore = INF; // Black wants to minimize White's evaluation
     uint32_t bestMove = 0;
 
-    board.resetUndoStack(); // Reset undo stack before new search
     for (int i = 0; i < move_count; i++) {
         // Apply the move
         board.applyMoveAI(move_list[i], false);

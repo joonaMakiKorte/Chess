@@ -35,14 +35,6 @@ constexpr uint64_t ROOK_D8 = (1ULL << 59); // (d8)
 constexpr uint64_t ROOK_F8 = (1ULL << 61); // (f8)
 constexpr uint64_t ROOK_H8 = (1ULL << 63); // (h8)
 
-// Masks for pawn shileds
-constexpr uint64_t WHITE_QUEENSIDE_SHIELD = (1ULL << 8) | (1ULL << 9) | (1ULL << 10) | (1ULL << 16) | (1ULL << 17) | (1ULL << 18); // (a2, b2, c2, a3, b3 ,c3)
-constexpr uint64_t WHITE_MIDDLE_SHIELD = (1ULL << 11) | (1ULL << 13) | (1ULL << 13) | (1ULL << 19) | (1ULL << 20) | (1ULL << 21); // (d2, e2, f2, d3, d4, d4)
-constexpr uint64_t WHITE_KINGSIDE_SHIELD = (1ULL << 13) | (1ULL << 14) | (1ULL << 15) | (1ULL << 21) | (1ULL << 22) | (1ULL << 23); // (f2, g2, h2, f3, g3, h3)
-constexpr uint64_t BLACK_QUEENSIDE_SHIELD = (1ULL << 48) | (1ULL << 49) | (1ULL << 50) | (1ULL << 40) | (1ULL << 41) | (1ULL << 42); // (a7, b7, c7, a6, b6, c6)
-constexpr uint64_t BLACK_MIDDLE_SHIELD = (1ULL << 51) | (1ULL << 52) | (1ULL << 53) | (1ULL << 43) | (1ULL << 44) | (1ULL << 45); // (d7, e7, f7, d6, e6, f6)
-constexpr uint64_t BLACK_KINGSIDE_SHIELD = (1ULL << 53) | (1ULL << 54) | (1ULL << 55) | (1ULL << 45) | (1ULL << 46) | (1ULL << 47); // (f7, g7, h7, f6, g6, h6)
-
 // Pre-computed variables
 constexpr int INF = 2147483647; // Infinity
 
