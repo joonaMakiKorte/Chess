@@ -1,8 +1,14 @@
 #include "pch.h"
 #include "ChessEngineExports.h"
 #include "ChessBoard.h"
+#include "MoveTables.h"
+#include "Tables.h"
 
 extern "C" CHESSENGINE_API void* CreateBoard() {
+    // Init once, safely
+    MoveTables::initMoveTables();
+    Tables::initTables();
+
     return new ChessBoard(); // Return a pointer to the new Board object
 }
 
@@ -10,6 +16,10 @@ extern "C" CHESSENGINE_API void DestroyBoard(void* board) {
     if (board) {
         delete static_cast<ChessBoard*>(board); // Cast the void* back to ChessBoard* and delete it
     }
+
+    // Teardown after use
+    Tables::teardownTables();
+    MoveTables::teardownMoveTables();
 }
 
 extern "C" CHESSENGINE_API uint64_t ValidMoves(void* board, int square) {

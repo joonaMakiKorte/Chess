@@ -3,6 +3,10 @@
 
 constexpr int KILLER_SCORE = 9000; // Score to prioritize killer moves
 constexpr int TT_MOVE_SCORE = 100000; // Score for TT-hint moves
+constexpr int QUEEN_PROMOTION = 20000; // Huge priority for queen promotion
+constexpr int ROOK_PROMOTION = 8000; // Priority for rook promotion, lower than queen but higher than most captures
+constexpr int BN_PROMOTION = 1500; // Bishop/knight promotions equal to minor captures (tactical)
+
 
 // Piece values for board evaluation
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function

@@ -356,19 +356,23 @@ void Bitboard::applyMove(int source, int target, bool white) {
 		return;
 	}
 
+	// Get new board state
+	updateBoardState(white);
+	updatePositionalScore();
+
 	// For reversible moves increment halfmoves
 	// Position history saved for also irreversible moves, but cleared before applying
-	if (!(source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING)) {
+	// If reversable, check for draw by repetition
+	if (source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING) {
 		half_moves++;
+		position_history[hash_key]++; // Save new state
+		updateDrawByRepetition();
 	}
 	else {
 		half_moves = 0; // Reset halfmoves if irreversable
 		position_history.clear(); // Reset threefold tracking
+		position_history[hash_key]++; // Save new state
 	}
-	position_history[hash_key]++; // Save new state
-
-	updateBoardState(white);
-	updatePositionalScore();
 }
 
 void Bitboard::applyPromotion(int target, char promotion_char, bool white) {
@@ -400,6 +404,8 @@ void Bitboard::applyPromotion(int target, char promotion_char, bool white) {
 
 	updateBoardState(white);
 	updatePositionalScore();
+
+	// No need to check for draw by repetition since irreversable
 }
 
 bool Bitboard::isEndgame() {
@@ -417,6 +423,12 @@ bool Bitboard::isEndgame() {
 	if (total == kings + pawns) return true;
 
 	return false; // No conditions filled
+}
+
+void Bitboard::updateDrawByRepetition() {
+	if (position_history[hash_key] >= 3 || half_moves >= 50) {
+		state.flags |= BoardState::DRAW;
+	}
 }
 
 uint64_t Bitboard::whitePieces() {
@@ -631,12 +643,6 @@ void Bitboard::updateBoardState(bool white) {
 	else if (isStalemate(!white)) {
 		state.flags |= BoardState::STALEMATE;
 	}
-
-	// Check if ended in draw
-	// Possible by threefold and halfmove rule
-	if (position_history[hash_key] >= 3 || half_moves >= 50) {
-		state.flags |= BoardState::DRAW;
-	}
 }
 
 void Bitboard::updatePositionalScore() {
@@ -663,10 +669,6 @@ void Bitboard::updatePositionalScore() {
 	}
 }
 
-void Bitboard::resetUndoStack() {
-	undo_stack_top = 0;
-}
-
 /*
 * The functions below are used for move generation and move encoding in chessAI
 * The functions are used by the AI to generate all legal moves for a given position
@@ -679,6 +681,20 @@ void Bitboard::resetUndoStack() {
 * ChessAI uses the move list to determine the best move to play
 * 
 */
+
+void Bitboard::resetUndoStack() {
+	undo_stack_top = 0;
+}
+
+void Bitboard::startNewSearch() {
+	search_history.clear();
+	// Also reserve space for all the new potential elements to avoid dynamic resizing (causes overhead)
+	search_history.reserve(MAX_SEARCH_DEPTH);
+}
+
+uint64_t Bitboard::getHashKey() {
+	return hash_key;
+}
 
 void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white, uint32_t move_hint) {
 	move_count = 0;
@@ -978,6 +994,9 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	current.flags = state.flags;
 	current.half_moves = half_moves;
 
+	// Save current state hash in history before making the move
+	search_history.push_back(hash_key);
+
 	float previous_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Store previous phase
 	int material_delta = 0; // Count material losses/gains in this move
 	int positional_delta = 0; // Change of positional score with move
@@ -1101,7 +1120,6 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	else {
 		half_moves = 0; // Reset halfmoves if irreversable
 	}
-	position_history[hash_key]++;
 
 	// Apply score deltas
 	if (!white) {
@@ -1139,8 +1157,7 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 	PieceType promotion = ChessAI::promotion(move);
 
 	// --- Undo Board and Hash Modifications (Reverse order of applyMove) ---
-
-	position_history[hash_key]--;
+	search_history.pop_back(); // Pop the history stack
 
 	hash_key ^= Tables::SIDE_TO_MOVE_KEY; // Toggle side to move
 
@@ -1311,6 +1328,28 @@ int Bitboard::evaluateKingSafety() {
 
 bool Bitboard::isGameOver() {
 	return state.isCheckmateWhite() || state.isCheckmateBlack() || state.isStalemate();
+}
+
+bool Bitboard::isDrawByRepetition() {
+	// We use the current hash key 
+	// Current half moves are how many reversible plies back we need to check
+	int count = 0;
+
+	// Iterate backwards through the history stack, starting from the parent state.
+	// Check only as far back as the plies since the last irreversible move allows.
+	int current_search_depth = search_history.size();
+	for (int i = 1; i <= half_moves && (current_search_depth - i >= 0); ++i) {
+		int history_index = current_search_depth - i;
+		if (search_history[history_index] == hash_key) {
+			count++;
+			// If we found the same position twice previously in the relevant history,
+			// the current position is the 3rd occurrence.
+			if (count >= 2) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 MoveType Bitboard::getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const {

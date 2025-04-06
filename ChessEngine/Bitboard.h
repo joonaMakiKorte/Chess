@@ -37,8 +37,15 @@ private:
     PinData pin_data; // Data of pinned pieces
     AttackData attack_data; // Data of attack squares and attack ray to king
 
+    uint64_t hash_key; // Unique key updated incrementally after each move
+
     // Zobrist hashing for threefold repetition detection
+    // Updated after applying an actual move (not ai searches)
     std::unordered_map<uint64_t, int> position_history;
+
+    // Stack to hold the position history for the current search path
+    // Used by ai for draw detection in search paths
+    std::vector<uint64_t> search_history;
 
 public:
     // Initialize each piece with starting pos
@@ -46,7 +53,6 @@ public:
 
     // Store the game state as a bitmask
     BoardState state;
-    uint64_t hash_key; // Unique key updated incrementally after each move
 
     // Helpers for FEN-string creation
     char getPieceTypeChar(int square) const;
@@ -74,6 +80,9 @@ public:
 
     // Evaluate if we are in the endgame
     bool isEndgame();
+
+    // Check if the move resulted in and update state accordingly
+    void updateDrawByRepetition();
 
 private:
     // Initialize board data at the beginning of the game
@@ -127,6 +136,12 @@ public:
     // Sets top element index to 0
     void resetUndoStack();
 
+    // Search history is cleared
+    void startNewSearch();
+
+    // Used for draw detection
+    uint64_t getHashKey();
+
     // Function for ChessAI to generate the legal moves
     // Only handle queen promotions
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
@@ -167,6 +182,9 @@ public:
 	// Function to check if the game is over
 	// Checkmate or stalemate for either side
 	bool isGameOver();
+
+    // Check for repetitions by threefold rule
+    bool isDrawByRepetition();
 
     // Used in quiescence search for delta pruning noisy moves
     int estimateCaptureValue(uint32_t move);

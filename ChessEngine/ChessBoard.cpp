@@ -50,6 +50,8 @@ void ChessBoard::MakeMoveAI(int depth) {
 
     // Apply move
 	board.applyMoveAI(best_move, white);
+    board.updateDrawByRepetition(); // Check if resulted in draw by repetition
+
 	white = !white; // Switch turn
     UpdateDebugMessage(message);
 
