@@ -17,6 +17,12 @@ namespace Tables {
 	extern int* HISTORY_TABLE; // Use move keys for lookup (uint16_t)
 	// Initialized on the heap for the large size
 
+	// Transposition Table for efficient alpha-beta pruning in minimax
+	extern TTEntry* TRANSPOSITION_TABLE; 
+	// Initialized on the heap for the large size
+	extern size_t TT_NUM_ENTRIES; // Number of entries (will be power of 2)
+	extern size_t TT_MASK;        // Mask for indexing (num_entries - 1)
+
 	// Tables for zobrist hashing key generation
 	extern uint64_t PIECE_KEYS[2][6][64]; // Piece position keys
 	extern uint64_t SIDE_TO_MOVE_KEY;     // Side to move key

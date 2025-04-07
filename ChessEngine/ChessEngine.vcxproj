@@ -183,6 +183,7 @@ if "$(Platform)"=="x64" (
     <ClInclude Include="Bitboard.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Scoring.h" />
     <ClInclude Include="Tables.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

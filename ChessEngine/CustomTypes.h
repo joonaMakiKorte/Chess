@@ -44,6 +44,27 @@ enum Direction : int8_t {
     NONE = 0
 };
 
+// Enum for TT entry flags (bound type)
+// Using uint8_t to save space
+enum TTFlag : uint8_t {
+    FLAG_NONE = 0,       // Represents an unused or invalid entry
+    FLAG_EXACT = 1,      // Score is exact (alpha < score < beta)
+    FLAG_LOWERBOUND = 2, // Score is a lower bound (score >= beta, fail-high)
+    FLAG_UPPERBOUND = 3  // Score is an upper bound (score <= alpha, fail-low)
+};
+
+// The structure for each entry in the Transposition Table
+struct TTEntry {
+    uint64_t zobrist_key_verify = 0; // Store the full Zobrist key for verification
+    uint32_t best_move = NULL_MOVE_32;    // Best move found for this position
+    int16_t score = 0;             // Evaluation score (adjust type based on score range)
+    int8_t depth = -1;             // Depth searched (-1 indicates unused/invalid)
+    TTFlag flag = FLAG_NONE;       // Flag indicating score type (EXACT, LOWER, UPPER)
+
+    // Ensure struct is packed if necessary, though alignment might make it naturally packed.
+    // Check sizeof(TTEntry) to be sure. Let's assume 8+4+2+1+1 = 16 bytes (+ potential padding)
+};
+
 // Board state is stored as a bitmask
 struct BoardState {
     uint8_t flags = 0; // 8-bit bitfield to store state flags
@@ -108,6 +129,14 @@ struct PinData {
 struct AttackData {
     uint64_t attack_squares;
     uint64_t attack_ray;
+};
+
+// Each direction king can get attacked from
+struct KingDanger {
+    uint64_t orthogonal;
+    uint64_t diagonal;
+    uint64_t knight;
+    uint64_t pawn;
 };
 
 #endif

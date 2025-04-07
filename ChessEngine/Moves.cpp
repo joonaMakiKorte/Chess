@@ -20,8 +20,6 @@ uint64_t Moves::getPseudoLegalMoves(int square, PieceType piece, uint64_t occupi
 }
 
 uint64_t Moves::getPawnMoves(int pawn, const uint64_t& white_pieces, const uint64_t& black_pieces, bool white, int en_passant) {
-	uint64_t pawn_bb = 1ULL << pawn; // Convert index to bitboard
-
 	uint64_t occupied = white_pieces | black_pieces; // Combine white and black occupancy with OR
 
 	// Initialize moves
@@ -50,8 +48,6 @@ uint64_t Moves::getPawnMoves(int pawn, const uint64_t& white_pieces, const uint6
 }
 
 uint64_t Moves::getPawnCaptures(int pawn, bool white) {
-	uint64_t pawn_bb = 1ULL << pawn; // Convert index to bitboard
-
 	// Initialize captures
 	uint64_t captures = 0ULL;
 
@@ -100,8 +96,6 @@ uint64_t Moves::getRookMoves(int rook, uint64_t occ) {
 }
 
 uint64_t Moves::getQueenMoves(int queen, uint64_t occupied) {
-	uint64_t queen_bb = 1ULL << queen;
-
 	uint64_t occ = occupied;
 
 	// Get rook moves
@@ -141,8 +135,8 @@ void Moves::computePinnedPieces(PinData& pin_data, const int& king_sq,
 
 		if (!direction) continue; // Not aligned
 
-		// Bishop cannot pin vertically/horizontally
-		// Rook cannot pin orthogonally
+		// Bishop cannot pin orthogonally
+		// Rook cannot pin diagonally
 		// Queen can pin in every direction
 		if ((direction == NORTH || direction == WEST || direction == SOUTH || direction == EAST) && bishops & (1ULL << slider_sq)) continue;
 		if ((direction == NORTH_EAST || direction == NORTH_WEST || direction == SOUTH_EAST || direction == SOUTH_WEST) && rooks & (1ULL << slider_sq)) continue;
@@ -158,4 +152,38 @@ void Moves::computePinnedPieces(PinData& pin_data, const int& king_sq,
 			pin_data.pin_rays[pinned_sq] = Tables::LINE[king_sq][slider_sq]; // Get the pin ray
 		}
 	}
+}
+
+KingDanger Moves::computeKingDanger(const int& king_sq, uint64_t occupied, bool white) {
+	// Orthogonal danger
+	uint64_t occ = occupied;
+	occ &= Magic::MAGIC_TABLE_ROOK[king_sq].mask;
+	occ *= Magic::MAGIC_TABLE_ROOK[king_sq].magic;
+	occ >>= Magic::MAGIC_TABLE_ROOK[king_sq].shift;
+	uint64_t orthogonal = MoveTables::ATTACKS_ROOK[king_sq][occ];
+
+	// Diagonal
+	occ = occupied;
+	occ &= Magic::MAGIC_TABLE_BISHOP[king_sq].mask;
+	occ *= Magic::MAGIC_TABLE_BISHOP[king_sq].magic;
+	occ >>= Magic::MAGIC_TABLE_BISHOP[king_sq].shift;
+	uint64_t diagonal = MoveTables::ATTACKS_BISHOP[king_sq][occ];
+
+	// Knight attacks
+	uint64_t knight = MoveTables::KNIGHT_MOVES[king_sq].moves;
+
+	// Pawn attacks
+	uint64_t pawn = 0ULL;
+	uint64_t king_mask = (1ULL << king_sq);
+	if (white && king_sq >= 16) {
+		if (!(king_mask & FILE_A)) pawn |= (king_mask << 7);
+		if (!(king_mask & FILE_H)) pawn |= (king_mask << 9);
+	}
+	if (!white && king_sq <= 47) {
+		if (!(king_mask & FILE_A)) pawn |= (king_mask >> 9);
+		if (!(king_mask & FILE_H)) pawn |= (king_mask >> 7);
+	}
+	
+	// Return as struct
+	return { orthogonal, diagonal, knight, pawn };
 }

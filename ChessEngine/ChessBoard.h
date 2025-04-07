@@ -11,6 +11,10 @@ private:
     // Keep track of player turns
     bool white;
 
+    // Flag to track game state
+    // Once endgame, calls different AI function for getting best move
+    bool isEndgame;
+
     // Debug
     std::string debugMessage;
 
@@ -22,16 +26,15 @@ public:
     uint64_t LegalMoves(int square);
 
     // Move a chessboard piece according to given parameter
+    // Takes promotion type as char ('-' if none)
     // Update chessboard status accordingly
     // Is called in C# if validating move successful
-    void MovePiece(int source, int target);
+    void MovePiece(int source, int target, char promotion);
 
     // Get best move for black pieces and apply it
     // Determined by search depth
     void MakeMoveAI(int depth);
 
-	// Promote the pawn at target square to a piece of choice
-	void MakePromotion(int target, char promotion);
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
     // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 -
@@ -56,7 +59,14 @@ private:
     void UpdateDebugMessage(const std::string& message);
 
     // Print bitboard in algebraic notation for debug
-    std::string printBitboardAsSquares(uint64_t bitboard);
+    std::string printBitboardAsSquares(uint64_t bitboard) const;
+
+    char getPieceLetter(PieceType piece) const;
+
+    char getFileLetter(int square) const;
+
+    // Transform the applied move to algebraic notation
+    std::string getMoveNotation(uint32_t move) const;
 };
 
 

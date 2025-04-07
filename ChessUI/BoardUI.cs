@@ -263,7 +263,7 @@ namespace Chess
 
             // make a string to check for enpassant
             string valids = ChessGame.BitboardToAlgebraic(validMoves);
-            Console.WriteLine(valids);
+            //Console.WriteLine(valids);
             
 
 
