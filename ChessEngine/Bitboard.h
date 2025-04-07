@@ -31,15 +31,22 @@ private:
     int half_moves; // Helps determine if a draw can be claimed
     int full_moves; // For game analysis and record keeping
 
-    UndoInfo undo_stack[MAX_SEARCH_DEPTH];  // Fixed-size stack for move undoing
-    int undo_stack_top; // Index of stack top
-
     PinData pin_data; // Data of pinned pieces
     AttackData attack_data; // Data of attack squares and attack ray to king
 
-    // Zobrist hashing for threefold repetition detection
     uint64_t hash_key; // Unique key updated incrementally after each move
+
+    // Zobrist hashing for threefold repetition detection
+    // Updated after applying an actual move (not ai searches)
     std::unordered_map<uint64_t, int> position_history;
+
+    // Stack to store undo-info for efficient board state restoring
+    // Used by ai in minimax and q-search
+    std::vector<UndoInfo> undo_stack;
+
+    // Stack to hold the position history for the current search path
+    // Used by ai for draw detection in search paths
+    std::vector<uint64_t> search_history;
 
 public:
     // Initialize each piece with starting pos
@@ -55,25 +62,24 @@ public:
     std::string getGameState(bool white);
     int getHalfMoveClock() const; 
     int getFullMoveNumber() const;
+    std::string squareToString(int square) const;
 
     // Get all legal moves from a square as a bitboard
     // Takes the source square and turn as the parameters
     uint64_t getLegalMoves(int from, bool white);
 
     // Apply move by updating bitboards
-    // Takes the source and target as parameters
+    // Takes the source and target as parameters (+promoting piece if available)
     // Move is applied only after making sure its legal, meaning no need to check for validity
     // Incrementally updates game phase and material scores
-    void applyMove(int source, int target, bool white);
-
-    // Apply promotion by updating bitboards
-	// Move has already been applied , so only need to promote the pawn
-	// Takes the target square and promotion piece as parameters
-    // Incrementally updates game phase and material scores
-	void applyPromotion(int target, char promotion, bool white);
+    // Returns the move encoded
+    uint32_t applyMove(int source, int target, PieceType promotion, bool white);
 
     // Evaluate if we are in the endgame
     bool isEndgame();
+
+    // Check if the move resulted in and update state accordingly
+    void updateDrawByRepetition();
 
 private:
     // Initialize board data at the beginning of the game
@@ -88,9 +94,6 @@ private:
     // To get all occupied squares, combine these two functions with bitwise OR
     uint64_t whitePieces();
     uint64_t blackPieces();
-
-    // Helper function to convert a square index to algebraic notation
-    std::string squareToString(int square) const;
 
     // Functions for castling
     uint64_t getCastlingMoves(bool white); // Get currently possible castling moves for a king
@@ -123,24 +126,31 @@ public:
     The functions below are used directly by the chessAI in minimax
     **************************************************************/
 
-    // Reset undo stack
-    // Sets top element index to 0
-    void resetUndoStack();
+    // Undo stack and search history are cleared
+    void startNewSearch();
+
+    // Used for draw detection
+    uint64_t getHashKey();
 
     // Function for ChessAI to generate the legal moves
-    // Only handle queen promotions, underpromotions deferred to quiescence
+    // Only handle queen promotions
     // Fills the movelist taken as parameter depending if we are minimizing/maximizing (which turn)
 	// Sorts the moves with MVV-LVA (Most Valuable Victim - Least Valuable Aggressor) heuristic
-    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
+    void generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white, uint32_t move_hint);
 
 	// Function for ChessAI to generate noisy moves
 	// Used for quiescence search to reduce horizon effect
-	// Noisy moves are captures and promotions
+	// Consider captures to resolve immediate tactical volatility
+    // + only queen promotions
 	void generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
     // Generate all legal moves sorted with endgame heuristic
     // Check moves are highest priority, also prioritize passed pawn advancement and king centrality
-    void generateEndgameMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
+    void generateEndgameMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white, uint32_t move_hint);
+
+	// Generate noisy moves sorted with endgame heuristic
+	// Noisy moves are captures and promotions + all check moves
+	void generateEndgameNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
 	// Function for ChessAI to apply the move
 	// Takes the encoded move as a parameter and applies it to the board
@@ -153,33 +163,34 @@ public:
 
     // Function to assign a score to the board
 	// Used for evaluation of the board state in midgame
-	int evaluateBoard(bool white);
+	int evaluateBoard();
+
+    // Score king safety in the midgame
+    // Bonus for non-open king file and pawn shields
+    // +white safety, -black safety
+    int evaluateKingSafety();
 
 	// Function to check if the game is over
 	// Checkmate or stalemate for either side
 	bool isGameOver();
 
-    // Calculate legal moves for the king
-    // Used for evaluating the king mobility
-	int calculateKingMobility(bool white);
+    // Check for repetitions by threefold rule
+    bool isDrawByRepetition();
 
     // Used in quiescence search for delta pruning noisy moves
     int estimateCaptureValue(uint32_t move);
-
-    // Used in quiescence search for delta pruning quiet moves
-    int evaluateQuietMove(uint32_t move, bool white);
+    int estimateEndgameCaptureValue(uint32_t move, bool white); // Bonus for passed pawn capturing
 
     // Get distance between kings
     // Used in endgame eval heuristic
     // Closer kings get higher bonus
     int calculateKingDistance();
 
-    // Calculate opponent's kings distance from the closest board edge
-    // Used in endgame eval heuristic
-    int calculateKingEdgeDistance(bool white);
+    // Get king distance from center squares (d4,e4,d5,e5)
+    // Critical in endgame evaluations
+    int getKingCentralization();
 
     // Evaluate passed pawns
-    // Used in endgame eval heuristic
     // Critical in endgame evaluations
     int evaluatePassedPawns(bool white);
 
@@ -187,17 +198,9 @@ private:
 	// Helper to get correct move type depending on the target square and piece type
 	// Used for encoding moves
 	MoveType getMoveType(int source_square, int target_square, PieceType piece, PieceType target_piece, bool white) const;
-	
-    // Get material score depending on active turn 
-	int calculateMaterialScore(bool white);
-
-	// Get material score depending on active turn
-	int calculatePositionalScore(bool white);
 
     // Calculate positional score of a piece
     inline int getPositionalScore(int square, float game_phase,  PieceType piece, bool white);
-
-    inline float calculateEndgameWeight();
 
     // Helper to determine if a pawn if passed
     // Passed pawns = pawns with no opposing pawns blocking their promoting path
@@ -205,6 +208,8 @@ private:
 
     // Compute whether move gets the enemy king in check
     bool isCheckMove(const KingDanger& king_danger, int to, PieceType piece);
+
+    int evaluateSingleKingSafety(int king_sq, bool white);
 };
 
 #endif BITBOARD_H

@@ -11,6 +11,10 @@ namespace Tables {
 	uint16_t KILLER_MOVES[MAX_DEPTH][2] = { NULL_MOVE };
 	int* HISTORY_TABLE = new int[MAX_HISTORY_KEY](); // Zero-initialized array
 
+	TTEntry* TRANSPOSITION_TABLE = nullptr;
+	size_t TT_NUM_ENTRIES = 0;
+	size_t TT_MASK = 0;
+
 	uint64_t PIECE_KEYS[2][6][64];
 	uint64_t SIDE_TO_MOVE_KEY;
 	uint64_t CASTLING_KEYS[16];
@@ -120,8 +124,39 @@ namespace Tables {
 		SIDE_TO_MOVE_KEY = dist(rng);
 	}
 
+	// --- Function to initialize the Transposition Table ---
+	void initializeTT(size_t size_in_mb) {
+		// Calculate total bytes and number of raw entries
+		size_t total_bytes = size_in_mb * 1024 * 1024;
+		size_t entry_size = sizeof(TTEntry);
+		size_t num_entries_raw = total_bytes / entry_size;
+
+		// Round down to the nearest power of 2
+		// Simple bit manipulation trick: find highest set bit, create mask
+		TT_NUM_ENTRIES = 1;
+		while (TT_NUM_ENTRIES * 2 <= num_entries_raw) {
+			TT_NUM_ENTRIES *= 2;
+		}
+
+		TT_MASK = TT_NUM_ENTRIES - 1; // Mask for indexing (works because size is power of 2)
+
+		// --- Allocate the memory using new[] ---
+		TRANSPOSITION_TABLE = new TTEntry[TT_NUM_ENTRIES];
+
+		// --- Clear the allocated memory ---
+		// This ensures all entries start in a known state (e.g., depth=-1, flag=FLAG_NONE)
+		// We rely on the TTEntry default member initializers or clear manually.
+		// Using memset is fast if all-zero bytes represent the desired initial "empty" state.
+		// Here, our default initializers mostly handle it, but let's explicitly clear
+		// to ensure depth is -1 and flag is FLAG_NONE if defaults weren't used.
+		std::memset(TRANSPOSITION_TABLE, 0, TT_NUM_ENTRIES * sizeof(TTEntry));
+	}
+
 	void initTables() {
-		// Initialize rays
+		// Zero initialize killer moves explicitly
+		std::memset(KILLER_MOVES, 0, sizeof(KILLER_MOVES));
+
+		// Initialize geometric tables
 		for (int sq1 = 0; sq1 < 64; sq1++) {
 			for (int sq2 = 0; sq2 < 64; sq2++) {
 				DIR[sq1][sq2] = getDirection(sq1, sq2);
@@ -130,10 +165,19 @@ namespace Tables {
 			}
 		}
 
+		// Init zobrist keys
 		initZobristKeys();
+
+		// Init transposition table with desired size
+		initializeTT(DESIRED_TT_SIZE_MB);
 	}
 
 	void teardownTables() {
+		// Free dynamically allocated space
 		delete[] HISTORY_TABLE;
+		HISTORY_TABLE = nullptr;
+
+		delete[] TRANSPOSITION_TABLE;
+		TRANSPOSITION_TABLE = nullptr;
 	}
 }
