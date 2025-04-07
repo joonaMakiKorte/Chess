@@ -453,7 +453,7 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
 
     // Check for terminal conditions after TT probe (mate/draw)
     if (board.isGameOver()) {
-        return evaluateBoard(board, depth, maximizingPlayer);
+        return evaluateEndgameBoard(board, depth, maximizingPlayer);
     }
 
     // Quiescence search at depth 0 (with checks)
@@ -475,7 +475,7 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
 
     // Check if no moves were generated (safeguard)
     if (move_count == 0) {
-        return evaluateBoard(board, depth, maximizingPlayer);
+        return evaluateEndgameBoard(board, depth, maximizingPlayer);
     }
 
     uint32_t best_move_found = NULL_MOVE_32; // Track best move at this ply
