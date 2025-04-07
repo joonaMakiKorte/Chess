@@ -153,18 +153,21 @@ namespace Chess
         public void MovePiece(int source, int target)
 
         {
-            // Apply move in the native engine
-            ChessEngineInterop.MakeMove(board, source, target);
-
             // Temporary pawn promotion logic
             // Is promotion when pawn reaches the last rank
             // Queen = 'q', rook = 'r', bishop = 'b', knight = 'k'
-            if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) || 
-               ( pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
+            char promotion = '-'; // No promotion by default
+            if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) ||
+               (pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
             {
-                ChessEngineInterop.MakePromotion(board, target, 'q');
+                promotion = 'q';
             }
 
+            // Apply move in the native engine
+            ChessEngineInterop.MakeMove(board, source, target, promotion);
+
+            string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
+            Console.WriteLine(debugMessage);
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
@@ -189,11 +192,6 @@ namespace Chess
             {
                 Console.WriteLine("Draw by threefold!");
             }
-            else
-            {
-                Console.WriteLine("The game is safe. No check or checkmate.");
-            }
-
         }
 
         public void MakeBlackMove()

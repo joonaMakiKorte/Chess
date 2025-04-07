@@ -28,23 +28,16 @@ extern "C" CHESSENGINE_API uint64_t ValidMoves(void* board, int square) {
     return b->LegalMoves(square); // Return moves
 }
 
-extern "C" CHESSENGINE_API void MakeMove(void* board, int source, int target) {
+extern "C" CHESSENGINE_API void MakeMove(void* board, int source, int target, char promotion) {
     if (!board) return; // Prevent crashes
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-    b->MovePiece(source, target); // Apply move 
+    b->MovePiece(source, target, promotion); // Apply move 
 }
 
 extern "C" CHESSENGINE_API void MakeBestMove(void* board, int depth) {
     if (!board) return; // Prevent crashes
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
     b->MakeMoveAI(depth); // Apply move
-}
-
-extern "C" CHESSENGINE_API void MakePromotion(void* board, int target, char promotion)
-{
-	if (!board) return; // Prevent crashes
-	ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-	b->MakePromotion(target, promotion); // Apply promotion
 }
 
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {

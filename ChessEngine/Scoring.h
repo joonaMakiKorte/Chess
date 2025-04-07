@@ -1,11 +1,22 @@
 #ifndef SCORING_H
 #define SCORING_H
 
+// --- Move ordering scoring ---
 constexpr int KILLER_SCORE = 9000; // Score to prioritize killer moves
 constexpr int TT_MOVE_SCORE = 100000; // Score for TT-hint moves
 constexpr int QUEEN_PROMOTION = 20000; // Huge priority for queen promotion
 constexpr int ROOK_PROMOTION = 8000; // Priority for rook promotion, lower than queen but higher than most captures
 constexpr int BN_PROMOTION = 1500; // Bishop/knight promotions equal to minor captures (tactical)
+// Endgame specific scores
+constexpr int PROMOTION_SCORE = 15000;
+constexpr int CHECK_MOVE_SCORE = 12000;
+constexpr int LOSING_TRADE_PENALTY = 1000;
+constexpr int PAWN_KILLER_SCORE = 3500;
+constexpr int KING_KILLER_SCORE = 2500;
+constexpr int ENDGAME_KILLER_SCORE = 1500;
+constexpr int PASSED_PAWN_SCORE = 4000;
+constexpr int PASSED_PAWN_RANK_MULTIPLIER = 200;
+constexpr int HISTORY_SCORE_SCALEFACTOR = 16;
 
 // --- King safety scoring ---
 constexpr int OPEN_FILE_PENALTY = 25;
@@ -13,8 +24,16 @@ constexpr int HEAVY_PIECE_MULTIPLIER = 2;
 constexpr int PAWN_SHIELD_PENALTY = 15;
 constexpr int PAWN_STORM_PENALTY = 20;
 
+// --- Promotion scores by piece type ---
+// Searched with piece type by (4 - PieceType)
+constexpr int PROMOTION_SCORES[4]{
+    QUEEN_PROMOTION,
+    ROOK_PROMOTION,
+    BN_PROMOTION,
+    BN_PROMOTION
+};
 
-// Piece values for board evaluation
+// --- Piece values for board evaluation ---
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
 constexpr int PIECE_VALUES[7] = {
     100,   // PAWN

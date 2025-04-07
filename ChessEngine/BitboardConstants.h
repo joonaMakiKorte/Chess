@@ -60,8 +60,10 @@ constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth f
 
 constexpr int MAX_QUIET_MOVES = 4; // Cap to limit the number of quiet moves stored
 
-// Margin for delta pruning in quiescence search (value of queen
-constexpr int DELTA_MARGIN = 900;
+// Margin for delta pruning in q-search
+constexpr int DELTA_MARGIN_MIDGAME = 200;
+constexpr int DELTA_MARGIN_ENDGAME = 250;
+
 
 // Game phase recalculation threshold in range of 0-1
 // Meaning a phase change greater than this in percentages after applying a move results in full positional score recalculation

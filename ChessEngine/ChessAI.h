@@ -67,7 +67,7 @@ private:
 	// Reduces the horizon effect by searching deeper in capturing positions
 	static int quiescence(Bitboard& board, int alpha, int beta, bool maximizingPlayer);
 
-	// Helper evaluation function for the minimax algorithm
+	// Get evaluation of the current board score
 	// Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
 	// Advantegeous positions are assigned higher scores for prioritization
 	static int evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer);
@@ -82,9 +82,22 @@ private:
     // Also moves are sorted with different heuristic
     static int endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
 
+    // Quiescence search algorithm
+    // Searches for the best move in a noisy position (captures and promotions)
+    // Reduces the horizon effect by searching deeper in capturing positions
+    static int endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizingPlayer);
+
+    // Get evaluation of the current board score
+    // Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
+    // Advantegeous positions are assigned higher scores for prioritization
+    static int evaluateEndgameBoard(Bitboard& board, int depth, bool maximizingPlayer);
+
 private: 
     // Helper to determine if a move is capture
     static inline bool isCapture(uint32_t move);
+
+    // Helper to determine if promotion
+    static inline bool isPromotion(uint32_t move);
 
     // Extract a compressed key derived from the move structure for killer-move/history heuristics hashing
     // 16-bit key, efficient and avoids collisions

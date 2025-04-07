@@ -153,6 +153,11 @@ std::string Bitboard::getGameState(bool white) {
 	return game_state;
 }
 
+std::string Bitboard::squareToString(int square) const {
+	char file = 'a' + (square % 8);
+	char rank = '1' + (square / 8);
+	return std::string() + file + rank;
+}
 
 bool Bitboard::isCheckmate(bool white) {
 	if (!(white ? state.isCheckWhite() : state.isCheckBlack())) {
@@ -254,7 +259,7 @@ uint64_t Bitboard::getLegalMoves(int from, bool white) {
 	return legal_moves;
 }
 
-void Bitboard::applyMove(int source, int target, bool white) {
+uint32_t Bitboard::applyMove(int source, int target, PieceType promotion, bool white) {
 	// Get piece types at squares
 	PieceType source_piece = piece_at_square[source];
 	PieceType target_piece = piece_at_square[target];
@@ -321,6 +326,23 @@ void Bitboard::applyMove(int source, int target, bool white) {
 		hash_key ^= Tables::PIECE_KEYS[white][ROOK][rook_target]; // Set target
 	}
 
+	// Promotion
+	if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
+		// Update promoted pieces bitboard
+		piece_bitboards[white][promotion] |= (1ULL << target);
+		piece_at_square[target] = promotion;
+		hash_key ^= Tables::PIECE_KEYS[white][promotion][target];
+
+		// Update board state
+		material_score += white ? PIECE_VALUES[promotion] : -PIECE_VALUES[promotion];
+		material_score += white ? -PIECE_VALUES[PAWN] : PIECE_VALUES[PAWN];
+	}
+	else { // For the non promotion moves move source piece to target
+		piece_bitboards[white][source_piece] |= (1ULL << target);
+		piece_at_square[target] = source_piece;
+		hash_key ^= Tables::PIECE_KEYS[white][source_piece][target];
+	}
+
 	// Clear previous en passant if available
 	if (en_passant_target != UNASSIGNED) {
 		hash_key ^= Tables::EN_PASSANT_KEYS[en_passant_target % 8];
@@ -341,19 +363,6 @@ void Bitboard::applyMove(int source, int target, bool white) {
 	// Toggle side-to-move key
 	hash_key ^= Tables::SIDE_TO_MOVE_KEY;
 
-	// Update board state and calculate new positional scores if not promotion, else updated after applying promotion
-	// Expensive function calls performance-wise but called only after human moves so no visible effect on performance
-	if (move_type != PROMOTION && move_type != PROMOTION_CAPTURE) {
-		// Move source piece to target
-		piece_bitboards[white][source_piece] |= (1ULL << target);
-		piece_at_square[target] = source_piece;
-		hash_key ^= Tables::PIECE_KEYS[white][source_piece][target]; // Set new location in hash
-	}
-	else {
-		// Rest is done in applyPromotion
-		return;
-	}
-
 	// Get new board state
 	updateBoardState(white);
 	updatePositionalScore();
@@ -361,7 +370,7 @@ void Bitboard::applyMove(int source, int target, bool white) {
 	// For reversible moves increment halfmoves
 	// Position history saved for also irreversible moves, but cleared before applying
 	// If reversable, check for draw by repetition
-	if (source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING) {
+	if (!(source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING)) {
 		half_moves++;
 		position_history[hash_key]++; // Save new state
 		updateDrawByRepetition();
@@ -371,39 +380,9 @@ void Bitboard::applyMove(int source, int target, bool white) {
 		position_history.clear(); // Reset threefold tracking
 		position_history[hash_key]++; // Save new state
 	}
-}
 
-void Bitboard::applyPromotion(int target, char promotion_char, bool white) {
-	// Update the bitboard of the piece moved
-	// Clears target square using bitwise AND with the negation target_square
-	// Sets the target using bitwise OR with target_square
-	PieceType promotion = EMPTY;
-
-	switch (promotion_char)
-	{
-	case 'n': promotion = KNIGHT; game_phase_score += 1; break;
-	case 'b': promotion = BISHOP; game_phase_score += 1; break;
-	case 'r': promotion = ROOK; game_phase_score += 2; break;
-	case 'q': promotion = QUEEN; game_phase_score += 4; break;
-	default: throw std::invalid_argument("Invalid promotion type");
-	}
-
-	piece_bitboards[white][promotion] |= (1ULL << target);
-	piece_at_square[target] = promotion;
-	hash_key ^= Tables::PIECE_KEYS[white][promotion][target];
-
-	// Update board state
-	material_score += white ? PIECE_VALUES[promotion] : -PIECE_VALUES[promotion];
-	material_score += white ? -PIECE_VALUES[PAWN] : PIECE_VALUES[PAWN];
-
-	half_moves = 0; // Reset halfmoves
-	position_history.clear(); // Reset threefold tracking
-	position_history[hash_key]++; // Save new state
-
-	updateBoardState(white);
-	updatePositionalScore();
-
-	// No need to check for draw by repetition since irreversable
+	// Finally return the encoded move
+	return ChessAI::encodeMove(source, target, source_piece, target_piece, move_type, promotion, false); // Don't add check flag
 }
 
 bool Bitboard::isEndgame() {
@@ -437,12 +416,6 @@ uint64_t Bitboard::whitePieces() {
 uint64_t Bitboard::blackPieces() {
 	return piece_bitboards[BLACK][PAWN] | piece_bitboards[BLACK][ROOK] | piece_bitboards[BLACK][KNIGHT] |
 		piece_bitboards[BLACK][BISHOP] | piece_bitboards[BLACK][QUEEN] | piece_bitboards[BLACK][KING];
-}
-
-std::string Bitboard::squareToString(int square) const {
-	char file = 'a' + (square % 8);
-	char rank = '1' + (square / 8);
-	return std::string() + file + rank;
 }
 
 uint64_t Bitboard::getCastlingMoves(bool white) {
@@ -736,8 +709,12 @@ void Bitboard::generateMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& mo
 					else {
 						score = ChessAI::getHistoryScore(from, to, piece);
 					}
+
+					// Prioritize queen promotions
+					if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) score += QUEEN_PROMOTION;
 				}
 			}
+
 			move_scores[move_count++] = { move, score };
 
 			Utils::popBit(legal_moves, to);
@@ -778,7 +755,7 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 			int score = MVV_LVA[target_piece][piece];
 
 			move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type,
-				(move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY, false), score };
+				(move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY, false), score + (move_type == PROMOTION_CAPTURE) ? QUEEN_PROMOTION : 0};
 
 			Utils::popBit(captures, to);
 		}
@@ -790,6 +767,16 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 				move_scores[move_count++] = { ChessAI::encodeMove(from, en_passant_target, PAWN, EMPTY, EN_PASSANT, EMPTY, false), MVV_LVA[PAWN][PAWN]};
 			}
 		}
+
+		// Process quiet promotions to queen
+		if (piece == PAWN) {
+			uint64_t promotion_mask = (white ? RANK_8 : RANK_1) & ~(opponent_pieces);
+			if ((legal_moves & promotion_mask) != 0) {
+				int promotion_sq = Utils::findFirstSetBit(legal_moves & promotion_mask);
+				move_scores[move_count++] = { ChessAI::encodeMove(from, promotion_sq, PAWN, EMPTY, PROMOTION, QUEEN, false), QUEEN_PROMOTION };
+			}
+		}
+
 		Utils::popBit(friendly_pieces, from);
 	}
 
@@ -803,7 +790,7 @@ void Bitboard::generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, in
 	}
 }
 
-void Bitboard::generateEndgameMoves(std::array<uint32_t, MAX_MOVES>&move_list, int& move_count, int depth, bool white) {
+void Bitboard::generateEndgameMoves(std::array<uint32_t, MAX_MOVES>&move_list, int& move_count, int depth, bool white, uint32_t move_hint) {
 	move_count = 0;
 	std::array<std::pair<uint32_t, int>, MAX_MOVES> move_scores; // Stack allocated array
 
@@ -831,15 +818,13 @@ void Bitboard::generateEndgameMoves(std::array<uint32_t, MAX_MOVES>&move_list, i
 
 			PieceType target_piece = piece_at_square[to];
 			MoveType move_type = getMoveType(from, to, piece, target_piece, white);
+			bool is_check = isCheckMove(king_danger, to, piece);
 
-			int score = 0;
+			// --- Scoring Logic ---
+			int score = 0; // Default score for quiet moves at depth 0 or unhandled cases
 
 			// Checks are absolute priorities, gives highest score
-			bool is_check = isCheckMove(king_danger, to, piece);
-			if (is_check) score += 15000;
-
-			// Encourage promotion
-			if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) score += 12000;
+			if (is_check) score += CHECK_MOVE_SCORE;
 
 			// Score captures with endgame specific MVV-LVA
 			if (move_type == CAPTURE || move_type == PROMOTION_CAPTURE || move_type == EN_PASSANT) {
@@ -848,31 +833,43 @@ void Bitboard::generateEndgameMoves(std::array<uint32_t, MAX_MOVES>&move_list, i
 
 				// Penalize losing trades in winning positions
 				if (winning_position && PIECE_VALUES[piece] > PIECE_VALUES[victim]) {
-					score -= 1000;
+					score -= LOSING_TRADE_PENALTY;
 				}
 			}
 			// Killer moves and history heuristics for quiet moves
 			else if (depth > 0) {
 				if (ChessAI::isKillerMove(from, to, piece, depth)) {
-					score += (piece == PAWN) ? 3500 : (piece == KING) ? 2500 : 1500;
+					score += (piece == PAWN) ? PAWN_KILLER_SCORE : (piece == KING) ? KING_KILLER_SCORE : ENDGAME_KILLER_SCORE;
 				}
-				score += ChessAI::getHistoryScore(from, to, piece) / 16; // History score is scaled down (prevent domination)
+				score += ChessAI::getHistoryScore(from, to, piece) / HISTORY_SCORE_SCALEFACTOR; // History score is scaled down (prevent domination)
 			}
 
 			if (piece == PAWN && isPassedPawn(to, white)) {
-				score += 4000 + 200 * (white ? (to / 8) : (7 - to / 8)); // Passed pawn push
+				score += PASSED_PAWN_SCORE + PASSED_PAWN_RANK_MULTIPLIER * (white ? (to / 8) : (7 - to / 8)); // Passed pawn push
 			}
 
 			if (piece == KING) {
 				score += 600 * (4 - CENTRALITY_DISTANCE[to]); // King activity
 			}
 
-			// Encode move
-			// Promote only to queen
-			uint32_t move = ChessAI::encodeMove(from, to, piece, target_piece, move_type,
-				(move_type == PROMOTION || move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY, is_check);
+			// --- Encode Move(s) and Apply TT Bonus ---
+			if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
+				PieceType promotions[] = { QUEEN, ROOK, BISHOP, KNIGHT }; // Order Q>N>R>B? maybe better
+				int promotion_base_score = score + PROMOTION_SCORE; // Add base promotion bonus
 
-			move_scores[move_count++] = { move, score };
+				for (PieceType pt : promotions) {
+					uint32_t move = ChessAI::encodeMove(from, to, piece, target_piece, move_type, pt, is_check);
+					// Check if this specific promotion move matches the hint
+					int final_score = (move_hint != NULL_MOVE_32 && move == move_hint) ? TT_MOVE_SCORE : promotion_base_score + PROMOTION_SCORES[4 - pt];
+					move_scores[move_count++] = { move, final_score };
+				}
+			}
+			else {
+				uint32_t move = ChessAI::encodeMove(from, to, piece, target_piece, move_type, EMPTY, is_check);
+				// Check if this regular move matches the hint
+				int final_score = (move_hint != NULL_MOVE_32 && move == move_hint) ? TT_MOVE_SCORE : score;
+				move_scores[move_count++] = { move, final_score };
+			}
 		}
 	}
 
@@ -923,14 +920,14 @@ void Bitboard::generateEndgameNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_l
 			int score = 0;
 
 			// Checks get highest priority
-			if (is_check) score += 15000;
+			if (is_check) score += CHECK_MOVE_SCORE;
 
 			// Promotions (queen only)
 			if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
-				score += 12000;
+				score += PROMOTION_SCORE;
 				// Bonus for passed pawn promotions
 				if (piece == PAWN && isPassedPawn(from, white)) {
-					score += 4000 + 200 * (white ? (to / 8) : (7 - to / 8));
+					score += PASSED_PAWN_SCORE + PASSED_PAWN_RANK_MULTIPLIER * (white ? (to / 8) : (7 - to / 8));
 				}
 			}
 
@@ -941,7 +938,7 @@ void Bitboard::generateEndgameNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_l
 
 				// Penalize losing trades in winning positions
 				if (winning_position && PIECE_VALUES[piece] > PIECE_VALUES[victim]) {
-					score -= 1000;
+					score -= LOSING_TRADE_PENALTY;
 				}
 			}
 
@@ -957,11 +954,16 @@ void Bitboard::generateEndgameNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_l
 				//}
 			}
 
-			// Encode move (promote only to queen)
-			uint32_t move = ChessAI::encodeMove(from, to, piece, target_piece, move_type,
-				(move_type == PROMOTION || move_type == PROMOTION_CAPTURE) ? QUEEN : EMPTY, is_check);
-
-			move_scores[move_count++] = { move, score };
+			// Encode move
+			if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, QUEEN, is_check), score + QUEEN_PROMOTION};
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, ROOK, is_check), score + ROOK_PROMOTION };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, BISHOP, is_check), score + BN_PROMOTION };
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, KNIGHT, is_check), score + BN_PROMOTION };
+			}
+			else {
+				move_scores[move_count++] = { ChessAI::encodeMove(from, to, piece, target_piece, move_type, EMPTY, is_check), score };
+			}
 		}
 	}
 
@@ -1414,10 +1416,22 @@ int Bitboard::evaluateSingleKingSafety(int king_sq, bool white) {
 }
 
 int Bitboard::estimateCaptureValue(uint32_t move) {
-	// Extract move information
-	int from_sq = ChessAI::from(move);
+	// Get pieces involved
+	PieceType captured_piece = ChessAI::capturedPiece(move);
+	PieceType attacking_piece = ChessAI::piece(move);
+
+	// Value of captured piece
+	int capture_value = PIECE_VALUES[captured_piece];
+
+	// If we're losing the more valuable piece (bad trade)
+	int trade_delta = PIECE_VALUES[attacking_piece] - PIECE_VALUES[captured_piece];
+
+	// Return net gain (could be negative for bad trades)
+	return capture_value - (trade_delta > 0 ? PIECE_VALUES[attacking_piece] : 0);
+}
+
+int Bitboard::estimateEndgameCaptureValue(uint32_t move, bool white) {
 	int to_sq = ChessAI::to(move);
-	MoveType move_type = ChessAI::moveType(move);
 
 	// Get pieces involved
 	PieceType captured_piece = ChessAI::capturedPiece(move);
@@ -1426,10 +1440,10 @@ int Bitboard::estimateCaptureValue(uint32_t move) {
 	// Value of captured piece
 	int capture_value = PIECE_VALUES[captured_piece];
 
-	// Handle promotions
-	if (move_type == PROMOTION || move_type == PROMOTION_CAPTURE) {
-		PieceType promo_piece = ChessAI::promotion(move);
-		capture_value += PIECE_VALUES[promo_piece] - PIECE_VALUES[PAWN];
+	// Bonus for capturing passed pawns
+	if (captured_piece == PAWN && isPassedPawn(to_sq, !white)) {
+		int rank = white ? (to_sq / 8) : (7 - (to_sq / 8)); // Relative rank (0=start, 7=promotion
+		capture_value += (10 + (rank * rank) * 5); // Quadratic scaling
 	}
 
 	// If we're losing the more valuable piece (bad trade)
@@ -1445,13 +1459,13 @@ int Bitboard::calculateKingDistance() {
 	return Utils::calculateDistance(white_king_sq, black_king_sq);
 }
 
-int Bitboard::calculateKingEdgeDistance(bool white) {
-	int opponent_king_sq = piece_bitboards[!white][KING]; // Get opposing king
-	int file = opponent_king_sq % 8;
-	int rank = opponent_king_sq / 8;
-	// Kings near the edge -> 0 penalty
-	// Kings in the center -> higher penalty
-	return (4 - min(min(file, 7 - file), min(rank, 7 - rank))) * 10;
+int Bitboard::getKingCentralization() {
+	int white_king_sq = Utils::findFirstSetBit(piece_bitboards[WHITE][KING]);
+	int black_king_sq = Utils::findFirstSetBit(piece_bitboards[BLACK][KING]);
+
+	// Calculate both kings distance from center and get diff
+	// If white is closer to center than black -> positive (good for white), and reversed for black
+	return CENTRALITY_DISTANCE[black_king_sq] - CENTRALITY_DISTANCE[white_king_sq];
 }
 
 int Bitboard::evaluatePassedPawns(bool white) {
@@ -1465,8 +1479,6 @@ int Bitboard::evaluatePassedPawns(bool white) {
 		if (!isPassedPawn(pawn_sq, white)) continue; // Skip non-passed pawns
 
 		int rank = white ? (pawn_sq / 8) : (7 - (pawn_sq / 8)); // Relative rank (0=start, 7=promotion
-		int file = pawn_sq % 8;
-		
 		score += (10 + (rank * rank) * 5); // Quadratic scaling
 
 		// Bonus if supported by friendly king

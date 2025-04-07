@@ -17,12 +17,26 @@ uint64_t ChessBoard::LegalMoves(int square) {
     return board.getLegalMoves(square, white);
 }
 
-void ChessBoard::MovePiece(int source, int target) {
+void ChessBoard::MovePiece(int source, int target, char promotion_char) {
     // Validate move notations
     if (source < 0 || source > 63 || target < 0 || target > 63) return;
 
-    // Apply move in bitboard
-    board.applyMove(source, target, white);
+    // Check for promotion
+    PieceType promotion;;
+    switch (promotion_char) {
+    case 'q': promotion = QUEEN; break;
+    case 'r': promotion = ROOK; break;
+    case 'b': promotion = BISHOP; break;
+    case 'n': promotion = KNIGHT; break;
+    default: promotion = EMPTY; break;
+    }
+
+    // Apply move in bitboard and get the applied move in encoded form
+    uint32_t move = board.applyMove(source, target, promotion, white);
+
+    // Transform move to algebraic notation
+    std::string move_notation = getMoveNotation(move);
+    UpdateDebugMessage(move_notation);
 
     white = !white; // Switch turn
 
@@ -37,7 +51,7 @@ void ChessBoard::MakeMoveAI(int depth) {
 
     uint32_t best_move;
 	if (isEndgame) {
-		best_move = ChessAI::getBestMove(board, depth, message);
+		best_move = ChessAI::getBestEndgameMove(board, depth, message);
 	}
 	else {
 		best_move = ChessAI::getBestMove(board, depth, message);
@@ -58,18 +72,6 @@ void ChessBoard::MakeMoveAI(int depth) {
     // Check if triggered endgame
     if (isEndgame) return; // Skip if already endgame
     isEndgame = board.isEndgame();
-}
-
-void ChessBoard::MakePromotion(int target, char promotion) {
-	// Validate promotion piece
-	if (promotion != 'q' && promotion != 'r' && promotion != 'b' && promotion != 'n') {
-		UpdateDebugMessage("Invalid promotion piece");
-		return;
-	}
-	// Apply promotion
-	// Piece has already been moved and turn has changed,
-	// so we negate the turn to apply the promotion to correct side
-	board.applyPromotion(target, promotion, !white);
 }
 
 std::string ChessBoard::GetBoardState() {
@@ -140,7 +142,7 @@ void ChessBoard::UpdateDebugMessage(const std::string& message) {
     debugMessage = message;
 }
 
-std::string ChessBoard::printBitboardAsSquares(uint64_t bitboard) {
+std::string ChessBoard::printBitboardAsSquares(uint64_t bitboard) const {
     std::string squares;
     for (int square = 0; square < 64; square++) {
         if (bitboard & (1ULL << square)) { // Check if the bit at `square` is set
@@ -150,6 +152,65 @@ std::string ChessBoard::printBitboardAsSquares(uint64_t bitboard) {
         }
     }
     return squares;
+}
+
+char ChessBoard::getPieceLetter(PieceType piece) const {
+    switch (piece)
+    {
+    case KNIGHT: return 'N';
+    case BISHOP: return 'B';
+    case ROOK: return 'R';
+    case QUEEN: return 'Q';
+    case KING: return 'K';
+    default: return '-'; // Should never reach here
+    }
+}
+
+char ChessBoard::getFileLetter(int square) const {
+    return 'a' + (square % 8);
+}
+
+std::string ChessBoard::getMoveNotation(uint32_t move) const {
+    // Define move type
+    MoveType move_type = ChessAI::moveType(move);
+    int from = ChessAI::from(move);
+    int to = ChessAI::to(move);
+
+    std::string algebraic_move = "";
+
+    // Start with castling since differs from usual notation
+    if (move_type == CASTLING) {
+        // Determine castling side
+        if (to - from == 2) algebraic_move += "O-O"; // kingside
+        else if (to - from == -2) algebraic_move += "O-O-O"; // queenside
+    }
+    else {
+        PieceType piece = ChessAI::piece(move);
+        // If not pawn, add piece letter
+        if (piece != PAWN) algebraic_move += getPieceLetter(piece);
+        
+        // Capture
+        if (move_type == CAPTURE || move_type == EN_PASSANT) {
+            // When a pawn captures we add its origin file
+            if (piece == PAWN) algebraic_move += getFileLetter(from);
+            algebraic_move += 'x'; // Captures are marked with x
+        }
+
+        // Add target square
+        algebraic_move += board.squareToString(to);
+
+        // Promotion
+        if (move_type == PROMOTION) algebraic_move += getPieceLetter(ChessAI::promotion(move));
+
+        // En passant
+        if (move_type == EN_PASSANT) algebraic_move += " e.p.";
+    }
+
+    // Handle check and mate marking
+    if (board.state.isCheckmateWhite() || board.state.isCheckmateBlack()) algebraic_move += "#";
+    else if (board.state.isCheckWhite() || board.state.isCheckBlack()) algebraic_move += "+";
+
+    return algebraic_move;
 }
 
 std::string ChessBoard::GetDebugMessage() const {

@@ -21,13 +21,10 @@ extern "C" {
 
     // Make move in bitboard
     // Takes a void pointer to the board and the source and target as square indexes
-    CHESSENGINE_API void MakeMove(void* board, int source, int target);
+    CHESSENGINE_API void MakeMove(void* board, int source, int target, char promotion);
 
     // Evaluate and execute the best move for black pieces in bitboard
     CHESSENGINE_API void MakeBestMove(void* board, int depth);
-
-	// Promote a pawn to a piece of choice
-	CHESSENGINE_API void MakePromotion(void* board, int target, char promotion);
 
     // Retrieve the current state of the chessboard and return it as a FEN string
     // Takes a void pointer to the board, pointer to char array to store the state (output buffer)

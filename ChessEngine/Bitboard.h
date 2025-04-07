@@ -62,22 +62,18 @@ public:
     std::string getGameState(bool white);
     int getHalfMoveClock() const; 
     int getFullMoveNumber() const;
+    std::string squareToString(int square) const;
 
     // Get all legal moves from a square as a bitboard
     // Takes the source square and turn as the parameters
     uint64_t getLegalMoves(int from, bool white);
 
     // Apply move by updating bitboards
-    // Takes the source and target as parameters
+    // Takes the source and target as parameters (+promoting piece if available)
     // Move is applied only after making sure its legal, meaning no need to check for validity
     // Incrementally updates game phase and material scores
-    void applyMove(int source, int target, bool white);
-
-    // Apply promotion by updating bitboards
-	// Move has already been applied , so only need to promote the pawn
-	// Takes the target square and promotion piece as parameters
-    // Incrementally updates game phase and material scores
-	void applyPromotion(int target, char promotion, bool white);
+    // Returns the move encoded
+    uint32_t applyMove(int source, int target, PieceType promotion, bool white);
 
     // Evaluate if we are in the endgame
     bool isEndgame();
@@ -98,9 +94,6 @@ private:
     // To get all occupied squares, combine these two functions with bitwise OR
     uint64_t whitePieces();
     uint64_t blackPieces();
-
-    // Helper function to convert a square index to algebraic notation
-    std::string squareToString(int square) const;
 
     // Functions for castling
     uint64_t getCastlingMoves(bool white); // Get currently possible castling moves for a king
@@ -147,12 +140,13 @@ public:
 
 	// Function for ChessAI to generate noisy moves
 	// Used for quiescence search to reduce horizon effect
-	// Consider only captures to resolve immediate tactical volatility
+	// Consider captures to resolve immediate tactical volatility
+    // + only queen promotions
 	void generateNoisyMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, bool white);
 
     // Generate all legal moves sorted with endgame heuristic
     // Check moves are highest priority, also prioritize passed pawn advancement and king centrality
-    void generateEndgameMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white);
+    void generateEndgameMoves(std::array<uint32_t, MAX_MOVES>& move_list, int& move_count, int depth, bool white, uint32_t move_hint);
 
 	// Generate noisy moves sorted with endgame heuristic
 	// Noisy moves are captures and promotions + all check moves
@@ -185,18 +179,18 @@ public:
 
     // Used in quiescence search for delta pruning noisy moves
     int estimateCaptureValue(uint32_t move);
+    int estimateEndgameCaptureValue(uint32_t move, bool white); // Bonus for passed pawn capturing
 
     // Get distance between kings
     // Used in endgame eval heuristic
     // Closer kings get higher bonus
     int calculateKingDistance();
 
-    // Calculate opponent's kings distance from the closest board edge
-    // Used in endgame eval heuristic
-    int calculateKingEdgeDistance(bool white);
+    // Get king distance from center squares (d4,e4,d5,e5)
+    // Critical in endgame evaluations
+    int getKingCentralization();
 
     // Evaluate passed pawns
-    // Used in endgame eval heuristic
     // Critical in endgame evaluations
     int evaluatePassedPawns(bool white);
 
