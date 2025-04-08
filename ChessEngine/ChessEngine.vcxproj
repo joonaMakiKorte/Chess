@@ -127,13 +127,9 @@
     </Link>
     <PostBuildEvent>
       <Command>if "$(Configuration)"=="Debug" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\$(Platform)\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\Debug\"
-) 
-if "$(Configuration)"=="Release" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\$(Platform)\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\Release\"
-) 
-if "$(Platform)"=="x64" (
     xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Debug\"
+) else if "$(Configuration)"=="Release" (
+    xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Release\"
 )
 </Command>
     </PostBuildEvent>
@@ -160,13 +156,9 @@ if "$(Platform)"=="x64" (
     </Link>
     <PostBuildEvent>
       <Command>if "$(Configuration)"=="Debug" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\$(Platform)\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\Debug\"
-) 
-if "$(Configuration)"=="Release" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\$(Platform)\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\Release\"
-) 
-if "$(Platform)"=="x64" (
     xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Debug\"
+) else if "$(Configuration)"=="Release" (
+    xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Release\"
 )
 </Command>
     </PostBuildEvent>
