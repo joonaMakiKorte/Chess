@@ -9,9 +9,9 @@ namespace Utils {
     // Helper to count the number of set bits in a bitboard
     static inline int countSetBits(const uint64_t& bitboard) {
         #if defined(_MSC_VER) // MSVC
-                return __popcnt64(bitboard);
+            return static_cast<int>(__popcnt64(bitboard));
         #else // GCC and Clang
-                return __builtin_popcountll(bitboard);
+            return static_cast<int>(__builtin_popcountll(bitboard));
         #endif
     }
 
@@ -30,28 +30,16 @@ namespace Utils {
         #endif
     }
 
-    static inline int findLastSetBit(uint64_t value) {
-        #if defined(_MSC_VER) // MSVC
-                unsigned long index;
-                if (_BitScanReverse64(&index, value)) {
-                    return static_cast<int>(index);
-                }
-                return -1;
-        #else // GCC and Clang
-                return value ? (63 - __builtin_clzll(value)) : -1;
-        #endif
+    static inline int getFile(int square) {
+        return square & 7;
     }
 
-    static inline uint64_t getFile(int square) {
-        return (square & 7);
-    }
-
-    static inline uint64_t getRank(int square) {
+    static inline int getRank(int square) {
         return square >> 3;
     }
 
     static inline int getSquare(uint64_t rank, uint64_t file) {
-        return 8 * rank + file;
+        return static_cast<int>(8 * rank + file);
     }
 
     static inline int getRow(int square, bool white) {

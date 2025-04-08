@@ -55,7 +55,7 @@ void Bitboard::initBoard() {
 	attack_data.attack_ray = 0xFFFFFFFFFFFFFFFFULL;
 	attack_data.attack_squares = 0ULL;
 
-	// Material and positonal scores are initially 0 since equal amount of pieces
+	// Material and positional scores are initially 0 since equal amount of pieces
 	material_score = 0;
 	positional_score = 0;
 	game_phase_score = MAX_GAME_PHASE; // Max game phase == beginning
@@ -367,7 +367,7 @@ uint32_t Bitboard::applyMove(int source, int target, PieceType promotion, bool w
 	updateBoardState(white);
 	updatePositionalScore();
 
-	// For reversible moves increment halfmoves
+	// For reversible moves increment half-moves
 	// Position history saved for also irreversible moves, but cleared before applying
 	// If reversable, check for draw by repetition
 	if (!(source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING)) {
@@ -376,7 +376,7 @@ uint32_t Bitboard::applyMove(int source, int target, PieceType promotion, bool w
 		updateDrawByRepetition();
 	}
 	else {
-		half_moves = 0; // Reset halfmoves if irreversable
+		half_moves = 0; // Reset half-moves if irreversible
 		position_history.clear(); // Reset threefold tracking
 		position_history[hash_key]++; // Save new state
 	}
@@ -431,12 +431,12 @@ uint64_t Bitboard::getCastlingMoves(bool white) {
 	if (white) {
 		if (castling_rights & 0x01) { // White Kingside
 			if ((occupied & WHITE_KINGSIDE_CASTLE_SQUARES) == 0) { // f1 and g1 must be free
-				// King cannot castle out of, throught, or into check
+				// King cannot castle out of, through, or into check
 				// Get squares that can't be under attack
 				critical_squares = WHITE_KINGSIDE_CASTLE_SQUARES;
 
-				// Now compare with opponents attack squares and make sure no squares alignt (bitwise AND)
-				// // Ensure the king does not move thorught or into check
+				// Now compare with opponents attack squares and make sure no squares align (bitwise AND)
+				// // Ensure the king does not move through or into check
 				// If castling available, add to moves
 				if (!(critical_squares & attack_data.attack_squares)) {
 					castling_moves |= 1ULL << 6; // King moves to g1
@@ -500,7 +500,7 @@ void Bitboard::handleCastling(bool white, int target) {
 			piece_bitboards[WHITE][ROOK] &= ~ROOK_H1; // Remove rook from h1
 			piece_bitboards[WHITE][ROOK] |= ROOK_F1; // Move rook to f1
 
-			// Also update piecetypes
+			// Also update piece types
 			piece_at_square[7] = EMPTY;
 			piece_at_square[5] = ROOK;
 		}
@@ -1036,7 +1036,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 		// Update material score
 		material_delta += PIECE_VALUES[target_piece];
 
-		// Clear positiinal score of target
+		// Clear positional score of target
 		positional_delta += getPositionalScore(target, previous_game_phase, target_piece, !white);
 	}
 
@@ -1112,13 +1112,13 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// Toggle side to move
 	hash_key ^= Tables::SIDE_TO_MOVE_KEY;
 
-	// For reversible moves increment halfmoves
+	// For reversible moves increment half-moves
 	// Count incremented for both
 	if (!(source_piece == PAWN || move_type == CAPTURE || move_type == CASTLING)) {
 		half_moves++;
 	}
 	else {
-		half_moves = 0; // Reset halfmoves if irreversable
+		half_moves = 0; // Reset half-moves if irreversible
 	}
 
 	// Apply score deltas
@@ -1263,7 +1263,7 @@ bool Bitboard::isDrawByRepetition() {
 
 	// Iterate backwards through the history stack, starting from the parent state.
 	// Check only as far back as the plies since the last irreversible move allows.
-	int current_search_depth = search_history.size();
+	int current_search_depth = static_cast<int>(search_history.size());
 	for (int i = 1; i <= half_moves && (current_search_depth - i >= 0); ++i) {
 		int history_index = current_search_depth - i;
 		if (search_history[history_index] == hash_key) {
@@ -1390,7 +1390,7 @@ int Bitboard::evaluateSingleKingSafety(int king_sq, bool white) {
 
 	int shield_penalty = 0;
 	// Penalty for missing pawn shields
-	// Check for ranks 4 or below (absolute), else open file penalty for agressive advancing
+	// Check for ranks 4 or below (absolute), else open file penalty for aggressive advancing
 	int king_rank = white ? (king_sq / 8) : 7 - (king_sq / 8);
 	if (king_rank <= 3) {
 		int front_sq = white ? (king_sq + 8) : (king_sq - 8);
