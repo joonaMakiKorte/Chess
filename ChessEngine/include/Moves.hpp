@@ -1,9 +1,9 @@
 #ifndef MOVES_H
 #define MOVES_H
 
-#include "BitboardConstants.h"
-#include "CustomTypes.h"
-#include "Bitboard.h"
+#include "BitboardConstants.hpp"
+#include "CustomTypes.hpp"
+#include "Bitboard.hpp"
 
 class Moves {
 public:

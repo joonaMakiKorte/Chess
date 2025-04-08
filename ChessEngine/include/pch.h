@@ -8,7 +8,6 @@
 #define PCH_H
 
 // Pre-compiled headers
-#include "framework.h"
 #include <cstdint>
 #include <string>
 #include <cstring>

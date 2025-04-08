@@ -146,6 +146,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -164,37 +165,35 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CustomTypes.h" />
-    <ClInclude Include="Magic.h" />
-    <ClInclude Include="Moves.h" />
-    <ClInclude Include="BitboardConstants.h" />
-    <ClInclude Include="ChessAI.h" />
-    <ClInclude Include="MoveTables.h" />
-    <ClInclude Include="ChessBoard.h" />
-    <ClInclude Include="ChessEngineExports.h" />
-    <ClInclude Include="Bitboard.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="Scoring.h" />
-    <ClInclude Include="Tables.h" />
-    <ClInclude Include="Utils.h" />
+    <ClCompile Include="src\Bitboard.cpp" />
+    <ClCompile Include="src\ChessAI.cpp" />
+    <ClCompile Include="src\ChessBoard.cpp" />
+    <ClCompile Include="src\ChessEngineExports.cpp" />
+    <ClCompile Include="src\Magic.cpp" />
+    <ClCompile Include="src\Moves.cpp" />
+    <ClCompile Include="src\MoveTables.cpp" />
+    <ClCompile Include="src\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\Tables.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Magic.cpp" />
-    <ClCompile Include="Moves.cpp" />
-    <ClCompile Include="ChessAI.cpp" />
-    <ClCompile Include="MoveTables.cpp" />
-    <ClCompile Include="ChessBoard.cpp" />
-    <ClCompile Include="ChessEngineExports.cpp" />
-    <ClCompile Include="Bitboard.cpp" />
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Tables.cpp" />
+    <ClInclude Include="include\Bitboard.hpp" />
+    <ClInclude Include="include\BitboardConstants.hpp" />
+    <ClInclude Include="include\ChessAI.hpp" />
+    <ClInclude Include="include\ChessBoard.hpp" />
+    <ClInclude Include="include\ChessEngineExports.hpp" />
+    <ClInclude Include="include\CustomTypes.hpp" />
+    <ClInclude Include="include\Magic.hpp" />
+    <ClInclude Include="include\Moves.hpp" />
+    <ClInclude Include="include\MoveTables.hpp" />
+    <ClInclude Include="include\pch.h" />
+    <ClInclude Include="include\Scoring.hpp" />
+    <ClInclude Include="include\Tables.hpp" />
+    <ClInclude Include="include\Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "Bitboard.h"
-#include "MoveTables.h"
-#include "ChessAI.h"
-#include "Tables.h"
-#include "Moves.h"
-#include "Utils.h"
-#include "Scoring.h"
+#include "Bitboard.hpp"
+#include "MoveTables.hpp"
+#include "ChessAI.hpp"
+#include "Tables.hpp"
+#include "Moves.hpp"
+#include "Utils.hpp"
+#include "Scoring.hpp"
 
 
 Bitboard::Bitboard():
@@ -621,7 +621,7 @@ void Bitboard::updatePositionalScore() {
 	positional_score = 0;
 
 	// Get game phase
-	float game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
+	float game_phase = std::max(0.0f, std::min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
 
 	// Get all pieces of both sides
 	uint64_t white_pieces = whitePieces();
@@ -997,7 +997,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	// Save current state hash in history before making the move
 	search_history.push_back(hash_key);
 
-	float previous_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Store previous phase
+	float previous_game_phase = std::max(0.0f, std::min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE)); // Store previous phase
 	int material_delta = 0; // Count material losses/gains in this move
 	int positional_delta = 0; // Change of positional score with move
 	int game_phase_delta = 0; // Change of game phase score
@@ -1138,7 +1138,7 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	undo_stack.push_back(current);
 
 	// Compute new game phase (clamped 0-1 range)
-	float new_game_phase = max(0.0f, min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
+	float new_game_phase = std::max(0.0f, std::min(1.0f, static_cast<float>(game_phase_score) / MAX_GAME_PHASE));
 
 	// **Check if the phase change is large enough for a full recalculation**
 	float phase_change = abs(new_game_phase - previous_game_phase);

@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Tables.h"
-#include "Utils.h"
+#include "Tables.hpp"
+#include "Utils.hpp"
 
 namespace Tables {
 	// Declare tables

@@ -1,8 +1,8 @@
 #ifndef BITBOARD_H
 #define BITBOARD_H
 
-#include "BitboardConstants.h"
-#include "CustomTypes.h"
+#include "BitboardConstants.hpp"
+#include "CustomTypes.hpp"
 
 class Bitboard {
 private:

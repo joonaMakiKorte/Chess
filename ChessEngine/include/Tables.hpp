@@ -1,8 +1,8 @@
 #ifndef TABLES_H
 #define TABLES_H
 
-#include "BitboardConstants.h"
-#include "CustomTypes.h"
+#include "BitboardConstants.hpp"
+#include "CustomTypes.hpp"
 
 namespace Tables {
 	// Pre-compute all attack rays between squares

@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "MoveTables.h"
-#include "Magic.h"
-#include "Utils.h"
+#include "MoveTables.hpp"
+#include "Magic.hpp"
+#include "Utils.hpp"
 
 namespace MoveTables {
 	// Static allocation of tables

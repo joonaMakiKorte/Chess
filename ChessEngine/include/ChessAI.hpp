@@ -1,8 +1,8 @@
 #ifndef CHESSAI_H
 #define CHESSAI_H
 
-#include "BitboardConstants.h"
-#include "CustomTypes.h"
+#include "BitboardConstants.hpp"
+#include "CustomTypes.hpp"
 
 // Forward declaration of Bitboard class
 class Bitboard;

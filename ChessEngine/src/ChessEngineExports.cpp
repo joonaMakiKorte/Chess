@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "ChessEngineExports.h"
-#include "ChessBoard.h"
-#include "MoveTables.h"
-#include "Tables.h"
+#include "ChessEngineExports.hpp"
+#include "ChessBoard.hpp"
+#include "MoveTables.hpp"
+#include "Tables.hpp"
 
 extern "C" CHESSENGINE_API void* CreateBoard() {
     // Init once, safely

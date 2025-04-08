@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Magic.h"
-#include "Utils.h"
+#include "Magic.hpp"
+#include "Utils.hpp"
 
 namespace Magic {
     // Static allocation of tables

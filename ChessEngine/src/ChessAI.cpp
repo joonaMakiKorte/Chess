@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "ChessAI.h"
-#include "Bitboard.h"
-#include "Tables.h"
+#include "ChessAI.hpp"
+#include "Bitboard.hpp"
+#include "Tables.hpp"
 
 // Initialize static members
 uint64_t ChessAI::nodes_evaluated = 0;
@@ -140,7 +140,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
                         return stored_score;
                     }
                     // If it doesn't cause cutoff, we can still tighten alpha
-                    alpha = max(alpha, stored_score);
+                    alpha = std::max(alpha, stored_score);
                 }
                 else if (entry.flag == FLAG_UPPERBOUND) { // Failed low previously (score <= alpha)
                     if (stored_score <= alpha) {
@@ -151,7 +151,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
                         return stored_score;
                     }
                     // If it doesn't cause cutoff, we can still tighten beta
-                    beta = min(beta, stored_score);
+                    beta = std::min(beta, stored_score);
                 }
 
                 // Check if bounds crossed after tightening
@@ -421,7 +421,7 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
                         return stored_score;
                     }
                     // If it doesn't cause cutoff, we can still tighten alpha
-                    alpha = max(alpha, stored_score);
+                    alpha = std::max(alpha, stored_score);
                 }
                 else if (entry.flag == FLAG_UPPERBOUND) { // Failed low previously (score <= alpha)
                     if (stored_score <= alpha) {
@@ -432,7 +432,7 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
                         return stored_score;
                     }
                     // If it doesn't cause cutoff, we can still tighten beta
-                    beta = min(beta, stored_score);
+                    beta = std::min(beta, stored_score);
                 }
 
                 // Check if bounds crossed after tightening

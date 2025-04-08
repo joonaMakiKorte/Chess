@@ -2,8 +2,8 @@
 #define UTILS_H
 
 #include "pch.h"
-#include "BitboardConstants.h"
-#include "CustomTypes.h"
+#include "BitboardConstants.hpp"
+#include "CustomTypes.hpp"
 
 namespace Utils {
     // Helper to count the number of set bits in a bitboard
@@ -93,7 +93,7 @@ namespace Utils {
     inline int calculateDistance(int sq1, int sq2) {
         int dx = abs((sq1 % 8) - (sq2 % 8));
         int dy = abs((sq1 / 8) - (sq2 / 8));
-        return max(dx, dy); // Chebyshev distance (also known as chessboard distance)
+        return std::max(dx, dy); // Chebyshev distance (also known as chessboard distance)
     }
 }
 

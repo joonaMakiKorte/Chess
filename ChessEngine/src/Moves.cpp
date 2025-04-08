@@ -1,9 +1,9 @@
 #include "pch.h"
-#include "Moves.h"
-#include "Magic.h"
-#include "MoveTables.h"
-#include "Tables.h"
-#include "Utils.h"
+#include "Moves.hpp"
+#include "Magic.hpp"
+#include "MoveTables.hpp"
+#include "Tables.hpp"
+#include "Utils.hpp"
 
 uint64_t Moves::getPseudoLegalMoves(int square, PieceType piece, uint64_t occupied) {
 	switch (piece)

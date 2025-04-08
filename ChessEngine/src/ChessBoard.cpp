@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "ChessBoard.h"
-#include "ChessAI.h"
+#include "ChessBoard.hpp"
+#include "ChessAI.hpp"
 
 ChessBoard::ChessBoard() :
     board(Bitboard()),

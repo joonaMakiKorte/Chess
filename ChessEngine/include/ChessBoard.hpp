@@ -1,7 +1,7 @@
 #ifndef CHESSBOARD_H
 #define CHESSBOARD_H	
 
-#include "Bitboard.h"
+#include "Bitboard.hpp"
 
 class ChessBoard {
 private:
