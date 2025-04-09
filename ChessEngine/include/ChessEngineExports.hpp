@@ -31,8 +31,8 @@ extern "C" {
     // and size of the output buffer
     CHESSENGINE_API void GetBoardState(void* board, char* output, int size);
 
-    // Export error messages from DLL
-    extern "C" CHESSENGINE_API void GetDebugMessage(void* board, char* output, int size);
+    // Export messages from DLL
+    extern "C" CHESSENGINE_API void GetMessage(void* board, char* output, int size);
 }
 
 #endif // CHESSENGINEEXPORTS_H

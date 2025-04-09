@@ -5,8 +5,9 @@
 ChessBoard::ChessBoard() :
     board(Bitboard()),
     white(true), // White starts
+    full_moves(1), // Starts at 1
     isEndgame(false),
-    debugMessage("Initial debug message")
+    previous_move("Initial message")
 {}
 
 uint64_t ChessBoard::LegalMoves(int square) {
@@ -34,9 +35,12 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
     // Apply move in bitboard and get the applied move in encoded form
     uint32_t move = board.applyMove(source, target, promotion, white);
 
+    // If black moved increment full moves
+    if (!white) full_moves++;
+
     // Transform move to algebraic notation
     std::string move_notation = getMoveNotation(move);
-    UpdateDebugMessage(move_notation);
+    UpdateMessage(move_notation);
 
     white = !white; // Switch turn
 
@@ -46,28 +50,30 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
 }
 
 void ChessBoard::MakeMoveAI(int depth) {
-    // Get best move in encoded form
-    std::string message;
-
     uint32_t best_move;
 	if (isEndgame) {
-		best_move = ChessAI::getBestEndgameMove(board, depth, message);
+		best_move = ChessAI::getBestEndgameMove(board, depth);
 	}
 	else {
-		best_move = ChessAI::getBestMove(board, depth, message);
+		best_move = ChessAI::getBestMove(board, depth);
 	}
 
 	if (best_move == 0) {
-		UpdateDebugMessage("No legal moves available");
+		UpdateMessage("No legal moves available");
 		return;
 	}
 
     // Apply move
 	board.applyMoveAI(best_move, white);
+    full_moves++; // Increment full moves
+
     board.updateDrawByRepetition(); // Check if resulted in draw by repetition
 
+    // Transform move to algebraic notation
+    std::string move_notation = getMoveNotation(best_move);
+    UpdateMessage(move_notation);
+
 	white = !white; // Switch turn
-    UpdateDebugMessage(message);
 
     // Check if triggered endgame
     if (isEndgame) return; // Skip if already endgame
@@ -128,7 +134,7 @@ std::string ChessBoard::GetBoardState() {
     fen += " " + std::to_string(board.getHalfMoveClock());
 
     // 6. Full-Move Number
-    fen += " " + std::to_string(board.getFullMoveNumber());
+    fen += " " + std::to_string(full_moves);
 
     // 7. Game state (Check/Checkmate/Stalemate/No threat)
     fen += " " + board.getGameState(white);
@@ -138,8 +144,8 @@ std::string ChessBoard::GetBoardState() {
 
 
 
-void ChessBoard::UpdateDebugMessage(const std::string& message) {
-    debugMessage = message;
+void ChessBoard::UpdateMessage(const std::string& message) {
+    previous_move = message;
 }
 
 std::string ChessBoard::printBitboardAsSquares(uint64_t bitboard) const {
@@ -213,6 +219,6 @@ std::string ChessBoard::getMoveNotation(uint32_t move) const {
     return algebraic_move;
 }
 
-std::string ChessBoard::GetDebugMessage() const {
-    return debugMessage;
+std::string ChessBoard::GetMessage() const {
+    return previous_move;
 }

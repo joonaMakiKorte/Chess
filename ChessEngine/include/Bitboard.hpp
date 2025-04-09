@@ -29,7 +29,6 @@ private:
     int en_passant_target;
 
     int half_moves; // Helps determine if a draw can be claimed
-    int full_moves; // For game analysis and record keeping
 
     PinData pin_data; // Data of pinned pieces
     AttackData attack_data; // Data of attack squares and attack ray to king

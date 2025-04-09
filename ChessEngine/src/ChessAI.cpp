@@ -3,13 +3,7 @@
 #include "Bitboard.hpp"
 #include "Tables.hpp"
 
-// Initialize static members
-uint64_t ChessAI::nodes_evaluated = 0;
-
-uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark) {
-    nodes_evaluated = 0; // Reset node count for benchmarking
-    auto start = std::chrono::high_resolution_clock::now();
-
+uint32_t ChessAI::getBestMove(Bitboard& board, int depth) {
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
     board.generateMoves(move_list, move_count, 0, false, NULL_MOVE_32); // Generate all legal moves for Black (AI player)
@@ -41,19 +35,10 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark
         }
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    double duration = std::chrono::duration<double>(end - start).count(); // Evaluation time
-    benchmark = "Depth: " + std::to_string(depth) + " | Nodes: " + std::to_string(nodes_evaluated)
-        + " | Time: " + std::to_string(duration) + "s"
-        + " | Nodes/sec: " + std::to_string(nodes_evaluated / duration);
-
     return bestMove;
 }
 
-uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark) {
-    nodes_evaluated = 0; // Reset node count for benchmarking
-    auto start = std::chrono::high_resolution_clock::now();
-
+uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth) {
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
     board.generateEndgameMoves(move_list, move_count, 0, false, NULL_MOVE_32); // Generate all legal moves for Black (AI player)
@@ -84,12 +69,6 @@ uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& be
             bestMove = move_list[i];
         }
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    double duration = std::chrono::duration<double>(end - start).count(); // Evaluation time
-    benchmark = "Depth: " + std::to_string(depth) + " | Nodes: " + std::to_string(nodes_evaluated)
-        + " | Time: " + std::to_string(duration) + "s"
-        + " | Nodes/sec: " + std::to_string(nodes_evaluated / duration);
 
     return bestMove;
 }
@@ -354,8 +333,6 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizingPla
 }
 
 int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
-    nodes_evaluated++; // Track evaluations
-
     if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
 	if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
     if (board.state.isStalemate()) return 0; // Draw -> neutral outcome
@@ -640,8 +617,6 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
 }
 
 int ChessAI::evaluateEndgameBoard(Bitboard& board, int depth, bool maximizingPlayer) {
-    nodes_evaluated++; // Track evaluations
-
     if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
     if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
     if (board.state.isStalemate()) return 0; // Draw -> neutral outcome
