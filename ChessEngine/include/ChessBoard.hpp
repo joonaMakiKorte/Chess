@@ -33,7 +33,7 @@ public:
 
     // Get best move for ai and apply it
     // Determined by search depth
-    void MakeMoveAI(int depth, bool white);
+    void MakeMoveAI(int depth, bool maximizing);
 
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
