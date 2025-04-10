@@ -9,7 +9,7 @@
 - **Game Modes**:
   - Human vs. Human (local multiplayer)
   - Human vs. Computer (three difficulty levels)
-- **AI Features:
+- **AI Features**:
   - Minimax algorithm with alpha-beta pruning
   - Adaptive evaluation function that adjusts strategy beweeen midgame and endgame phases
   - Progressive difficulty levels that modify search depth and tactical awareness
@@ -102,12 +102,14 @@ The core [minimax](https://en.wikipedia.org/wiki/Minimax) algorithm with alpha-b
 
 ### Evaluation function
 Dual-phase evaluation system:
+
 **Midgame**:
 - Material and positional scoring
 - [King safety](https://www.chessprogramming.org/King_Safety) metrics:
   - Pawn shield coverage
   - Nearby pawn storms
   - Open/semi-open king files
+     
 **Endgame**:
 - Prioritizes king activity
 - Rewards [passed pawns](https://en.wikipedia.org/wiki/Passed_pawn#:~:text=In%20chess%2C%20a%20passed%20pawn,same%20file%20or%20adjacent%20files.)
