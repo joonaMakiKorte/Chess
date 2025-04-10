@@ -109,10 +109,10 @@ private:
 
 public:
     // Get the best move for the current board state in midgame
-    static uint32_t getBestMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing);
+    static uint32_t getBestMove(Bitboard& board, int depth, bool maximizing);
 
     // Get the best move for the current board state in endgame
-    static uint32_t getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing);
+    static uint32_t getBestEndgameMove(Bitboard& board, int depth, bool maximizing);
 
 };
 

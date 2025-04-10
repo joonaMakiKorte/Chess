@@ -52,10 +52,10 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
 void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
     uint32_t best_move;
 	if (isEndgame) {
-		best_move = ChessAI::getBestEndgameMove(board, depth, message, maximizing);
+		best_move = ChessAI::getBestEndgameMove(board, depth, maximizing);
 	}
 	else {
-		best_move = ChessAI::getBestMove(board, depth, message, maximizing);
+		best_move = ChessAI::getBestMove(board, depth, maximizing);
 	}
 
 	if (best_move == 0) {

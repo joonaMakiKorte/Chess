@@ -4,7 +4,7 @@
 #include "Tables.hpp"
 
 
-uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing) {
+uint32_t ChessAI::getBestMove(Bitboard& board, int depth, bool maximizing) {
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
     board.generateMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI player
@@ -39,7 +39,7 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark
 }
 
 
-uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing) {
+uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, bool maximizing) {
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
     board.generateEndgameMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI
