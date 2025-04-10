@@ -35,9 +35,9 @@ public:
     // Is called in C# if validating move successful
     void MovePiece(int source, int target, char promotion);
 
-    // Get best move for black pieces and apply it
+    // Get best move for ai and apply it
     // Determined by search depth
-    void MakeMoveAI(int depth);
+    void MakeMoveAI(int depth, bool maximizing);
 
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
