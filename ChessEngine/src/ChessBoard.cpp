@@ -45,16 +45,16 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
     isEndgame = board.isEndgame();
 }
 
-void ChessBoard::MakeMoveAI(int depth) {
+void ChessBoard::MakeMoveAI(int depth, bool white) {
     // Get best move in encoded form
     std::string message;
 
     uint32_t best_move;
 	if (isEndgame) {
-		best_move = ChessAI::getBestEndgameMove(board, depth, message);
+		best_move = ChessAI::getBestEndgameMove(board, depth, message, white);
 	}
 	else {
-		best_move = ChessAI::getBestMove(board, depth, message);
+		best_move = ChessAI::getBestMove(board, depth, message, white);
 	}
 
 	if (best_move == 0) {
@@ -64,9 +64,11 @@ void ChessBoard::MakeMoveAI(int depth) {
 
     // Apply move
 	board.applyMoveAI(best_move, white);
+    white = !white;
+
     board.updateDrawByRepetition(); // Check if resulted in draw by repetition
 
-	white = !white; // Switch turn
+    message = white ? "white" : "black";
     UpdateDebugMessage(message);
 
     // Check if triggered endgame

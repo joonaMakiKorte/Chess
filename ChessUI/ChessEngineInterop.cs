@@ -20,7 +20,7 @@ namespace Chess
         public static extern void MakeMove(IntPtr board, int source, int target, char promotion);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void MakeBestMove(IntPtr board, int depth);
+        public static extern void MakeBestMove(IntPtr board, int depth, bool white);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void GetBoardState(IntPtr board, IntPtr output, int size);

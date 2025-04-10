@@ -23,8 +23,8 @@ extern "C" {
     // Takes a void pointer to the board and the source and target as square indexes
     CHESSENGINE_API void MakeMove(void* board, int source, int target, char promotion);
 
-    // Evaluate and execute the best move for black pieces in bitboard
-    CHESSENGINE_API void MakeBestMove(void* board, int depth);
+    // Evaluate and execute the best move for white/black in bitboard
+    CHESSENGINE_API void MakeBestMove(void* board, int depth, bool white);
 
     // Retrieve the current state of the chessboard and return it as a FEN string
     // Takes a void pointer to the board, pointer to char array to store the state (output buffer)
@@ -32,7 +32,7 @@ extern "C" {
     CHESSENGINE_API void GetBoardState(void* board, char* output, int size);
 
     // Export error messages from DLL
-    extern "C" CHESSENGINE_API void GetDebugMessage(void* board, char* output, int size);
+    CHESSENGINE_API void GetDebugMessage(void* board, char* output, int size);
 }
 
 #endif // CHESSENGINEEXPORTS_H

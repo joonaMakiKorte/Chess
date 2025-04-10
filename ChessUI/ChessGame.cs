@@ -211,7 +211,7 @@ namespace Chess
             else if (AIDifficulty == "Hard") diff = 5;
 
 
-            ChessEngineInterop.MakeBestMove(board,diff);
+            ChessEngineInterop.MakeBestMove(board,diff,false);
 
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>

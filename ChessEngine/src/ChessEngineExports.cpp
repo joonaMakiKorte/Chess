@@ -34,10 +34,10 @@ extern "C" CHESSENGINE_API void MakeMove(void* board, int source, int target, ch
     b->MovePiece(source, target, promotion); // Apply move 
 }
 
-extern "C" CHESSENGINE_API void MakeBestMove(void* board, int depth) {
+extern "C" CHESSENGINE_API void MakeBestMove(void* board, int depth, bool white) {
     if (!board) return; // Prevent crashes
     ChessBoard* b = static_cast<ChessBoard*>(board); // Cast void* to ChessBoard*
-    b->MakeMoveAI(depth); // Apply move
+    b->MakeMoveAI(depth, white); // Apply move
 }
 
 extern "C" CHESSENGINE_API void GetBoardState(void* board, char* output, int size) {

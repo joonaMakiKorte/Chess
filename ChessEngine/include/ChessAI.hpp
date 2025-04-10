@@ -60,17 +60,17 @@ private:
 	// Minimax algorithm with alpha-beta pruning
 	// Recursively evaluates the board by simulating moves and choosing the best one
 	// Alpha-beta pruning is used to reduce the number of nodes evaluated in the search tree
-    static int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
+    static int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing);
 
 	// Quiescence search algorithm
 	// Searches for the best move in a noisy position (captures and promotions)
 	// Reduces the horizon effect by searching deeper in capturing positions
-	static int quiescence(Bitboard& board, int alpha, int beta, bool maximizingPlayer);
+	static int quiescence(Bitboard& board, int alpha, int beta, bool maximizing);
 
 	// Get evaluation of the current board score
 	// Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
 	// Advantegeous positions are assigned higher scores for prioritization
-	static int evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer);
+	static int evaluateBoard(Bitboard& board, int depth, bool maximizing);
 
 
     /*************************
@@ -80,17 +80,17 @@ private:
     // Minimax algorithm with alpha-beta pruning
     // Differs from midgame by extending search for moves that chech the opponent
     // Also moves are sorted with different heuristic
-    static int endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer);
+    static int endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing);
 
     // Quiescence search algorithm
     // Searches for the best move in a noisy position (captures and promotions)
     // Reduces the horizon effect by searching deeper in capturing positions
-    static int endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizingPlayer);
+    static int endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizing);
 
     // Get evaluation of the current board score
     // Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
     // Advantegeous positions are assigned higher scores for prioritization
-    static int evaluateEndgameBoard(Bitboard& board, int depth, bool maximizingPlayer);
+    static int evaluateEndgameBoard(Bitboard& board, int depth, bool maximizing);
 
 private: 
     // Helper to determine if a move is capture
@@ -110,10 +110,10 @@ private:
 
 public:
     // Get the best move for the current board state in midgame
-    static uint32_t getBestMove(Bitboard& board, int depth, std::string& benchmark);
+    static uint32_t getBestMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing);
 
     // Get the best move for the current board state in endgame
-    static uint32_t getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark);
+    static uint32_t getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing);
 };
 
 #endif // !CHESSAI_H

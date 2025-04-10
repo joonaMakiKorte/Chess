@@ -6,36 +6,35 @@
 // Initialize static members
 uint64_t ChessAI::nodes_evaluated = 0;
 
-uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark) {
+uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing) {
     nodes_evaluated = 0; // Reset node count for benchmarking
     auto start = std::chrono::high_resolution_clock::now();
 
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateMoves(move_list, move_count, 0, false, NULL_MOVE_32); // Generate all legal moves for Black (AI player)
+    board.generateMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI player
 
     if (move_count == 0) {
         return 0; // No legal moves available
     }
 
-    int bestScore = INF; // Black wants to minimize White's evaluation
+    int bestScore = maximizing ? -INF : INF; // Start from worst eval depending if maximizing/minimizing
     uint32_t bestMove = 0;
 
     board.startNewSearch(); // Clear previous search history
 
     for (int i = 0; i < move_count; i++) {
         // Apply the move
-        board.applyMoveAI(move_list[i], false);
+        board.applyMoveAI(move_list[i], maximizing);
 
-        // Call minimax (assuming AI plays as Black)
-        // Call with maximizingPlayer = true since AI wants to minimize White's score
-        int score = minimax(board, depth - 1, -INF, INF, true);
+        // Call minimax with !maximizing
+        int score = minimax(board, depth - 1, -INF, INF, !maximizing);
 
         // Undo move
-        board.undoMoveAI(move_list[i], false);
+        board.undoMoveAI(move_list[i], maximizing);
 
-        // Black wants to minimize White's score
-        if (score < bestScore) {
+        // Logic to account for AI being either black or white
+        if ((maximizing && score > bestScore) || (!maximizing && score < bestScore)) {
             bestScore = score;
             bestMove = move_list[i];
         }
@@ -50,36 +49,34 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, std::string& benchmark
     return bestMove;
 }
 
-uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark) {
+uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing) {
     nodes_evaluated = 0; // Reset node count for benchmarking
     auto start = std::chrono::high_resolution_clock::now();
 
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateEndgameMoves(move_list, move_count, 0, false, NULL_MOVE_32); // Generate all legal moves for Black (AI player)
+    board.generateEndgameMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI
 
     if (move_count == 0) {
         return 0; // No legal moves available
     }
 
-    int bestScore = INF; // Black wants to minimize White's evaluation
+    int bestScore = maximizing ? -INF : INF; // Start from worst eval
     uint32_t bestMove = 0;
 
     board.startNewSearch(); // Clear previous search history
 
     for (int i = 0; i < move_count; i++) {
         // Apply the move
-        board.applyMoveAI(move_list[i], false);
+        board.applyMoveAI(move_list[i], maximizing);
 
-        // Call minimax (assuming AI plays as Black)
-        // Call with maximizingPlayer = true since AI wants to minimize White's score
-        int score = endgameMinimax(board, depth - 1, -INF, INF, true);
+        int score = endgameMinimax(board, depth - 1, -INF, INF, !maximizing);
 
         // Undo move
-        board.undoMoveAI(move_list[i], false);
+        board.undoMoveAI(move_list[i], maximizing);
 
-        // Black wants to minimize White's score
-        if (score < bestScore) {
+        // Logic to account for AI being either black or white
+        if ((maximizing && score > bestScore) || (!maximizing && score < bestScore)) {
             bestScore = score;
             bestMove = move_list[i];
         }
@@ -94,7 +91,7 @@ uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, std::string& be
     return bestMove;
 }
 
-int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
+int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
     if (board.getHalfMoveClock() >= 50) {
@@ -172,38 +169,38 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     
     // Check for terminal conditions after TT probe (mate/draw)
 	if (board.isGameOver()) {
-        return evaluateBoard(board, depth, maximizingPlayer);
+        return evaluateBoard(board, depth, maximizing);
 	}
 
     // Quiescence search at depth 0 (with checks)
     if (depth <= 0) {
         // Results from Q-search are generally not stored in the main TT here,
         // though Q-search itself could potentially use the TT or its own smaller cache
-        return quiescence(board, alpha, beta, maximizingPlayer);
+        return quiescence(board, alpha, beta, maximizing);
     }
 
     // --- Main search logic ---
     std::array<uint32_t, MAX_MOVES> move_list;
 	int move_count = 0;
-    board.generateMoves(move_list, move_count, depth, maximizingPlayer, tt_best_move); // Passing best move from tt to movegen
+    board.generateMoves(move_list, move_count, depth, maximizing, tt_best_move); // Passing best move from tt to movegen
 
     // Check if no moves were generated (safeguard)
     if (move_count == 0) {
-        return evaluateBoard(board, depth, maximizingPlayer);
+        return evaluateBoard(board, depth, maximizing);
     }
 
     uint32_t best_move_found = NULL_MOVE_32; // Track best move at this ply
     TTFlag flag = FLAG_UPPERBOUND; // Assume fail-low initially (score <= original_alpha)
     int best_eval; // Holds the best score found
 
-    if (maximizingPlayer) { // AI (Black) tries to maximize
+    if (maximizing) { 
         best_eval = -INF;
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizingPlayer);
+            board.applyMoveAI(move_list[i], maximizing);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizing);
 
 			// --- Update best score and alpha ---
             if (eval > best_eval) {
@@ -245,14 +242,14 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
             }
         }
     }
-    else { // Opponent (White) tries to minimize
+    else { 
         best_eval = INF; // Initialize appropriately for minimization
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizingPlayer);
+            board.applyMoveAI(move_list[i], maximizing);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizing);
 
             // --- Update best score and beta ---
             if (eval < best_eval) {
@@ -309,7 +306,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     return best_eval; // Return the final evaluation for this node
 }
 
-int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizingPlayer) {
+int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
     if (board.getHalfMoveClock() >= 50) {
@@ -321,7 +318,7 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizingPla
         return 0; // Draw score
     }
 
-    int eval = evaluateBoard(board, 0, maximizingPlayer);  // Get a static evaluation of the current position
+    int eval = evaluateBoard(board, 0, maximizing);  // Get a static evaluation of the current position
 
     // Stand pat: if this position is already better than beta, cut off search (pruning)
     if (eval >= beta) return beta;
@@ -330,7 +327,7 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizingPla
     // Generate captures + promotions (non quiet moves)
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateNoisyMoves(move_list, move_count, maximizingPlayer);
+    board.generateNoisyMoves(move_list, move_count, maximizing);
 
     for (int i = 0; i < move_count; i++) {
         int move_value = board.estimateCaptureValue(move_list[i]);
@@ -340,11 +337,11 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizingPla
         if (!isPromotion(move_list[i]) && eval + move_value + DELTA_MARGIN_MIDGAME <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }
-        board.applyMoveAI(move_list[i], maximizingPlayer);
+        board.applyMoveAI(move_list[i], maximizing);
 
-        int score = -quiescence(board, -beta, -alpha, !maximizingPlayer);  // Negamax approach
+        int score = -quiescence(board, -beta, -alpha, !maximizing);  // Negamax approach
 
-        board.undoMoveAI(move_list[i], maximizingPlayer);
+        board.undoMoveAI(move_list[i], maximizing);
 
         if (score >= beta) return beta;  // Beta cutoff
         if (score > alpha) alpha = score;  // Improve alpha
@@ -353,7 +350,7 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizingPla
     return alpha;  // Best evaluation we found
 }
 
-int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
+int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizing) {
     nodes_evaluated++; // Track evaluations
 
     if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
@@ -372,10 +369,10 @@ int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizingPlayer) {
     if (board.state.isCheckBlack()) score += 50; // Black in check
 
     // Return the score (negate for black)
-    return maximizingPlayer ? score : -score;
+    return maximizing ? score : -score;
 }
 
-int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizingPlayer) {
+int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
     if (board.getHalfMoveClock() >= 50) {
@@ -453,43 +450,43 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
 
     // Check for terminal conditions after TT probe (mate/draw)
     if (board.isGameOver()) {
-        return evaluateEndgameBoard(board, depth, maximizingPlayer);
+        return evaluateEndgameBoard(board, depth, maximizing);
     }
 
     // Quiescence search at depth 0 (with checks)
     if (depth <= 0) {
         // Results from Q-search are generally not stored in the main TT here,
         // though Q-search itself could potentially use the TT or its own smaller cache
-        return endgameQuiescence(board, alpha, beta, maximizingPlayer);
+        return endgameQuiescence(board, alpha, beta, maximizing);
     }
 
     // Check extension: Extend if current player is in check
-    if (maximizingPlayer ? board.state.isCheckBlack() : board.state.isCheckWhite()) {
+    if (maximizing ? board.state.isCheckBlack() : board.state.isCheckWhite()) {
         depth += 1; // Standard extension
     }
 
     // --- Main search logic ---
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateEndgameMoves(move_list, move_count, depth, maximizingPlayer, tt_best_move);
+    board.generateEndgameMoves(move_list, move_count, depth, maximizing, tt_best_move);
 
     // Check if no moves were generated (safeguard)
     if (move_count == 0) {
-        return evaluateEndgameBoard(board, depth, maximizingPlayer);
+        return evaluateEndgameBoard(board, depth, maximizing);
     }
 
     uint32_t best_move_found = NULL_MOVE_32; // Track best move at this ply
     TTFlag flag = FLAG_UPPERBOUND; // Assume fail-low initially (score <= original_alpha)
     int best_eval; // Holds the best score found
 
-    if (maximizingPlayer) { // AI (Black) tries to maximize
+    if (maximizing) { 
         best_eval = -INF;
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizingPlayer);
+            board.applyMoveAI(move_list[i], maximizing);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizing);
 
             // --- Update best score and alpha ---
             if (eval > best_eval) {
@@ -531,14 +528,14 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
             }
         }
     }
-    else { // Opponent (White) tries to minimize
+    else { 
         best_eval = INF; // Initialize appropriately for minimization
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizingPlayer);
+            board.applyMoveAI(move_list[i], maximizing);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer);
+            int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizingPlayer);
+            board.undoMoveAI(move_list[i], maximizing);
 
             // --- Update best score and beta ---
             if (eval < best_eval) {
@@ -595,7 +592,7 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
     return best_eval; // Return the final evaluation for this node
 }
 
-int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizingPlayer) {
+int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
     if (board.getHalfMoveClock() >= 50) {
@@ -607,7 +604,7 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
         return 0; // Draw score
     }
 
-    int eval = evaluateEndgameBoard(board, 0, maximizingPlayer);  // Get a static evaluation of the current position
+    int eval = evaluateEndgameBoard(board, 0, maximizing);  // Get a static evaluation of the current position
 
     // Stand pat: if this position is already better than beta, cut off search (pruning)
     if (eval >= beta) return beta;
@@ -616,7 +613,7 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
     // Generate captures + promotions (non quiet moves)
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateEndgameNoisyMoves(move_list, move_count, maximizingPlayer);
+    board.generateEndgameNoisyMoves(move_list, move_count, maximizing);
 
     for (int i = 0; i < move_count; i++) {
         int move_value = board.estimateCaptureValue(move_list[i]);
@@ -626,11 +623,11 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
         if (!isPromotion(move_list[i]) && !isCheck(move_list[i]) && eval + move_value + DELTA_MARGIN_ENDGAME <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }
-        board.applyMoveAI(move_list[i], maximizingPlayer);
+        board.applyMoveAI(move_list[i], maximizing);
 
-        int score = -quiescence(board, -beta, -alpha, !maximizingPlayer);  // Negamax approach
+        int score = -quiescence(board, -beta, -alpha, !maximizing);  // Negamax approach
 
-        board.undoMoveAI(move_list[i], maximizingPlayer);
+        board.undoMoveAI(move_list[i], maximizing);
 
         if (score >= beta) return beta;  // Beta cutoff
         if (score > alpha) alpha = score;  // Improve alpha
@@ -639,7 +636,7 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
     return alpha;  // Best evaluation we found
 }
 
-int ChessAI::evaluateEndgameBoard(Bitboard& board, int depth, bool maximizingPlayer) {
+int ChessAI::evaluateEndgameBoard(Bitboard& board, int depth, bool maximizing) {
     nodes_evaluated++; // Track evaluations
 
     if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
@@ -659,7 +656,7 @@ int ChessAI::evaluateEndgameBoard(Bitboard& board, int depth, bool maximizingPla
     score += board.getKingCentralization();
 
     // Negate score for black
-    return maximizingPlayer ? score : -score;
+    return maximizing ? score : -score;
 }
 
 inline bool ChessAI::isCapture(uint32_t move) {
