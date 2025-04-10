@@ -11,12 +11,16 @@ private:
     // Keep track of player turns
     bool white;
 
+    // Track full moves
+    // Incremented after black
+    int full_moves;
+
     // Flag to track game state
     // Once endgame, calls different AI function for getting best move
     bool isEndgame;
 
-    // Debug
-    std::string debugMessage;
+    // Store the privously applied move
+    std::string previous_move;
 
 public:
     // Initialize the chessboard
@@ -52,11 +56,11 @@ public:
     std::string GetBoardState();
 
     // Get debug message
-    std::string GetDebugMessage() const;
+    std::string GetMessage() const;
 
 private:
-    // Set debug messages dynamically
-    void UpdateDebugMessage(const std::string& message);
+    // Set messages dynamically
+    void UpdateMessage(const std::string& message);
 
     // Print bitboard in algebraic notation for debug
     std::string printBitboardAsSquares(uint64_t bitboard) const;

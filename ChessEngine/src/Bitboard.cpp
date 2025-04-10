@@ -12,7 +12,6 @@ Bitboard::Bitboard():
 	castling_rights(0x0F),                 // All castling rights (0b00001111)
 	en_passant_target(UNASSIGNED),         // None
 	half_moves(0),                         // Initially 0
-	full_moves(0),                         // Initially 0
 	hash_key(0)                           
 {
 	initBoard();
@@ -200,10 +199,6 @@ int Bitboard::getHalfMoveClock() const {
 	return half_moves;
 }
 
-int Bitboard::getFullMoveNumber() const {
-	return full_moves;
-}
-
 uint64_t Bitboard::getLegalMoves(int from, bool white) {
 	PieceType piece = piece_at_square[from]; // Get piece type at square
 
@@ -264,8 +259,6 @@ uint32_t Bitboard::applyMove(int source, int target, PieceType promotion, bool w
 	PieceType source_piece = piece_at_square[source];
 	PieceType target_piece = piece_at_square[target];
 	MoveType move_type = getMoveType(source, target, source_piece, target_piece, white);
-
-	full_moves++; // Increment full-move count
 
 	// Clear the source square
 	piece_bitboards[white][source_piece] &= ~(1ULL << source);

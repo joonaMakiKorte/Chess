@@ -30,7 +30,7 @@ extern "C" {
     // Takes a void pointer to the board, pointer to char array to store the state (output buffer)
     // and size of the output buffer
     CHESSENGINE_API void GetBoardState(void* board, char* output, int size);
-
+  
     // Export error messages from DLL
     CHESSENGINE_API void GetDebugMessage(void* board, char* output, int size);
 }

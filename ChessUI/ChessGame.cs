@@ -170,15 +170,13 @@ namespace Chess
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, source, target, promotion);
 
-            string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
-            Console.WriteLine(debugMessage);
+            // Print out move notation
+            string move_notation = ChessEngineInterop.GetMessageString(board);
+            Console.WriteLine(move_notation);
 
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
-
-            //string debugMessage = ChessEngineInterop.GetDebugMessageString(board);
-            //Console.WriteLine(debugMessage);
 
             if (gameState == "M")
             {
@@ -216,13 +214,13 @@ namespace Chess
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // Get move notation
+                string move_notation = ChessEngineInterop.GetMessageString(board);
+                Console.WriteLine(move_notation);
+
                 // Update local board state from DLL
                 string fen = ChessEngineInterop.GetBoardStateString(board);
                 LoadFromFEN(fen);
-                Console.WriteLine(fen);
-
-                string message = ChessEngineInterop.GetDebugMessageString(board);
-                Console.WriteLine(message);
             });
 
         }

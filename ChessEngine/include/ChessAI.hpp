@@ -24,9 +24,6 @@ The ChessAI structures a move in 32 bits:
 */
 
 class ChessAI {
-private:
-    static uint64_t nodes_evaluated;
-
 public:
     // Pack a move into an integer
 	// Must be static since used in Bitboard.cpp without an instance
@@ -73,6 +70,8 @@ private:
 	static int evaluateBoard(Bitboard& board, int depth, bool maximizing);
 
 
+
+
     /*************************
     Endgame specific algorithm
     *************************/
@@ -89,8 +88,8 @@ private:
 
     // Get evaluation of the current board score
     // Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
-    // Advantegeous positions are assigned higher scores for prioritization
     static int evaluateEndgameBoard(Bitboard& board, int depth, bool maximizing);
+
 
 private: 
     // Helper to determine if a move is capture
@@ -114,6 +113,7 @@ public:
 
     // Get the best move for the current board state in endgame
     static uint32_t getBestEndgameMove(Bitboard& board, int depth, std::string& benchmark, bool maximizing);
+
 };
 
 #endif // !CHESSAI_H
