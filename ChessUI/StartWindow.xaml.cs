@@ -2,9 +2,13 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Converters;
 
 namespace Chess
 {
+    /// <summary>
+    /// Startup window for game config
+    /// </summary>
     public partial class StartWindow : Window
     {
         private bool _isSwappingSides = false;
@@ -117,23 +121,23 @@ namespace Chess
 
             // Get settings based on which side is currently White/Black
             bool whiteIsHuman, blackIsHuman;
-            string whiteDifficulty = null, blackDifficulty = null;
+            string difficulty = null;
 
             if (leftIsWhite)
             {
                 // Left side is White, Right side is Black
                 whiteIsHuman = LeftHumanRadio.IsChecked == true;
                 blackIsHuman = RightHumanRadio.IsChecked == true;
-                if (!whiteIsHuman) whiteDifficulty = (LeftAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
-                if (!blackIsHuman) blackDifficulty = (RightAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
+                if (!whiteIsHuman) difficulty = (LeftAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
+                if (!blackIsHuman) difficulty = (RightAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
             }
             else
             {
                 // Right side is White, Left side is Black
                 whiteIsHuman = RightHumanRadio.IsChecked == true;
                 blackIsHuman = LeftHumanRadio.IsChecked == true;
-                if (!whiteIsHuman) whiteDifficulty = (RightAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
-                if (!blackIsHuman) blackDifficulty = (LeftAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
+                if (!whiteIsHuman) difficulty = (RightAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
+                if (!blackIsHuman) difficulty = (LeftAIDifficultyComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Medium";
             }
 
 
@@ -149,9 +153,9 @@ namespace Chess
 
             try
             {
-                // isWhiteHuman, whiteDifficulty,isBlackHuman, blackDifficulty, timerMinutes
+                // Pass AI flags, playing sides, difficulty and timer to MainWindow
                 MainWindow mainWindow = new MainWindow(
-                    "AI", blackDifficulty, "10"
+                    whiteIsHuman, blackIsHuman, leftIsWhite, difficulty, timerMinutes
                 );
                 mainWindow.Show();
                 this.Close(); // Close the startup window

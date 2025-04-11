@@ -21,17 +21,27 @@ namespace Chess
 
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
-        public string GameMode { get; private set; }
-        public string AIDifficulty { get; private set; }
+        public bool isAIGame { get; private set; } // Store game mode
+        public bool isBlackAI { get; private set; } // Store player playing as ai
+        private int difficulty; // None initially if human v human game
 
         // Event to notify about game over conditions
         public event Action<string> GameOver;
 
-        public ChessGame(string gameMode, string aiDifficulty, string timer, BoardUI UI)
+        public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI)
         {
-            GameMode = gameMode;
-            AIDifficulty = aiDifficulty;
-            this.boardUI = UI;
+            isAIGame = !whiteIsHuman || !blackIsHuman; // Determine game mode
+            isBlackAI = !blackIsHuman; // Determine AI player
+
+            // Get difficulty
+            if (aiDifficulty != null)
+            {
+                if (aiDifficulty == "Easy") this.difficulty = 1;
+                else if (aiDifficulty == "Medium") this.difficulty = 3;
+                else this.difficulty = 5;
+            }
+
+            this.boardUI = UI; // Instance to UI
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
@@ -60,7 +70,7 @@ namespace Chess
                     if (char.IsDigit(c)) // Empty square
                     {
                         int emptyCount = c - '0';
-                        //Iterate accoding to c
+                        //Iterate according to c
                         for (int i = 0; i < emptyCount; i++)
                         {
                             // Add nothing to every part
@@ -185,17 +195,9 @@ namespace Chess
             }
         }
 
-        public void MakeBlackMove()
+        public void MakeAIMove()
         {
-
-            // check AIDifficulty and give to cpp
-            int diff = 0;
-            if (AIDifficulty == "Easy") diff = 1;
-            else if (AIDifficulty == "Medium") diff = 3;
-            else if (AIDifficulty == "Hard") diff = 5;
-
-
-            ChessEngineInterop.MakeBestMove(board,diff,false);
+            ChessEngineInterop.MakeBestMove(board,difficulty,false);
 
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>

@@ -20,32 +20,30 @@ using static System.Net.Mime.MediaTypeNames;
 namespace Chess
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Main application window, hosts UI for chess engine DLL
     /// </summary>
-    /// 
     public partial class MainWindow : Window
     {
         private ChessGame chessGame;
         private Images images = new Images();
         private BoardUI boardUI;
         private BoardInteract boardInteract;
-        private AudioPlayer audioPlayer;
         private object pieceGrid;
 
-        public MainWindow(string gameMode, string aiDifficulty, string timer)
+        public MainWindow(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, int timer)
         {
             InitializeComponent();
 
             // Init UI
-            boardUI = new BoardUI(PieceGrid, TurnLabel, WhiteTimerLabel, BlackTimerLabel, images, int.Parse(timer), MoveLogView);
+            boardUI = new BoardUI(PieceGrid, TurnLabel, WhiteTimerLabel, BlackTimerLabel,
+                images, timer, !bottomIsWhite, MoveLogView);
 
             // Init chess logic
-            chessGame = new ChessGame(gameMode, aiDifficulty, timer, boardUI);
+            chessGame = new ChessGame(whiteIsHuman, blackIsHuman, bottomIsWhite, aiDifficulty, boardUI);
 
             // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-
 
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);

@@ -11,6 +11,9 @@ using System.Media;
 
 namespace Chess
 {
+    /// <summary>
+    /// Handle board interactions
+    /// </summary>
     class BoardInteract
     {
         private ChessGame chessGame;
@@ -41,7 +44,7 @@ namespace Chess
 public async void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
             // Prevent selection if game mode is AI and it's Black's turn
-            if (chessGame.GameMode == "AI" && !chessGame.IsWhiteTURN())
+            if (chessGame.isAIGame && !chessGame.IsWhiteTURN())
             {
                 return;
                 
@@ -104,12 +107,12 @@ public async void PieceGrid_MouseDown(object sender, MouseButtonEventArgs e)
                     boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
 
                     // Prevent selection if game mode is AI and it's Black's turn
-                    if (chessGame.GameMode == "AI" && !chessGame.IsWhiteTURN())
+                    if (chessGame.isAIGame && !chessGame.IsWhiteTURN())
                     {
                         await Task.Run(() =>
                         {
                             // Run AI move on a separate thread  
-                            chessGame.MakeBlackMove();
+                            chessGame.MakeAIMove();
                         });
                         // Ensure UI updates happen on the main thread
                         Application.Current.Dispatcher.Invoke(() =>

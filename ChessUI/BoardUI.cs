@@ -14,14 +14,13 @@ namespace Chess
 {
     public class BoardUI
     {
-
         private readonly Grid pieceGrid;
         private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
         private readonly Image[,] pieceImages = new Image[8, 8];
-        private Images images;
+        private Images images; // Hold piece image data
         private readonly Label turnLabel;
 
-        // Move log logic
+        // Move-log logic
         public class MoveLogEntry
         {
            public int Turn { get; set; }
@@ -31,7 +30,8 @@ namespace Chess
         private readonly ListView moveLogPanel;
         private readonly List<MoveLogEntry> moveLogEntries = new List<MoveLogEntry>();
 
-        private ChessGame chessGame;
+
+        private ChessGame chessGame; // Store chess game instance
 
         private readonly Label whiteTimerLabel;
         private readonly Label blackTimerLabel;
@@ -40,17 +40,10 @@ namespace Chess
         private TimeSpan whiteTimeRemaining;
         private TimeSpan blackTimeRemaining;
 
-        // Define an event to notify loss
-        public event Action<string> LossOccurred;
-
-
-
-
-        private (int row, int col)? highlightedSquare = null;
+        private (int row, int col)? highlightedSquare = null; // Track highlighted square
 
         public BoardUI(Grid grid, Label turnLabel, Label whiteTimerLabel, Label blackTimerLabel,
-            Images images, int initialtimerMinutes,
-            ListView moveLogPanel)
+            Images images, int initialTimerMinutes, bool isFlipped, ListView moveLogPanel)
         {
             this.pieceGrid = grid;
             this.images = images;
@@ -61,7 +54,7 @@ namespace Chess
             
 
             InitializeBoard();
-            InitializeTimers(initialtimerMinutes);
+            InitializeTimers(initialTimerMinutes);
 
             moveLogPanel.ItemsSource = moveLogEntries;
         }
@@ -132,8 +125,6 @@ namespace Chess
             else
             {
                 whiteTimer.Stop();
-                // Handle time out for white player
-                ShowLossPopup("Black won! White player ran out of time!");
 
             }
         }
@@ -148,8 +139,6 @@ namespace Chess
             else
             {
                 blackTimer.Stop();
-                // Handle time out for black player
-                ShowLossPopup("White won! Black player ran out of time!");
             }
         }
         private void UpdateTimerLabels()
@@ -255,17 +244,10 @@ namespace Chess
 
 
         public void HighlightValidMoves(ulong validMoves)
-        {
-
-            
+        {  
             ClearValidMoveHighlights();
 
-
-            // make a string to check for enpassant
             string valids = ChessGame.BitboardToAlgebraic(validMoves);
-            //Console.WriteLine(valids);
-            
-
 
             for (int square = 0; square < 64; square++)
             {
@@ -280,16 +262,6 @@ namespace Chess
                     
                 }
             }
-        }
-
-        public void ShowLossPopup(string reason)
-        {
-            // Freeze the chess board
-            pieceGrid.IsEnabled = false;
-
-            // Create and show the popup window
-            LossPopup lossPopup = new LossPopup(reason);
-            lossPopup.ShowDialog();   
         }
 
         public void ClearValidMoveHighlights()
