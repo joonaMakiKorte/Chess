@@ -13,7 +13,7 @@ namespace Chess
     public class ChessGame : IDisposable
     {
         private BoardUI boardUI;
-        private bool isWhiteTurn = true; // White moves first
+        public bool isWhiteTurn { get; private set; } // Make active turn readable to others
         private bool whiteKingside, whiteQueenside, blackKingside, blackQueenside; // Store castling rights
         private string enPassantTarget; // Store en passant target square using algebraic notation
         private int halfMoves, fullMoves; // Store move clocks
@@ -22,7 +22,7 @@ namespace Chess
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
         public bool isAIGame { get; private set; } // Store game mode
-        public bool isBlackAI { get; private set; } // Store player playing as ai
+        public bool isWhiteAI { get; private set; } // Store player playing as ai
         private int difficulty; // None initially if human v human game
 
         // Event to notify about game over conditions
@@ -30,8 +30,9 @@ namespace Chess
 
         public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI)
         {
+            isWhiteTurn = true; // Initially white turn
             isAIGame = !whiteIsHuman || !blackIsHuman; // Determine game mode
-            isBlackAI = !blackIsHuman; // Determine AI player
+            isWhiteAI = !whiteIsHuman; // Determine AI player
 
             // Get difficulty
             if (aiDifficulty != null)
@@ -197,7 +198,7 @@ namespace Chess
 
         public void MakeAIMove()
         {
-            ChessEngineInterop.MakeBestMove(board,difficulty,false);
+            ChessEngineInterop.MakeBestMove(board,difficulty,isWhiteAI);
 
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>

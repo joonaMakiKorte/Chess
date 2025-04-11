@@ -47,6 +47,9 @@ namespace Chess
 
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);
+
+            // Task to start game (needed in case white plays as ai)
+            _ = boardInteract.StartGameASync();
         }
     }
 }
