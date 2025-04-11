@@ -1,72 +1,157 @@
 ﻿<Window x:Class="Chess.StartWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Chess Start" Height="1000" Width="1000"
-        
-        Icon="pics/icon.ico">
-    <Window.Background>
-        <ImageBrush ImageSource="pics/backgroundpic.png" Stretch="UniformToFill"/>
-    </Window.Background>
+        Title="Chess Start" Height="600" Width="800"    
+        Icon="pics/icon.ico"
+        Background="#222">
 
     <!-- Square Button Style -->
     <Window.Resources>
-        <Style x:Key="SquareButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Black"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="FontSize" Value="16"/>
+        <Style x:Key="SegmentedControlContainerStyle" TargetType="Border">
+            <Setter Property="Background" Value="#FF3C3C3C"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="3"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="SegmentedControlRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFCCCCCC"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="ButtonBorder"
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" TargetName="ButtonBorder" Value="#FF5A5A5A"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#FF4A4A4A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+            <Setter Property="Foreground" Value="Red"/>
+        </Style>
     </Window.Resources>
 
     <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="Welcome to Chess!" Foreground="Red" FontSize="30" Margin="0,0,0,20"/>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="600">
+            <TextBlock Text="Welcome to Chess!" Foreground="Red" FontSize="30" HorizontalAlignment="Center" Margin="0,0,0,30"/>
 
-            <!-- Game Mode Selection -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button x:Name="Button1v1" Width="400" Height="400"
-                        Margin="10,0" Click="GameMode_Click" Style="{StaticResource SquareButtonStyle}">
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                        
-                        <Image Source="/pics/manvman.png" Width="400" Height="400" Stretch="Uniform"/>
-                    </StackPanel>
-                </Button>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <Button x:Name="ButtonAI" Width="400" Height="400" Margin="10,0" Click="GameMode_Click" Style="{StaticResource SquareButtonStyle}">
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                        
-                        <Image Source="/pics/manvmachine.png" Width="400" Height="400" Stretch="Uniform"/>
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Text="White" Style="{StaticResource HeaderTextStyle}"/>
+
+                    <Border Style="{StaticResource SegmentedControlContainerStyle}" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="WhiteHumanRadio" Content="Human" GroupName="WhitePlayerType"
+                             Style="{StaticResource SegmentedControlRadioButtonStyle}"
+                             IsChecked="True" Checked="PlayerType_Changed"/>
+                                <RadioButton x:Name="WhiteEngineRadio" Content="Engine" GroupName="WhitePlayerType"
+                             Style="{StaticResource SegmentedControlRadioButtonStyle}"
+                             Checked="PlayerType_Changed"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Name" HorizontalAlignment="Left" Margin="10,10,0,2"/>
+                    <TextBox x:Name="WhitePlayerName" Text="Player 1"/>
+
+                    <TextBlock Text="AI Difficulty" HorizontalAlignment="Left" Margin="10,5,0,2" Visibility="{Binding ElementName=WhiteEngineRadio, Path=IsChecked}"/>
+                    <ComboBox x:Name="WhiteAIDifficultyComboBox" Visibility="{Binding ElementName=WhiteEngineRadio, Path=IsChecked}">
+                        <ComboBoxItem Content="Easy"/>
+                        <ComboBoxItem Content="Medium" IsSelected="True"/>
+                        <ComboBoxItem Content="Hard"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                    x:Name="SwitchSidesButton"
+                    Content="&#x21C4;" FontSize="24"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Margin="15,0"
+                    Padding="5"
+                    FontWeight="Bold"
+                    ToolTip="Switch Sides"
+                    BorderThickness="0"
+                    Background="Transparent"
+                    Foreground="White"
+                    Cursor="Hand"
+                    Click="SwitchSides_Click"/>
+                
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Text="Black" Style="{StaticResource HeaderTextStyle}"/>
+
+                    <Border Style="{StaticResource SegmentedControlContainerStyle}" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="BlackHumanRadio" Content="Human" GroupName="BlackPlayerType"
+                             Style="{StaticResource SegmentedControlRadioButtonStyle}"
+                             IsChecked="True" Checked="PlayerType_Changed"/>
+                             <RadioButton x:Name="BlackEngineRadio" Content="Engine" GroupName="BlackPlayerType"
+                             Style="{StaticResource SegmentedControlRadioButtonStyle}"
+                             Checked="PlayerType_Changed"/>     
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Name" HorizontalAlignment="Left" Margin="10,10,0,2"/>
+                    <TextBox x:Name="BlackPlayerName" Text="Player 2"/>
+
+                    <TextBlock Text="AI Difficulty" HorizontalAlignment="Left" Margin="10,5,0,2" Visibility="{Binding ElementName=BlackEngineRadio, Path=IsChecked}"/>
+                    <ComboBox x:Name="BlackAIDifficultyComboBox" Visibility="{Binding ElementName=BlackEngineRadio, Path=IsChecked}">
+                        <ComboBoxItem Content="Easy"/>
+                        <ComboBoxItem Content="Medium" IsSelected="True"/>
+                        <ComboBoxItem Content="Hard"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+
+            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <TextBlock x:Name="SelectionTextBlock" Text="Select Timer (minutes):" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                <Slider x:Name="TimerSlider" Width="300" Minimum="1" Maximum="60" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="TimerSlider_ValueChanged" Margin="0,0,0,5"/>
+                <TextBlock x:Name="TimerValueTextBlock" Text="{Binding ElementName=TimerSlider, Path=Value, StringFormat={}{0} min}" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,20"/>
             </StackPanel>
 
-            <ComboBox x:Name="AIDifficultyComboBox" Width="200" Margin="0,0,0,10" Visibility="Collapsed">
-                <ComboBoxItem Content="Easy"/>
-                <ComboBoxItem Content="Medium"/>
-                <ComboBoxItem Content="Hard"/>
-            </ComboBox>
-
-            <!-- Timer Selection -->
-            <TextBlock x:Name="SelectionTextBlock" Text="Select Timer (minutes):" Foreground="Red" FontSize="20" Margin="0,0,0,10"/>
-            <Slider x:Name="TimerSlider" Width="200" Minimum="1" Maximum="60"
-                    TickFrequency="1" IsSnapToTickEnabled="False"
-                    ValueChanged="TimerSlider_ValueChanged" Margin="0,0,0,20"/>
-            <TextBlock x:Name="TimerValueTextBlock" Text="1" Foreground="Red" FontSize="20" HorizontalAlignment="Center"/>
-
-            <Button Content="Start Game" Click="StartGame_Click" Width="200" Height="40" Margin="0,0,0,10"/>
-            <Button Content="Exit" Click="Exit_Click" Width="200" Height="40"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="StartGameButton" Content="Start Game" Click="StartGame_Click"/>
+                <Button Content="Exit" Click="Exit_Click"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
-
 </Window>
