@@ -18,14 +18,12 @@ namespace Chess
 {
     public partial class StartWindow : Window
     {
-
-
         private AudioPlayer _mediaPlayer;
         private readonly int[] allowedTimes = { 1, 3, 5, 10, 15, 30, 60 };
         public StartWindow()
         {
             InitializeComponent();
-
+            
             _mediaPlayer = new AudioPlayer();
             this.Loaded += StartWindow_Loaded; // Ensure UI is fully loaded before modifying the slider
 
