@@ -12,10 +12,8 @@ using System.Windows.Threading;
 
 namespace Chess
 {
-    class BoardUI
+    public class BoardUI
     {
-      
-
 
         private readonly Grid pieceGrid;
         private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
@@ -23,9 +21,17 @@ namespace Chess
         private Images images;
         private readonly Label turnLabel;
 
-        private readonly Label halfMoveLabel;
+        // Move log logic
+        public class MoveLogEntry
+        {
+           public int Turn { get; set; }
+            public string WhiteMove { get; set; }
+            public string BlackMove { get; set; }
+        }
+        private readonly ListView moveLogPanel;
+        private readonly List<MoveLogEntry> moveLogEntries = new List<MoveLogEntry>();
+
         private ChessGame chessGame;
-        private AudioPlayer _audioPlayer;
 
         private readonly Label whiteTimerLabel;
         private readonly Label blackTimerLabel;
@@ -39,35 +45,31 @@ namespace Chess
 
 
 
-        public BoardUI(AudioPlayer audioPlayer)
-        {
-            _audioPlayer = audioPlayer;
-        }
 
         private (int row, int col)? highlightedSquare = null;
 
-        public BoardUI(Grid grid, Label turnLabel, Label halfMoveLabel,
-            Label whiteTimerLabel, Label blackTimerLabel, Images images, AudioPlayer audioPlayer, int initialtimerMinutes)
+        public BoardUI(Grid grid, Label turnLabel, Label whiteTimerLabel, Label blackTimerLabel,
+            Images images, int initialtimerMinutes,
+            ListView moveLogPanel)
         {
             this.pieceGrid = grid;
             this.images = images;
             this.turnLabel = turnLabel;
             this.whiteTimerLabel = whiteTimerLabel;
             this.blackTimerLabel = blackTimerLabel;
-            this.halfMoveLabel = halfMoveLabel;
-            this._audioPlayer = audioPlayer;
+            this.moveLogPanel = moveLogPanel;
             
 
             InitializeBoard();
             InitializeTimers(initialtimerMinutes);
+
+            moveLogPanel.ItemsSource = moveLogEntries;
         }
 
 
         
         public void InitializeBoard()
         {
-
-            
             pieceGrid.Children.Clear(); // Clear older images
 
             for (int row = 0; row < 8; row++)
@@ -191,8 +193,6 @@ namespace Chess
                     pieceImages[row, col].Stretch = Stretch.UniformToFill;
                 }
             }
-            _audioPlayer.StopMusic();// stops previous sound
-            _audioPlayer.PlayMoveSound();
         }
 
 
@@ -282,16 +282,6 @@ namespace Chess
             }
         }
 
-
-        public void UpdateHalfMoveCount(int halfMoveCount)
-        {
-            halfMoveLabel.Content = "Halfmoves(Tie at 50): " + halfMoveCount;
-            if (halfMoveCount == 50)
-            {
-                ShowLossPopup("Draw! Halfmove count reached 50.");
-            }
-        }
-
         public void ShowLossPopup(string reason)
         {
             // Freeze the chess board
@@ -299,9 +289,7 @@ namespace Chess
 
             // Create and show the popup window
             LossPopup lossPopup = new LossPopup(reason);
-            lossPopup.ShowDialog();
-
-            
+            lossPopup.ShowDialog();   
         }
 
         public void ClearValidMoveHighlights()
@@ -316,11 +304,37 @@ namespace Chess
             highlightedSquare = null; // null so it doesn't remain in memory
         }
 
-        public void SetChessGame(ChessGame chessGame)
+        public void LogMove(string move, bool isWhite, int currentTurn)
         {
-            this.chessGame = chessGame;
-            // Subscribe to the GameOver event
-            chessGame.GameOver += ShowLossPopup;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (isWhite)
+                {
+                    moveLogEntries.Add(new MoveLogEntry
+                    {
+                        Turn = currentTurn,
+                        WhiteMove = move,
+                        BlackMove = ""
+                    });
+                }
+                else
+                {
+                    // Update the last entry
+                    if (moveLogEntries.Count > 0)
+                    {
+                        moveLogEntries[moveLogEntries.Count - 1].BlackMove = move;
+                    }
+                    currentTurn++;
+                }
+
+                moveLogPanel.Items.Refresh(); // Update UI
+
+                // Make sure there is at least one entry
+                if (moveLogEntries.Count > 0)
+                {
+                    moveLogPanel.ScrollIntoView(moveLogEntries.Last());
+                }
+            });
         }
     }
 }

@@ -36,27 +36,19 @@ namespace Chess
         {
             InitializeComponent();
 
-            // Init chess logic
-            chessGame = new ChessGame(gameMode, aiDifficulty, timer);
-
-            // Initialize AudioPlayer
-            audioPlayer = new AudioPlayer();
-
             // Init UI
-            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, WhiteTimerLabel, BlackTimerLabel, images, audioPlayer, int.Parse(timer));
+            boardUI = new BoardUI(PieceGrid, TurnLabel, WhiteTimerLabel, BlackTimerLabel, images, int.Parse(timer), MoveLogView);
+
+            // Init chess logic
+            chessGame = new ChessGame(gameMode, aiDifficulty, timer, boardUI);
+
+            // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-            chessGame.OnHalfMoveUpdated += boardUI.UpdateHalfMoveCount;
 
-            // Update BoardUI with ChessGame reference
-            boardUI.SetChessGame(chessGame);
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);
         }
-
-        
-
-
     }
 }

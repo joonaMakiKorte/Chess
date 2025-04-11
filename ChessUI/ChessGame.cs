@@ -27,11 +27,11 @@ namespace Chess
         // Event to notify about game over conditions
         public event Action<string> GameOver;
 
-        public ChessGame(string gameMode, string aiDifficulty, string timer)
+        public ChessGame(string gameMode, string aiDifficulty, string timer, BoardUI UI)
         {
             GameMode = gameMode;
             AIDifficulty = aiDifficulty;
-            
+            this.boardUI = UI;
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
@@ -39,19 +39,10 @@ namespace Chess
                 throw new Exception("Failed to initialize the chess board from the engine.");
             }
 
-            
-
-
             // Get initial board state and apply to pieceLocations
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
         }
-
-
-        
-
-        // this is to move halfmove updates
-        public event Action<int> OnHalfMoveUpdated;
 
         // Parse data from FEN representation of the board status
         private void LoadFromFEN(string fen)
@@ -98,7 +89,6 @@ namespace Chess
 
             // Read half moves
             halfMoves = int.Parse(sections[4]);
-            OnHalfMoveUpdated?.Invoke(halfMoves); // Notify UI
 
             // Read full moves
             fullMoves = int.Parse(sections[5]);
@@ -106,10 +96,6 @@ namespace Chess
             // Read game state
             gameState = sections[6].ToString();
         }
-
-
-
-
 
         // Function to convert a bitboard to algebraic notation
         public static string BitboardToAlgebraic(ulong bitboard)
@@ -170,13 +156,13 @@ namespace Chess
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, source, target, promotion);
 
-            // Print out move notation
-            string move_notation = ChessEngineInterop.GetMessageString(board);
-            Console.WriteLine(move_notation);
-
             // Update local board state from DLL
             string fen = ChessEngineInterop.GetBoardStateString(board);
             LoadFromFEN(fen);
+
+            // Print out move notation
+            string move_notation = ChessEngineInterop.GetMessageString(board);
+            boardUI.LogMove(move_notation, !isWhiteTurn, fullMoves);
 
             if (gameState == "M")
             {

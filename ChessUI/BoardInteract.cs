@@ -22,7 +22,7 @@ namespace Chess
         private List<SoundPlayer> soundPlayers = new List<SoundPlayer>(); 
 
 
-        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi, Button muteButton)
+        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi)
         {
             this.pieceGrid = pieceGrid;
             this.chessGame = chessGame;
@@ -30,8 +30,6 @@ namespace Chess
 
             // Attach event handler directly to constructor
             this.pieceGrid.MouseDown += PieceGrid_MouseDown;
-
-            muteButton.Click += MuteButton_Click;
 
             // Ensure pieceGrid can receive key events
             this.pieceGrid.Focusable = true;
