@@ -30,9 +30,6 @@ namespace Chess
         private readonly ListView moveLogPanel;
         private readonly List<MoveLogEntry> moveLogEntries = new List<MoveLogEntry>();
 
-
-        private ChessGame chessGame; // Store chess game instance
-
         private readonly Label whiteTimerLabel;
         private readonly Label blackTimerLabel;
         private DispatcherTimer whiteTimer;
@@ -40,10 +37,15 @@ namespace Chess
         private TimeSpan whiteTimeRemaining;
         private TimeSpan blackTimeRemaining;
 
-        private (int row, int col)? highlightedSquare = null; // Track highlighted square
+        // Store the single selected square using LOGIC coordinates internally
+        private (int logicRow, int logicCol)? highlightedSquareLogicCoords = null;
+        // Store valid move highlights using UI coordinates
+        private List<(int uiRow, int uiCol)> highlightedValidMoveUiCoords = new List<(int uiRow, int uiCol)>();
+
+        private bool isFlipped;
 
         public BoardUI(Grid grid, Label turnLabel, Label whiteTimerLabel, Label blackTimerLabel,
-            Images images, int initialTimerMinutes, bool isFlipped, ListView moveLogPanel)
+            Images images, int initialTimerMinutes, bool flipped, ListView moveLogPanel)
         {
             this.pieceGrid = grid;
             this.images = images;
@@ -51,23 +53,21 @@ namespace Chess
             this.whiteTimerLabel = whiteTimerLabel;
             this.blackTimerLabel = blackTimerLabel;
             this.moveLogPanel = moveLogPanel;
-            
+            this.isFlipped = flipped;
 
             InitializeBoard();
             InitializeTimers(initialTimerMinutes);
 
             moveLogPanel.ItemsSource = moveLogEntries;
         }
-
-
         
         public void InitializeBoard()
         {
             pieceGrid.Children.Clear(); // Clear older images
 
-            for (int row = 0; row < 8; row++)
+            for (int uiRow = 0; uiRow < 8; uiRow++)
             {
-                for (int col = 0; col < 8; col++)
+                for (int uiCol = 0; uiCol < 8; uiCol++)
                 {
                     // Create a border for each square
                     Border border = new Border
@@ -77,11 +77,11 @@ namespace Chess
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                         VerticalAlignment = VerticalAlignment.Stretch
                     };
-
-                    pieceBorders[row, col] = border;
+                    // Store by UI coords
+                    pieceBorders[uiRow, uiCol] = border;
                     // Add border to grid
-                    Grid.SetRow(border, row);
-                    Grid.SetColumn(border, col);
+                    Grid.SetRow(border, uiRow);
+                    Grid.SetColumn(border, uiCol);
                     pieceGrid.Children.Add(border);
 
                     // Create image for each piece
@@ -91,10 +91,11 @@ namespace Chess
                         VerticalAlignment = VerticalAlignment.Stretch,
                         Stretch = Stretch.UniformToFill
                     };
-                    pieceImages[row, col] = image;
-
-                    Grid.SetRow(image, row);
-                    Grid.SetColumn(image, col);
+                    // Store by UI coords
+                    pieceImages[uiRow, uiCol] = image;
+                    // Add to grid at UI coords
+                    Grid.SetRow(image, uiRow);
+                    Grid.SetColumn(image, uiCol);
                     pieceGrid.Children.Add(image);
 
                 }
@@ -113,6 +114,187 @@ namespace Chess
             blackTimer.Tick += BlackTimer_Tick;
 
             UpdateTimerLabels();
+        }
+
+ 
+        public void UpdateBoard(string[,] boardState)
+        {
+            for (int uiRow = 0; uiRow < 8; uiRow++) // Loop UI rows/cols
+            {
+                for (int uiCol = 0; uiCol < 8; uiCol++)
+                {
+                    // Get the corresponding LOGIC coordinates to read from boardState
+                    (int logicRow, int logicCol) = GetLogicCoords(uiRow, uiCol);
+
+                    // Get piece from the logic board state
+                    string piece = boardState[logicRow, logicCol];
+
+                    // Update the image at the current UI coordinate
+                    pieceImages[uiRow, uiCol].Source = images.GetPieceImage(piece);
+                    // Ensure alignment/stretch (might be redundant if set in InitializeBoard)
+                    pieceImages[uiRow, uiCol].HorizontalAlignment = HorizontalAlignment.Stretch;
+                    pieceImages[uiRow, uiCol].VerticalAlignment = VerticalAlignment.Stretch;
+                    pieceImages[uiRow, uiCol].Stretch = Stretch.UniformToFill;
+                }
+            }
+        }
+
+        public void UpdateTurnDisplay( bool isWhiteTurn)
+        {
+            string turnText = isWhiteTurn ? "White's Turn" : "Black's Turn";
+            turnLabel.Content = turnText;
+            // start the timer at the same time as turn changes
+            if (isWhiteTurn)
+            {
+                StartWhiteTimer();
+            }
+            else
+            {
+                StartBlackTimer();
+            }
+
+        }
+        
+        // Takes LOGIC coordinates as input for correct mapping
+        public void HighlightSquare(int logicRow, int logicCol, Brush color)
+        {
+            // Clear previous blue highlight first
+            ClearHighlights();
+
+            // Store the *logic* coordinates of the selected piece
+            highlightedSquareLogicCoords = (logicRow, logicCol);
+
+            // Calculate the UI coordinates to apply the highlight
+            (int uiRow, int uiCol) = GetUiCoords(logicRow, logicCol);
+
+            // Apply highlight to the border at the UI coordinate
+            if (uiRow >= 0 && uiRow < 8 && uiCol >= 0 && uiCol < 8) // Bounds check
+            {
+                pieceBorders[uiRow, uiCol].Background = color;
+            }
+        }
+
+        public void ClearHighlights()
+        {
+            // Clear the single selected square (blue) highlight
+            if (highlightedSquareLogicCoords != null)
+            {
+                (int logicRow, int logicCol) = highlightedSquareLogicCoords.Value;
+                // Calculate UI coords to clear the correct border
+                (int uiRow, int uiCol) = GetUiCoords(logicRow, logicCol);
+
+                if (uiRow >= 0 && uiRow < 8 && uiCol >= 0 && uiCol < 8) // Bounds check
+                {
+                    // Only clear if it wasn't also a valid move highlight (optional complexity)
+                    // For simplicity, just clear it. Valid moves will be reapplied if needed.
+                    pieceBorders[uiRow, uiCol].Background = Brushes.Transparent;
+                }
+                highlightedSquareLogicCoords = null;
+            }
+        }
+
+
+        public void HighlightValidMoves(ulong validMoves)
+        {
+            // Clear previous valid move highlights FIRST
+            ClearValidMoveHighlights();
+
+            for (int square = 0; square < 64; square++)
+            {
+                if ((validMoves & (1UL << square)) != 0) // Check if bit is set
+                {
+                    // Calculate LOGIC coordinates from bitboard index
+                    int logicRow = 7 - (square / 8);
+                    int logicCol = square % 8;
+
+                    // Calculate UI coordinates for highlighting
+                    (int uiRow, int uiCol) = GetUiCoords(logicRow, logicCol);
+
+                    // Apply highlight at UI coordinate
+                    if (uiRow >= 0 && uiRow < 8 && uiCol >= 0 && uiCol < 8) // Bounds check
+                    {
+                        // Use a different color/style for valid moves
+                        pieceBorders[uiRow, uiCol].Background = Brushes.LightGreen;
+                        // Store the UI coord of the valid move highlight
+                        highlightedValidMoveUiCoords.Add((uiRow, uiCol));
+                    }
+                }
+            }
+        }
+
+        public void ClearValidMoveHighlights()
+        {
+            // Iterate through the stored list of highlighted valid move UI coordinates
+            foreach (var coord in highlightedValidMoveUiCoords)
+            {
+                if (coord.uiRow >= 0 && coord.uiRow < 8 && coord.uiCol >= 0 && coord.uiCol < 8) // Bounds check
+                {
+                    // Check if this square is NOT the main selected piece square before clearing
+                    bool isSelectedSquare = false;
+                    if (highlightedSquareLogicCoords.HasValue)
+                    {
+                        var selectedUiCoords = GetUiCoords(highlightedSquareLogicCoords.Value.logicRow, highlightedSquareLogicCoords.Value.logicCol);
+                        isSelectedSquare = selectedUiCoords.uiRow == coord.uiRow && selectedUiCoords.uiCol == coord.uiCol;
+                    }
+
+                    if (!isSelectedSquare) // Only clear if it's not the main selected square
+                    {
+                        pieceBorders[coord.uiRow, coord.uiCol].Background = Brushes.Transparent;
+                    }
+                }
+            }
+            // Clear the list
+            highlightedValidMoveUiCoords.Clear();
+        }
+
+        public void LogMove(string move, bool isWhite, int currentTurn)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (isWhite)
+                {
+                    moveLogEntries.Add(new MoveLogEntry
+                    {
+                        Turn = currentTurn,
+                        WhiteMove = move,
+                        BlackMove = ""
+                    });
+                }
+                else
+                {
+                    // Update the last entry
+                    if (moveLogEntries.Count > 0)
+                    {
+                        moveLogEntries[moveLogEntries.Count - 1].BlackMove = move;
+                    }
+                    currentTurn++;
+                }
+
+                moveLogPanel.Items.Refresh(); // Update UI
+
+                // Make sure there is at least one entry
+                if (moveLogEntries.Count > 0)
+                {
+                    moveLogPanel.ScrollIntoView(moveLogEntries.Last());
+                }
+            });
+        }
+
+        // Helper for coordinate mapping
+        private (int uiRow, int uiCol) GetUiCoords(int logicRow, int logicCol)
+        {
+            int uiRow = isFlipped ? (7 - logicRow) : logicRow;
+            int uiCol = isFlipped ? (7 - logicCol): logicCol;
+
+            return (uiRow, uiCol);
+        }
+
+        private (int logicRow, int logicCol) GetLogicCoords(int uiRow, int uiCol)
+        {
+            int logicRow = isFlipped? (7 - uiRow) : uiRow;
+            int logicCol = isFlipped? (7 - uiCol): uiCol;
+
+            return (logicRow, logicCol);
         }
 
         private void WhiteTimer_Tick(object sender, EventArgs e)
@@ -157,156 +339,6 @@ namespace Chess
         {
             blackTimer.Start();
             whiteTimer.Stop();
-        }
-
-
-        public void UpdateBoard(string[,] boardState)
-        {
-
-            ClearValidMoveHighlights(); // Deletes former highlights
-
-
-            //Console.WriteLine("Updating board...");
-            for (int row = 0; row < 8; row++)
-            {
-                for (int col = 0; col < 8; col++)
-                {
-
-                    //Console.WriteLine($"Row {row}, Col {col}: {boardState[row, col]}");
-                    string piece = boardState[row, col]; // Get piece at square
-                    // Image for each piece
-                    pieceImages[row, col].Source = images.GetPieceImage(piece);
-                    // Set image alignment and stretch
-                    pieceImages[row, col].HorizontalAlignment = HorizontalAlignment.Stretch;
-                    pieceImages[row, col].VerticalAlignment = VerticalAlignment.Stretch;
-                    pieceImages[row, col].Stretch = Stretch.UniformToFill;
-                }
-            }
-        }
-
-
-
-        public void UpdateTurnDisplay( bool isWhiteTurn)
-        {
-            string turnText = isWhiteTurn ? "White's Turn" : "Black's Turn";
-            turnLabel.Content = turnText;
-            // start the timer at the same time as turn changes
-            if (isWhiteTurn)
-            {
-                StartWhiteTimer();
-            }
-            else
-            {
-                StartBlackTimer();
-            }
-
-        }
-        public void HighlightSquare(int row, int col, Brush color)
-        {
-            highlightedSquare = (row, col);
-            pieceBorders[row, col].Background = color;
-
-        }
-
-        public void ClearHighlights()
-        {
-            // Clear highlights at selected square
-            if (highlightedSquare != null)
-            {
-                (int row, int col) = highlightedSquare.Value;
-                pieceBorders[row, col].Background = Brushes.Transparent;
-                highlightedSquare = null;
-            }
-        }
-
-
-        public static ulong EnPassantToBitboard(string enPassantSquare)
-        {
-            // Ensure the enPassantSquare is valid, e.g., "e6"
-            if (enPassantSquare.Length != 2)
-                throw new ArgumentException("Invalid en passant square notation.");
-
-            char file = enPassantSquare[0]; // e.g., 'e'
-            char rank = enPassantSquare[1]; // e.g., '6'
-
-            // Convert the file (e.g., 'a' -> 0, 'b' -> 1, ..., 'h' -> 7)
-            int fileIndex = file - 'a';
-
-            // Convert the rank (e.g., '8' -> 0, '7' -> 1, ..., '1' -> 7)
-            int rankIndex = 8 - (rank - '0');
-
-            // Calculate the index on the bitboard
-            int bitboardIndex = rankIndex * 8 + fileIndex;
-
-            // Return the corresponding bitboard (1UL << bitboardIndex)
-            return 1UL << bitboardIndex;
-        }
-
-
-        public void HighlightValidMoves(ulong validMoves)
-        {  
-            ClearValidMoveHighlights();
-
-            string valids = ChessGame.BitboardToAlgebraic(validMoves);
-
-            for (int square = 0; square < 64; square++)
-            {
-                if ((validMoves & (1UL << square)) != 0) // Check if bit is set
-                {
-
-
-                    int row = 7 - (square / 8);
-                    int col = square % 8;
-
-                    HighlightSquare(row, col, Brushes.LightGreen);
-                    
-                }
-            }
-        }
-
-        public void ClearValidMoveHighlights()
-        {
-            for (int row = 0; row < 8; row++)
-            {
-                for (int col = 0; col < 8; col++)
-                {
-                    pieceBorders[row, col].Background = Brushes.Transparent;
-                }
-            }
-            highlightedSquare = null; // null so it doesn't remain in memory
-        }
-
-        public void LogMove(string move, bool isWhite, int currentTurn)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                if (isWhite)
-                {
-                    moveLogEntries.Add(new MoveLogEntry
-                    {
-                        Turn = currentTurn,
-                        WhiteMove = move,
-                        BlackMove = ""
-                    });
-                }
-                else
-                {
-                    // Update the last entry
-                    if (moveLogEntries.Count > 0)
-                    {
-                        moveLogEntries[moveLogEntries.Count - 1].BlackMove = move;
-                    }
-                    currentTurn++;
-                }
-
-                moveLogPanel.Items.Refresh(); // Update UI
-
-                // Make sure there is at least one entry
-                if (moveLogEntries.Count > 0)
-                {
-                    moveLogPanel.ScrollIntoView(moveLogEntries.Last());
-                }
-            });
         }
     }
 }

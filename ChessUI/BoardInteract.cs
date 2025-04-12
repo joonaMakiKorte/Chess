@@ -18,15 +18,17 @@ namespace Chess
     {
         private ChessGame chessGame;
         private BoardUI boardUi;
-        private (int row, int col)? selectedPiece = null;
+        private (int logicRow, int logicCol)? selectedPiece = null; // LOGIC coordinates of the selected piece
         private readonly Grid pieceGrid; // store to reference PieceGrid
         private bool isProcessingMove = false; // Flag to prevent overlapping actions
+        private bool isFlipped;
 
-        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi)
+        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi, bool flipped)
         {
             this.pieceGrid = pieceGrid;
             this.chessGame = chessGame;
             this.boardUi = boardUi;
+            this.isFlipped = flipped; // Flipped logic if black is bottom
 
             // Attach event handler directly to constructor
             this.pieceGrid.MouseDown += PieceGrid_MouseDown;
@@ -106,20 +108,32 @@ namespace Chess
         {
             // Prevent clicks if processing or it's AI's turn
             bool isAITurn = chessGame.isAIGame && (chessGame.isWhiteAI == chessGame.isWhiteTurn);
-            if (isProcessingMove || isAITurn) // Also prevent clicks if game over
+            if (isProcessingMove || isAITurn /*|| IsGameOver()*/) // Also prevent clicks if game over
             {
                 return;
             }
 
             Point position = e.GetPosition(pieceGrid);
+            // Prevent errors if grid size is zero
+            if (pieceGrid.ActualWidth == 0 || pieceGrid.ActualHeight == 0) return;
+
             double cellWidth = pieceGrid.ActualWidth / 8;
             double cellHeight = pieceGrid.ActualHeight / 8;
 
-            int col = (int)(position.X / cellWidth);
-            int row = (int)(position.Y / cellHeight);
+            // Calculate UI row/col clicked
+            int uiCol = (int)(position.X / cellWidth);
+            int uiRow = (int)(position.Y / cellHeight);
+
+            // Bounds check for safety
+            if (uiRow < 0 || uiRow > 7 || uiCol < 0 || uiCol > 7) return;
+
+            // *** TRANSLATE UI Coords to LOGIC Coords ***
+            int logicRow = isFlipped ? (7 - uiRow) : uiRow;
+            int logicCol = isFlipped ? (7 - uiCol) : uiCol;
 
             string[,] boardState = chessGame.GetBoardState();
-            string piece = boardState[row, col];
+            // Use LOGIC coords to get piece info
+            string piece = boardState[logicRow, logicCol];
 
             // If no piece is selected, attempt to select one  
             if (selectedPiece == null)
@@ -129,31 +143,34 @@ namespace Chess
                     if ((chessGame.isWhiteTurn && Char.IsUpper(piece[0])) ||
                         (!chessGame.isWhiteTurn && Char.IsLower(piece[0])))
                     {
-                        selectedPiece = (row, col);
-                        boardUi.ClearHighlights(); // Clear previous selection highlight
-                        boardUi.HighlightSquare(row, col, Brushes.LightBlue);
+                        // Store LOGIC coords
+                        selectedPiece = (logicRow, logicCol);
+                        boardUi.ClearHighlights();
+                        // Highlight using LOGIC coords (BoardUI handles mapping)
+                        boardUi.HighlightSquare(logicRow, logicCol, Brushes.LightBlue);
 
-                        // Highlight valid moves  
-                        int source = col + 8 * (7 - row);
+                        // Calculate source index using LOGIC coords
+                        int source = logicCol + 8 * (7 - logicRow); // Formula expects logic coords
                         ulong validMoves = chessGame.GetValidMoves(source);
+                        // Highlight valid moves (BoardUI handles mapping)
                         boardUi.HighlightValidMoves(validMoves);
                     }
                 }
             }
             else
             {
-                (int fromRow, int fromCol) = selectedPiece.Value;
+                // Retrieve the LOGIC coordinates of the already selected piece
+                (int fromLogicRow, int fromLogicCol) = selectedPiece.Value;
 
                 // Clear visual selection highlights immediately
-                var pieceJustSelected = selectedPiece; // Store for potential re-selection logic
-                selectedPiece = null;
+                selectedPiece = null; // Deselect logical storage first
                 boardUi.ClearHighlights();
                 boardUi.ClearValidMoveHighlights();
 
                 // If clicking the same square again, don't proceed
-                if (fromRow == row && fromCol == col)
+                if (fromLogicRow == logicRow && fromLogicCol == logicCol)
                 {
-                    return; 
+                    return; // Just deselected
                 }
 
                 // If clicking another piece of the same color, select that one instead
@@ -161,20 +178,23 @@ namespace Chess
                    ((chessGame.isWhiteTurn && Char.IsUpper(piece[0])) ||
                     (!chessGame.isWhiteTurn && Char.IsLower(piece[0]))))
                 {
-                    selectedPiece = (row, col);
-                    boardUi.HighlightSquare(row, col, Brushes.LightBlue);
-                    int newSource = col + 8 * (7 - row);
+                    // Select the new piece (store LOGIC coords)
+                    selectedPiece = (logicRow, logicCol);
+                    // Highlight using LOGIC coords
+                    boardUi.HighlightSquare(logicRow, logicCol, Brushes.LightBlue);
+                    // Show its valid moves (calculate source index using LOGIC coords)
+                    int newSource = logicCol + 8 * (7 - logicRow);
                     ulong newValidMoves = chessGame.GetValidMoves(newSource);
                     boardUi.HighlightValidMoves(newValidMoves);
-                    return; // Switched selection, don't proceed with move
+                    return; // Switched selection
                 }
 
-                // Convert squares to their little-endian ranking indexes  
-                int source = fromCol + 8 * (7 - fromRow);
-                int target = col + 8 * (7 - row);
+                // Convert selected LOGIC coords to source index
+                int source = fromLogicCol + 8 * (7 - fromLogicRow);
+                // Convert clicked LOGIC coords to target index
+                int target = logicCol + 8 * (7 - logicRow);
 
-                // Validate move by getting valid moves from source square as a bitboard  
-                // and comparing target square with valid moves with bitwise OR  
+                // Validate move using source/target indices
                 ulong validMoves = chessGame.GetValidMoves(source);
                 bool isValid = (validMoves & (1UL << target)) != 0;
 

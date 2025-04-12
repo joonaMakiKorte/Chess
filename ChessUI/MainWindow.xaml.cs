@@ -46,7 +46,7 @@ namespace Chess
             boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI);
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, !bottomIsWhite);
 
             // Task to start game (needed in case white plays as ai)
             _ = boardInteract.StartGameASync();
