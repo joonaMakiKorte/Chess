@@ -11,8 +11,6 @@ namespace Chess
     /// </summary>
     public partial class StartWindow : Window
     {
-        private bool _isSwappingSides = false;
-
         public StartWindow()
         {
             InitializeComponent();

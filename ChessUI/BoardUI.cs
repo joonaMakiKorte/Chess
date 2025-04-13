@@ -30,8 +30,10 @@ namespace Chess
         private readonly ListView moveLogPanel;
         private readonly List<MoveLogEntry> moveLogEntries = new List<MoveLogEntry>();
 
-        private readonly Label whiteTimerLabel;
-        private readonly Label blackTimerLabel;
+        // Timer logic
+        // Top and bottom timers are determined by flipped flag
+        private readonly Label topTimerLabel;
+        private readonly Label bottomTimerLabel;
         private DispatcherTimer whiteTimer;
         private DispatcherTimer blackTimer;
         private TimeSpan whiteTimeRemaining;
@@ -44,14 +46,13 @@ namespace Chess
 
         private bool isFlipped;
 
-        public BoardUI(Grid grid, Label turnLabel, Label whiteTimerLabel, Label blackTimerLabel,
+        public BoardUI(Grid grid, Label topTimerLabel, Label bottomTimerLabel,
             Images images, int initialTimerMinutes, bool flipped, ListView moveLogPanel)
         {
             this.pieceGrid = grid;
             this.images = images;
-            this.turnLabel = turnLabel;
-            this.whiteTimerLabel = whiteTimerLabel;
-            this.blackTimerLabel = blackTimerLabel;
+            this.topTimerLabel = topTimerLabel;
+            this.bottomTimerLabel = bottomTimerLabel;
             this.moveLogPanel = moveLogPanel;
             this.isFlipped = flipped;
 
@@ -139,10 +140,8 @@ namespace Chess
             }
         }
 
-        public void UpdateTurnDisplay( bool isWhiteTurn)
+        public void SwitchActiveTimer( bool isWhiteTurn)
         {
-            string turnText = isWhiteTurn ? "White's Turn" : "Black's Turn";
-            turnLabel.Content = turnText;
             // start the timer at the same time as turn changes
             if (isWhiteTurn)
             {
@@ -325,8 +324,17 @@ namespace Chess
         }
         private void UpdateTimerLabels()
         {
-            whiteTimerLabel.Content = $"White: {whiteTimeRemaining:mm\\:ss}";
-            blackTimerLabel.Content = $"Black: {blackTimeRemaining:mm\\:ss}";
+            // Handle normal and flipped UI logic
+            if (isFlipped)
+            {
+                topTimerLabel.Content = $"{whiteTimeRemaining:mm\\:ss}";
+                bottomTimerLabel.Content = $"{blackTimeRemaining:mm\\:ss}";
+            }
+            else
+            {
+                bottomTimerLabel.Content = $"{whiteTimeRemaining:mm\\:ss}";
+                topTimerLabel.Content = $"{blackTimeRemaining:mm\\:ss}";
+            }
         }
 
         public void StartWhiteTimer()

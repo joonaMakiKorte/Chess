@@ -32,10 +32,11 @@ namespace Chess
 
         public MainWindow(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, int timer)
         {
+            
             InitializeComponent();
-
+            
             // Init UI
-            boardUI = new BoardUI(PieceGrid, TurnLabel, WhiteTimerLabel, BlackTimerLabel,
+            boardUI = new BoardUI(PieceGrid, TopTimerLabel, BottomTimerLabel,
                 images, timer, !bottomIsWhite, MoveLogView);
 
             // Init chess logic
@@ -43,7 +44,6 @@ namespace Chess
 
             // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
-            boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
 
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, !bottomIsWhite);

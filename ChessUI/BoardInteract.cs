@@ -23,6 +23,9 @@ namespace Chess
         private bool isProcessingMove = false; // Flag to prevent overlapping actions
         private bool isFlipped;
 
+        // Small delay for AI and timer start in the initial call
+        const int initialStartDelayMs = 750;
+
         public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi, bool flipped)
         {
             this.pieceGrid = pieceGrid;
@@ -39,7 +42,23 @@ namespace Chess
         public async Task StartGameASync()
         {
             // Set initial focus
-            pieceGrid.Focus();
+            if (pieceGrid != null)
+            {
+                pieceGrid.Focus();
+            }
+
+            // Apply delay for timer start
+            await Task.Delay(initialStartDelayMs);
+
+            // Double the delay if AI starts
+            if (chessGame.isAIGame && chessGame.isWhiteAI)
+            {
+                await Task.Delay(initialStartDelayMs);
+            }
+
+            // Start timer
+            boardUi.SwitchActiveTimer(chessGame.isWhiteTurn);
+            
             // Check if AI needs to make the first move (e.g., White AI)
             await CheckAndMakeAIMoveAsync();
         }
@@ -74,7 +93,7 @@ namespace Chess
                     {
                         // boardUi.ShowThinkingIndicator(false);
                         boardUi.UpdateBoard(chessGame.GetBoardState());
-                        boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN());
+                        boardUi.SwitchActiveTimer(chessGame.isWhiteTurn);
                         boardUi.ClearHighlights(); // Clear any selection visuals
                         boardUi.ClearValidMoveHighlights();
                         selectedPiece = null; // Ensure no piece is selected after AI move
@@ -207,7 +226,7 @@ namespace Chess
                     {
                         chessGame.MovePiece(source, target); // Make human move
                         boardUi.UpdateBoard(chessGame.GetBoardState()); // Update board
-                        boardUi.UpdateTurnDisplay(chessGame.IsWhiteTURN()); // Update turn display
+                        boardUi.SwitchActiveTimer(chessGame.isWhiteTurn); // Update turn display
 
                         // TODO
                         // Check for game end AFTER human move

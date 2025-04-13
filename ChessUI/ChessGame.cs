@@ -203,13 +203,13 @@ namespace Chess
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>
             {
-                // Get move notation
-                string move_notation = ChessEngineInterop.GetMessageString(board);
-                Console.WriteLine(move_notation);
-
                 // Update local board state from DLL
                 string fen = ChessEngineInterop.GetBoardStateString(board);
                 LoadFromFEN(fen);
+
+                // Get move notation
+                string move_notation = ChessEngineInterop.GetMessageString(board);
+                boardUI.LogMove(move_notation, !isWhiteTurn, fullMoves);
             });
 
         }
