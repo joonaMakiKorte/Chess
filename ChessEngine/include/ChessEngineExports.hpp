@@ -26,13 +26,16 @@ extern "C" {
     // Evaluate and execute the best move for white/black in bitboard
     CHESSENGINE_API void MakeBestMove(void* board, int depth, bool white);
 
-    // Retrieve the current state of the chessboard and return it as a FEN string
-    // Takes a void pointer to the board, pointer to char array to store the state (output buffer)
-    // and size of the output buffer
-    CHESSENGINE_API void GetBoardState(void* board, char* output, int size);
-  
-    // Export error messages from DLL
-    CHESSENGINE_API void GetDebugMessage(void* board, char* output, int size);
+    // Retvieve board state as fen, previous move, and game state, all in one JSON copied to output buffer
+    // JSON
+    /*
+    {
+      "move": "e2e4", // The move the engine made
+      "state": "ongoing", // The state *after* the move
+      "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1" // FEN *after* the move
+    }
+    */
+    CHESSENGINE_API void GetBoardJSON(void* board, char* output, int size);
 }
 
 #endif // CHESSENGINEEXPORTS_H

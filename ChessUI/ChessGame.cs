@@ -14,16 +14,16 @@ namespace Chess
     {
         private BoardUI boardUI;
         public bool isWhiteTurn { get; private set; } // Make active turn readable to others
-        private bool whiteKingside, whiteQueenside, blackKingside, blackQueenside; // Store castling rights
-        private string enPassantTarget; // Store en passant target square using algebraic notation
-        private int halfMoves, fullMoves; // Store move clocks
-        private string gameState; // Keep track of game state
+        private int fullMoves; // Store move clocks
 
         private string[,] pieceLocations = new string[8, 8]; // Init empty 8x8 grid to store board pieces
         private IntPtr board; // Pointer to native board
         public bool isAIGame { get; private set; } // Store game mode
         public bool isWhiteAI { get; private set; } // Store player playing as ai
         private int difficulty; // None initially if human v human game
+
+        // Store previous board state info after move
+        ChessEngineInterop.BoardStatusInfo boardStatusInfo;
 
         // Event to notify about game over conditions
         public event Action<string> GameOver;
@@ -51,8 +51,8 @@ namespace Chess
             }
 
             // Get initial board state and apply to pieceLocations
-            string fen = ChessEngineInterop.GetBoardStateString(board);
-            LoadFromFEN(fen);
+            boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
+            LoadFromFEN(boardStatusInfo.Fen);
         }
 
         // Parse data from FEN representation of the board status
@@ -89,23 +89,8 @@ namespace Chess
             // Read turn
             isWhiteTurn = sections[1] == "w";
 
-            // Read castling rights
-            whiteKingside = sections[2].Contains("K");
-            whiteQueenside = sections[2].Contains("Q");
-            blackKingside = sections[2].Contains("k");
-            blackQueenside = sections[2].Contains("q");
-
-            // Read en passant target square
-            enPassantTarget = sections[3].ToString();
-
-            // Read half moves
-            halfMoves = int.Parse(sections[4]);
-
             // Read full moves
             fullMoves = int.Parse(sections[5]);
-
-            // Read game state
-            gameState = sections[6].ToString();
         }
 
         // Function to convert a bitboard to algebraic notation
@@ -167,33 +152,11 @@ namespace Chess
             // Apply move in the native engine
             ChessEngineInterop.MakeMove(board, source, target, promotion);
 
-            // Update local board state from DLL
-            string fen = ChessEngineInterop.GetBoardStateString(board);
-            LoadFromFEN(fen);
+            // Get new state
+            boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
+            LoadFromFEN(boardStatusInfo.Fen); // Update fen
+            boardUI.LogMove(boardStatusInfo.Move, !isWhiteTurn, fullMoves); // Log move
 
-            // Print out move notation
-            string move_notation = ChessEngineInterop.GetMessageString(board);
-            boardUI.LogMove(move_notation, !isWhiteTurn, fullMoves);
-
-            if (gameState == "M")
-            {
-               Console.WriteLine("Checkmate! The game is over.");
-                GameOver?.Invoke("Checkmate!");
-            }
-            else if (gameState == "C")
-            {
-                Console.WriteLine("You are in check! Protect your king.");
-            }
-            else if (gameState == "S")
-            {
-                Console.WriteLine("Stalemate!");
-                GameOver?.Invoke("Stalemate!");
-            }
-            else if (gameState == "D")
-            {
-                Console.WriteLine("Draw!");
-                GameOver?.Invoke("Draw!");
-            }
         }
 
         public void MakeAIMove()
@@ -203,18 +166,12 @@ namespace Chess
             // Ensure all UI updates happen on the main thread
             Application.Current.Dispatcher.Invoke(() =>
             {
-                // Update local board state from DLL
-                string fen = ChessEngineInterop.GetBoardStateString(board);
-                LoadFromFEN(fen);
-
-                // Get move notation
-                string move_notation = ChessEngineInterop.GetMessageString(board);
-                boardUI.LogMove(move_notation, !isWhiteTurn, fullMoves);
+                // Get new state
+                boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
+                LoadFromFEN(boardStatusInfo.Fen); // Update fen
+                boardUI.LogMove(boardStatusInfo.Move, !isWhiteTurn, fullMoves); // Log move
             });
-
         }
-
-        
 
         // Destroy board
         public void Dispose()

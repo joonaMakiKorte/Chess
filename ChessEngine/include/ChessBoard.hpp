@@ -19,7 +19,7 @@ private:
     // Once endgame, calls different AI function for getting best move
     bool isEndgame;
 
-    // Store the privously applied move
+    // Store the previously applied move
     std::string previous_move;
 
 public:
@@ -52,15 +52,27 @@ public:
     // '-' = En Passant Target Square
     // '0' = half move clock
     // '1' = full move number
-    // '-' = Game state (Check/checkmate/stalemate/normal)
-    std::string GetBoardState();
+    std::string GetFEN();
 
-    // Get debug message
-    std::string GetMessage() const;
+    // Get game state
+    // Different states:
+    /*
+    ongoing
+    check
+    mate
+    stalemate
+    draw_repetition
+    draw_50move
+    draw_insufficient
+    */
+    std::string GetGameState();
+
+    // Get previous move in algrebraic notation
+    std::string GetPrevMove() const;
 
 private:
-    // Set messages dynamically
-    void UpdateMessage(const std::string& message);
+    // Set previous move dynamically
+    void UpdatePrevMove(const std::string& message);
 
     // Print bitboard in algebraic notation for debug
     std::string printBitboardAsSquares(uint64_t bitboard) const;
