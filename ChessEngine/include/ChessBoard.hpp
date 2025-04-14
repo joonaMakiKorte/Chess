@@ -85,5 +85,4 @@ private:
     std::string getMoveNotation(uint32_t move) const;
 };
 
-
 #endif // CHESSBOARD_H
