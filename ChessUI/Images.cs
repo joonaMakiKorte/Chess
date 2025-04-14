@@ -34,8 +34,5 @@ namespace Chess
         {
             return pieceImages.ContainsKey(piece) ? pieceImages[piece] : null;
         }
-
-    }
-
-       
+    }   
 }

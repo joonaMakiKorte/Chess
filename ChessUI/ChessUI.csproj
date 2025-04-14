@@ -173,8 +173,6 @@
     <Resource Include="pics\BishopB.png" />
     <Resource Include="pics\BishopW.png" />
     <Resource Include="pics\Board.png" />
-    <Resource Include="pics\CursorB.cur" />
-    <Resource Include="pics\CursorW.cur" />
     <Resource Include="pics\icon.ico" />
     <Resource Include="pics\KingB.png" />
     <Resource Include="pics\KingW.png" />
@@ -186,19 +184,6 @@
     <Resource Include="pics\QueenW.png" />
     <Resource Include="pics\RookB.png" />
     <Resource Include="pics\RookW.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="pics\Lobbymusic.mp3">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="pics\piecemove.mp3">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Resource Include="pics\manvmachine.png" />
-    <Resource Include="pics\manvman.png" />
-    <Resource Include="pics\AI.jpg" />
-    <Resource Include="pics\backgroundpic.png" />
-    <Content Include="pics\Gargoyle%27s Quest_ Ghosts %27n Goblins - Big Tower Monster.mp3" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

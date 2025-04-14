@@ -11,32 +11,68 @@
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner"
-        Background="#F0F0F0"
-        KeyDown="Window_KeyDown">
-    <Border Padding="15" BorderBrush="Gray" BorderThickness="1">
+        Background="#F8F8F8"  KeyDown="Window_KeyDown">
+
+    <Window.Resources>
+        <Style TargetType="{x:Type Button}" x:Key="PromotionButtonStyle">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="buttonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"  SnapsToDevicePixels="True">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              Focusable="False"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="buttonBorder" Property="Background" Value="#ECECEC"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="buttonBorder" Property="Background" Value="#DCDCDC"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="buttonBorder" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Padding="20">
         <StackPanel HorizontalAlignment="Center">
-            <TextBlock Text="Select piece for promotion:"
-                       FontSize="14"
-                       FontWeight="SemiBold"
-                       Margin="0,0,0,10"
-                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Select promotion piece:"
+                       FontSize="16"
+                       FontWeight="SemiBold" Foreground="#444444" Margin="0,0,0,15" HorizontalAlignment="Center"/>
 
-            <UniformGrid Columns="2" Rows="2" Width="140" Height="140">
-
-                <Button x:Name="QueenButton" Click="PromotionButton_Click" Tag="q" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
-                    <Image x:Name="QueenImage" Width="50" Height="50"/>
+            <UniformGrid Columns="2" Rows="2" Width="150" Height="150">
+                <Button x:Name="QueenButton" Click="PromotionButton_Click" Tag="q" Style="{StaticResource PromotionButtonStyle}">
+                    <Image x:Name="QueenImage" Width="50" Height="50" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
-                <Button x:Name="KnightButton" Click="PromotionButton_Click" Tag="n" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
-                    <Image x:Name="KnightImage" Width="50" Height="50"/>
+                <Button x:Name="KnightButton" Click="PromotionButton_Click" Tag="n" Style="{StaticResource PromotionButtonStyle}">
+                    <Image x:Name="KnightImage" Width="50" Height="50" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
-                <Button x:Name="RookButton" Click="PromotionButton_Click" Tag="r" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
-                    <Image x:Name="RookImage" Width="50" Height="50"/>
+                <Button x:Name="RookButton" Click="PromotionButton_Click" Tag="r" Style="{StaticResource PromotionButtonStyle}">
+                    <Image x:Name="RookImage" Width="50" Height="50" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
-                <Button x:Name="BishopButton" Click="PromotionButton_Click" Tag="b" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
-                    <Image x:Name="BishopImage" Width="50" Height="50"/>
+                <Button x:Name="BishopButton" Click="PromotionButton_Click" Tag="b" Style="{StaticResource PromotionButtonStyle}">
+                    <Image x:Name="BishopImage" Width="50" Height="50" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
             </UniformGrid>

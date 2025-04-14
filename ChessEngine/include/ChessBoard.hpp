@@ -41,7 +41,7 @@ public:
 
 
     // Return board state as a FEN string (Forsyth-Edwards Notation)
-    // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 -
+    // For starting position the FEN string would be: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     // Explanation:
     // 8 ranks, '/' separates the ranks
     // 'p'=pawn, 'r'=rook, 'n'=knight, 'b'=bishop, 'q'=queen, 'k'=king

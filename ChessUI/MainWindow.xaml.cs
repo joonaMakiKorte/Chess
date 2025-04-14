@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -68,6 +69,6 @@ namespace Chess
                 boardUI.ToggleTimer(isWhite, true); // Start active timer
                 return (dialogResult == true) ? promoDialog.SelectedPromotionPiece : '-'; // Return '-' if cancelled
             });
-        }
+        }   
     }
 }
