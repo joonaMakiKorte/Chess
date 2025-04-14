@@ -396,8 +396,11 @@ bool Bitboard::isEndgame() {
 }
 
 void Bitboard::updateDrawByRepetition() {
-	if (position_history[hash_key] >= 3 || half_moves >= 50) {
-		state.flags |= BoardState::DRAW;
+	if (position_history[hash_key] >= 3) {
+		state.flags |= BoardState::DRAW_REPETITION;
+	}
+	else if (half_moves >= 50) {
+		state.flags |= BoardState::DRAW_50;
 	}
 }
 

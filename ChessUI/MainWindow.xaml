@@ -5,94 +5,175 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Chess"
         mc:Ignorable="d"
-        Title="Chess" Width="600" SizeToContent="Height"
+        Title="Chess" Width="900" Height="750"
         Icon="pics/icon.ico"
         WindowStartupLocation="CenterScreen"
-        Background="Black">
-    <Viewbox>
+        Background="#222">
 
+    <Viewbox Stretch="Uniform">
+        <Grid Width="880" Height="710">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="650"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-
-        <Grid x:Name="MainGrid">
-            <Grid.RowDefinitions>
-                <!--for label-->
-                <RowDefinition Height="Auto" />
-                <!--for timer-->
-                <RowDefinition Height="Auto"/>
-                <!--for chessboard-->
-                <RowDefinition Height="*"/>
-                <!--for halfmoves-->
-                <RowDefinition Height="Auto" />
-                <!--for button-->
-                <RowDefinition Height="Auto" />
-                
-            </Grid.RowDefinitions>
-            
-            
-
-            <Label x:Name="TurnLabel" Content="White's Turn" 
-                   HorizontalAlignment="Center" VerticalAlignment="Top" 
-                   FontSize="24" Foreground="White" Margin="0,10,0,0"
-                   Grid.Row="0"/>
-            
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-                <Label x:Name="WhiteTimerLabel" Content="White: 00:00"
-                       FontSize="20" Foreground="White" Margin="0,5"/>
-                <Label x:Name="BlackTimerLabel" Content="Black: 00:00"
-                       FontSize="20" Foreground="White" Margin="20,5,0,5"/>
-            </StackPanel>
-
-
-
-            <Grid x:Name="PieceGrid"
-                Grid.Row="2"
-                Width="600"
-                Height="600"
-                Focusable="True">
-                <Grid.Background>
-                    <ImageBrush ImageSource="pics/Board.png"/>
-                </Grid.Background>
-
+            <Grid Grid.Column="0" x:Name="MainGrid">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
 
-                
+                <Border Grid.Row="0"
+                        Background="#111" HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        CornerRadius="3"
+                        Padding="8,2"
+                        Margin="25,10,0,5">
+                    <Label x:Name="TopTimerLabel"
+                           Content="00:00"  FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="White"/>
+                </Border>
+
+                <Grid x:Name="PieceGrid"
+                      Grid.Row="1" Width="600"
+                      Height="600"
+                      Focusable="True"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                    <Grid.Background>
+                        <ImageBrush ImageSource="pics/Board.png"/>
+                    </Grid.Background>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                </Grid>
+
+                <Border Grid.Row="2"
+                        Background="#111" HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                         CornerRadius="3"
+                         Padding="8,2"
+                        Margin="25,5,0,10">
+                    <Label x:Name="BottomTimerLabel"
+                           Content="00:00" FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="White"/>
+                </Border>
+
             </Grid>
 
-            <Label x:Name="HalfMoveLabel" Content="Halfmoves: 0" 
-                   HorizontalAlignment="Center" Margin="0,10"
-                   Grid.Row="3" Foreground="Red"
-                   FontSize="24"/>
-            
-            <!-- Mute Button -->
-            <Button x:Name="MuteButton" Content="Mute Lobby Music"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Grid.Row="4"
-                    FontSize="20" Foreground="White" Margin="0,10"/>
+            <Border Grid.Column="1"
+                Background="#2A2A2A" 
+                CornerRadius="8"
+                Padding="5"
+                Margin="10">
+                <ListView x:Name="MoveLogView"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="Transparent"
+                      Foreground="#E0E0E0"
+                      BorderThickness="0"
+                      AlternationCount="2"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                    <ListView.Resources>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding" Value="8,6" />
+                            <Setter Property="Margin" Value="0,1" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListViewItem">
+                                        <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True">
+                                            <GridViewRowPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                    <Setter Property="Background" Value="#333333" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#454545" />
+                                    <Setter Property="Foreground" Value="White" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#505050" />
+                                    <Setter Property="Foreground" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+
+                        <Style TargetType="GridViewColumnHeader">
+                            <Setter Property="Background" Value="#3C3C3C"/>
+                            <Setter Property="Foreground" Value="#F0F0F0"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontSize" Value="18"/>
+                            <Setter Property="Padding" Value="10,5"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                            <Setter Property="BorderBrush" Value="#555555"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                        </Style>
+                    </ListView.Resources>
+
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="#" Width="35">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Turn}" TextAlignment="Center" Padding="0" FontWeight="SemiBold" FontSize="16"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+
+                            <GridViewColumn Header="White" Width="75">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding WhiteMove}" FontWeight="SemiBold" FontSize="16" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+
+                            <GridViewColumn Header="Black" Width="95">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding BlackMove}" FontWeight="SemiBold" FontSize="16" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Border>
         </Grid>
-        
     </Viewbox>
-        
-
 </Window>
-    
-
-    

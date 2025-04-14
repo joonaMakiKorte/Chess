@@ -7,7 +7,7 @@ ChessBoard::ChessBoard() :
     white(true), // White starts
     full_moves(1), // Starts at 1
     isEndgame(false),
-    previous_move("Initial message")
+    previous_move("")
 {}
 
 uint64_t ChessBoard::LegalMoves(int square) {
@@ -40,7 +40,7 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
 
     // Transform move to algebraic notation
     std::string move_notation = getMoveNotation(move);
-    UpdateMessage(move_notation);
+    UpdatePrevMove(move_notation);
 
     white = !white; // Switch turn
 
@@ -51,6 +51,7 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
 
 void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
     uint32_t best_move;
+    std::string message = "";
 	if (isEndgame) {
 		best_move = ChessAI::getBestEndgameMove(board, depth, maximizing);
 	}
@@ -59,7 +60,7 @@ void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
 	}
 
 	if (best_move == 0) {
-		UpdateMessage("No legal moves available");
+		UpdatePrevMove("");
 		return;
 	}
 
@@ -71,7 +72,7 @@ void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
 
     // Transform move to algebraic notation
     std::string move_notation = getMoveNotation(best_move);
-    UpdateMessage(move_notation);
+    UpdatePrevMove(move_notation);
 
     white = !white; // Switch turn
 
@@ -80,7 +81,7 @@ void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
     isEndgame = board.isEndgame();
 }
 
-std::string ChessBoard::GetBoardState() {
+std::string ChessBoard::GetFEN() {
     // Generate the FEN string based on the current board state
     std::string fen;
 
@@ -136,15 +137,12 @@ std::string ChessBoard::GetBoardState() {
     // 6. Full-Move Number
     fen += " " + std::to_string(full_moves);
 
-    // 7. Game state (Check/Checkmate/Stalemate/No threat)
-    fen += " " + board.getGameState(white);
-
     return fen;
 }
 
 
 
-void ChessBoard::UpdateMessage(const std::string& message) {
+void ChessBoard::UpdatePrevMove(const std::string& message) {
     previous_move = message;
 }
 
@@ -219,6 +217,16 @@ std::string ChessBoard::getMoveNotation(uint32_t move) const {
     return algebraic_move;
 }
 
-std::string ChessBoard::GetMessage() const {
+std::string ChessBoard::GetGameState() {
+    if (board.state.isCheckmateWhite() || board.state.isCheckmateBlack()) return "mate";
+    else if (board.state.isCheckWhite() || board.state.isCheckBlack()) return "check";
+    else if (board.state.isStalemate()) return "stalemate";
+    else if (board.state.isDrawRepetition()) return "draw_repetition";
+    else if (board.state.isDraw50()) return "draw_50";
+    // else if (board.state.isDrawInsufficient()) return "draw_insufficient";
+    return "ongoing"; // Normal game state
+}
+
+std::string ChessBoard::GetPrevMove() const {
     return previous_move;
 }

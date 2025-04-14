@@ -20,43 +20,36 @@ using static System.Net.Mime.MediaTypeNames;
 namespace Chess
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Main application window, hosts UI for chess engine DLL
     /// </summary>
-    /// 
     public partial class MainWindow : Window
     {
         private ChessGame chessGame;
         private Images images = new Images();
         private BoardUI boardUI;
         private BoardInteract boardInteract;
-        private AudioPlayer audioPlayer;
         private object pieceGrid;
 
-        public MainWindow(string gameMode, string aiDifficulty, string timer)
+        public MainWindow(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, int timer)
         {
+            
             InitializeComponent();
+            
+            // Init UI
+            boardUI = new BoardUI(PieceGrid, TopTimerLabel, BottomTimerLabel,
+                images, timer, !bottomIsWhite, MoveLogView);
 
             // Init chess logic
-            chessGame = new ChessGame(gameMode, aiDifficulty, timer);
+            chessGame = new ChessGame(whiteIsHuman, blackIsHuman, bottomIsWhite, aiDifficulty, boardUI);
 
-            // Initialize AudioPlayer
-            audioPlayer = new AudioPlayer();
-
-            // Init UI
-            boardUI = new BoardUI(PieceGrid, TurnLabel, HalfMoveLabel, WhiteTimerLabel, BlackTimerLabel, images, audioPlayer, int.Parse(timer));
+            // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
-            boardUI.UpdateTurnDisplay(chessGame.IsWhiteTURN());
-            chessGame.OnHalfMoveUpdated += boardUI.UpdateHalfMoveCount;
-
-            // Update BoardUI with ChessGame reference
-            boardUI.SetChessGame(chessGame);
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, MuteButton);
+            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, !bottomIsWhite);
+
+            // Task to start game (needed in case white plays as ai)
+            _ = boardInteract.StartGameASync();
         }
-
-        
-
-
     }
 }

@@ -74,7 +74,9 @@ struct BoardState {
     static constexpr uint8_t STALEMATE = 1 << 2; // 0000 0100
     static constexpr uint8_t CHECKMATE_WHITE = 1 << 3; // 0000 1000
     static constexpr uint8_t CHECKMATE_BLACK = 1 << 4; // 0001 0000
-    static constexpr uint8_t DRAW = 1 << 5; // 0010 0000
+    static constexpr uint8_t DRAW_REPETITION = 1 << 5; // 0010 0000
+    static constexpr uint8_t DRAW_50 = 1 << 6; // 0100 0000
+    static constexpr uint8_t DRAW_INSUFFICIENT = 1 << 7; // 1000 0000
 
     constexpr bool isCheckWhite() const noexcept {
         return flags & CHECK_WHITE;
@@ -82,10 +84,6 @@ struct BoardState {
 
     constexpr bool isCheckBlack() const noexcept {
         return flags & CHECK_BLACK;
-    }
-
-    constexpr bool isStalemate() const noexcept {
-        return flags & STALEMATE;
     }
 
     constexpr bool isCheckmateWhite() const noexcept {
@@ -96,8 +94,24 @@ struct BoardState {
         return flags & CHECKMATE_BLACK;
     }
 
+    constexpr bool isStalemate() const noexcept {
+        return flags & STALEMATE;
+    }
+
+    constexpr bool isDrawRepetition() const noexcept {
+        return flags & DRAW_REPETITION;
+    }
+
+    constexpr bool isDraw50() const noexcept {
+        return flags & DRAW_50;
+    }
+
+    constexpr bool isDrawInsufficient() const noexcept {
+        return flags & DRAW_INSUFFICIENT;
+    }
+
     constexpr bool isDraw() const noexcept {
-        return flags & DRAW;
+        return flags & (STALEMATE | DRAW_REPETITION | DRAW_50 | DRAW_INSUFFICIENT);
     }
 };
 
