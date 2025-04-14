@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,10 +26,9 @@ namespace Chess
         // Store previous board state info after move
         ChessEngineInterop.BoardStatusInfo boardStatusInfo;
 
-        // Event to notify about game over conditions
-        public event Action<string> GameOver;
+        private readonly IPromotionUI _promotionUIService; // Subscribe to MainWindow for promotions
 
-        public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI)
+        public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI, IPromotionUI promotionUIService)
         {
             isWhiteTurn = true; // Initially white turn
             isAIGame = !whiteIsHuman || !blackIsHuman; // Determine game mode
@@ -43,6 +43,7 @@ namespace Chess
             }
 
             this.boardUI = UI; // Instance to UI
+            _promotionUIService = promotionUIService; // Subscribe to MainWindow for promotions
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
@@ -53,6 +54,7 @@ namespace Chess
             // Get initial board state and apply to pieceLocations
             boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
             LoadFromFEN(boardStatusInfo.Fen);
+            _promotionUIService = promotionUIService;
         }
 
         // Parse data from FEN representation of the board status
@@ -139,14 +141,20 @@ namespace Chess
         public void MovePiece(int source, int target)
 
         {
-            // Temporary pawn promotion logic
             // Is promotion when pawn reaches the last rank
-            // Queen = 'q', rook = 'r', bishop = 'b', knight = 'k'
             char promotion = '-'; // No promotion by default
-            if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) ||
-               (pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
+            bool isPromotion = ((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) ||
+               (pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7);
+
+            if (isPromotion)
             {
-                promotion = 'q';
+                char choice = _promotionUIService.GetPromotionChoice(isWhiteTurn); // Call the interface method
+                if (choice == '-')
+                {
+                    // Promotion was cancelled by user in the UI
+                    return; // Abort move
+                }
+                promotion = choice;
             }
 
             // Apply move in the native engine
@@ -187,6 +195,5 @@ namespace Chess
         {
             Dispose();
         }
-
     }
 }

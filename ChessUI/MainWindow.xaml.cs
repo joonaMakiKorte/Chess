@@ -19,16 +19,21 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace Chess
 {
+    // Handle promotion events
+    public interface IPromotionUI
+    {
+        char GetPromotionChoice(bool isWhite); // Returns chosen piece char ('q','r','n','b') or '-' for cancel
+    }
+
     /// <summary>
     /// Main application window, hosts UI for chess engine DLL
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IPromotionUI
     {
         private ChessGame chessGame;
         private Images images = new Images();
         private BoardUI boardUI;
         private BoardInteract boardInteract;
-        private object pieceGrid;
 
         public MainWindow(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, int timer)
         {
@@ -40,7 +45,7 @@ namespace Chess
                 images, timer, !bottomIsWhite, MoveLogView);
 
             // Init chess logic
-            chessGame = new ChessGame(whiteIsHuman, blackIsHuman, bottomIsWhite, aiDifficulty, boardUI);
+            chessGame = new ChessGame(whiteIsHuman, blackIsHuman, bottomIsWhite, aiDifficulty, boardUI, this);
 
             // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
@@ -50,6 +55,19 @@ namespace Chess
 
             // Task to start game (needed in case white plays as ai)
             _ = boardInteract.StartGameASync();
+        }
+
+        // Activate promotion window to get promotion choice
+        public char GetPromotionChoice(bool isWhite)
+        {
+            return Dispatcher.Invoke(() => {
+                var promoDialog = new PromotionWindow(isWhite, this.images);
+                promoDialog.Owner = this; // Owner is MainWindow
+                boardUI.ToggleTimer(isWhite, false); // Stop active timer
+                bool? dialogResult = promoDialog.ShowDialog();
+                boardUI.ToggleTimer(isWhite, true); // Start active timer
+                return (dialogResult == true) ? promoDialog.SelectedPromotionPiece : '-'; // Return '-' if cancelled
+            });
         }
     }
 }

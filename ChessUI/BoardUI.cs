@@ -18,7 +18,6 @@ namespace Chess
         private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
         private readonly Image[,] pieceImages = new Image[8, 8];
         private Images images; // Hold piece image data
-        private readonly Label turnLabel;
 
         // Move-log logic
         public class MoveLogEntry
@@ -111,8 +110,8 @@ namespace Chess
             whiteTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             blackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
 
-            whiteTimer.Tick += WhiteTimer_Tick;
-            blackTimer.Tick += BlackTimer_Tick;
+            whiteTimer.Tick += WhiteTimerTick;
+            blackTimer.Tick += BlackTimerTick;
 
             UpdateTimerLabels();
         }
@@ -142,14 +141,16 @@ namespace Chess
 
         public void SwitchActiveTimer( bool isWhiteTurn)
         {
-            // start the timer at the same time as turn changes
+            // Start the timer at the same time as turn changes
             if (isWhiteTurn)
             {
-                StartWhiteTimer();
+                ToggleTimer(true, true); // Start white
+                ToggleTimer(false, false); // Stop black
             }
             else
             {
-                StartBlackTimer();
+                ToggleTimer(false, true); // Start black
+                ToggleTimer(true, false); // Stop white
             }
 
         }
@@ -296,7 +297,7 @@ namespace Chess
             return (logicRow, logicCol);
         }
 
-        private void WhiteTimer_Tick(object sender, EventArgs e)
+        private void WhiteTimerTick(object sender, EventArgs e)
         {
             if (whiteTimeRemaining > TimeSpan.Zero)
             {
@@ -310,7 +311,7 @@ namespace Chess
             }
         }
 
-        private void BlackTimer_Tick(object sender, EventArgs e)
+        private void BlackTimerTick(object sender, EventArgs e)
         {
             if (blackTimeRemaining > TimeSpan.Zero)
             {
@@ -337,16 +338,31 @@ namespace Chess
             }
         }
 
-        public void StartWhiteTimer()
+        // Toggle timers
+        public void ToggleTimer(bool white, bool start)
         {
-            whiteTimer.Start();
-            blackTimer.Stop();
-        }
-
-        public void StartBlackTimer()
-        {
-            blackTimer.Start();
-            whiteTimer.Stop();
+            if (white)
+            {
+                if (start)
+                {
+                    whiteTimer.Start();
+                }
+                else
+                {
+                    whiteTimer.Stop();
+                }
+            }
+            else
+            {
+                if (start)
+                {
+                    blackTimer.Start();
+                }
+                else
+                {
+                    blackTimer.Stop();
+                }
+            }
         }
     }
 }

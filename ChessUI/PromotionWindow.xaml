@@ -1,0 +1,45 @@
+﻿<Window x:Class="Chess.PromotionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Chess"
+        mc:Ignorable="d"
+        Title="Pawn Promotion"
+        SizeToContent="WidthAndHeight"
+        WindowStyle="ToolWindow"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F0F0"
+        KeyDown="Window_KeyDown">
+    <Border Padding="15" BorderBrush="Gray" BorderThickness="1">
+        <StackPanel HorizontalAlignment="Center">
+            <TextBlock Text="Select piece for promotion:"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,10"
+                       HorizontalAlignment="Center"/>
+
+            <UniformGrid Columns="2" Rows="2" Width="140" Height="140">
+
+                <Button x:Name="QueenButton" Click="PromotionButton_Click" Tag="q" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
+                    <Image x:Name="QueenImage" Width="50" Height="50"/>
+                </Button>
+
+                <Button x:Name="KnightButton" Click="PromotionButton_Click" Tag="n" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
+                    <Image x:Name="KnightImage" Width="50" Height="50"/>
+                </Button>
+
+                <Button x:Name="RookButton" Click="PromotionButton_Click" Tag="r" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
+                    <Image x:Name="RookImage" Width="50" Height="50"/>
+                </Button>
+
+                <Button x:Name="BishopButton" Click="PromotionButton_Click" Tag="b" Margin="5" Background="White" BorderThickness="1" BorderBrush="DarkGray">
+                    <Image x:Name="BishopImage" Width="50" Height="50"/>
+                </Button>
+
+            </UniformGrid>
+        </StackPanel>
+    </Border>
+</Window>
