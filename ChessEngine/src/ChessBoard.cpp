@@ -51,7 +51,6 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
 
 void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
     uint32_t best_move;
-    std::string message = "";
 	if (isEndgame) {
 		best_move = ChessAI::getBestEndgameMove(board, depth, maximizing);
 	}
@@ -66,7 +65,7 @@ void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
 
     // Apply move
 	board.applyMoveAI(best_move, maximizing);
-    full_moves++; // Increment full moves
+    if (!white) full_moves++;
 
     board.updateDrawByRepetition(); // Check if resulted in draw by repetition
 

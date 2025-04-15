@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,10 +27,25 @@ namespace Chess
         // Store previous board state info after move
         ChessEngineInterop.BoardStatusInfo boardStatusInfo;
 
-        // Event to notify about game over conditions
-        public event Action<string> GameOver;
+        private readonly IPromotionUI _promotionUIService; // Subscribe to MainWindow for promotions
 
-        public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI)
+        // Even for game over
+        // Subscribed by MainWindow
+        public class GameOverEventArgs : EventArgs
+        {
+            public string State { get; } // Game over condition (e.g. mate/stalemate/draw_repetition
+            public GameOverEventArgs(string state) { State = state; }
+        }
+        public event EventHandler<GameOverEventArgs> GameOver;
+        public bool isOngoing = true; // Set false if game over
+
+        // Called if game over
+        protected virtual void OnGameOver(GameOverEventArgs e)
+        {
+            GameOver?.Invoke(this, e);
+        }
+
+        public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI, IPromotionUI promotionUIService)
         {
             isWhiteTurn = true; // Initially white turn
             isAIGame = !whiteIsHuman || !blackIsHuman; // Determine game mode
@@ -43,6 +60,7 @@ namespace Chess
             }
 
             this.boardUI = UI; // Instance to UI
+            _promotionUIService = promotionUIService; // Subscribe to MainWindow for promotions
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
             if (board == IntPtr.Zero)
@@ -53,6 +71,7 @@ namespace Chess
             // Get initial board state and apply to pieceLocations
             boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
             LoadFromFEN(boardStatusInfo.Fen);
+            _promotionUIService = promotionUIService;
         }
 
         // Parse data from FEN representation of the board status
@@ -139,14 +158,20 @@ namespace Chess
         public void MovePiece(int source, int target)
 
         {
-            // Temporary pawn promotion logic
             // Is promotion when pawn reaches the last rank
-            // Queen = 'q', rook = 'r', bishop = 'b', knight = 'k'
             char promotion = '-'; // No promotion by default
-            if (((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) ||
-               (pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7))
+            bool isPromotion = ((pieceLocations[7 - (source / 8), source % 8] == "P" && target >= 56) ||
+               (pieceLocations[7 - (source / 8), source % 8] == "p") && target <= 7);
+
+            if (isPromotion)
             {
-                promotion = 'q';
+                char choice = _promotionUIService.GetPromotionChoice(isWhiteTurn); // Call the interface method
+                if (choice == '-')
+                {
+                    // Promotion was cancelled by user in the UI
+                    return; // Abort move
+                }
+                promotion = choice;
             }
 
             // Apply move in the native engine
@@ -156,7 +181,6 @@ namespace Chess
             boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
             LoadFromFEN(boardStatusInfo.Fen); // Update fen
             boardUI.LogMove(boardStatusInfo.Move, !isWhiteTurn, fullMoves); // Log move
-
         }
 
         public void MakeAIMove()
@@ -173,6 +197,18 @@ namespace Chess
             });
         }
 
+        // Called in BoardInteract after every move
+        public void CheckGameEnd()
+        {
+            if (boardStatusInfo != null)
+            {
+                if (boardStatusInfo.State == "ongoing" || boardStatusInfo.State == "check") return; // No need to proceed if ongoing
+                // Trigger GameOver and pass state
+                isOngoing = false;
+                OnGameOver(new GameOverEventArgs(boardStatusInfo.State));
+            }
+        }
+
         // Destroy board
         public void Dispose()
         {
@@ -187,6 +223,5 @@ namespace Chess
         {
             Dispose();
         }
-
     }
 }
