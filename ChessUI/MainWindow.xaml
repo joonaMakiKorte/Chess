@@ -82,98 +82,121 @@
 
             </Grid>
 
-            <Border Grid.Column="1"
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                
+                <Border Grid.Row="0"
                 Background="#2A2A2A" 
                 CornerRadius="8"
                 Padding="5"
                 Margin="10">
-                <ListView x:Name="MoveLogView"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Background="Transparent"
-                      Foreground="#E0E0E0"
-                      BorderThickness="0"
-                      AlternationCount="2"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView x:Name="MoveLogView"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="Transparent"
+                          Foreground="#E0E0E0"
+                          BorderThickness="0"
+                          AlternationCount="2"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
-                    <ListView.Resources>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="8,6" />
-                            <Setter Property="Margin" Value="0,1" />
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListViewItem">
-                                        <Border Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            Padding="{TemplateBinding Padding}"
-                                            SnapsToDevicePixels="True">
-                                            <GridViewRowPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                    <Setter Property="Background" Value="#333333" />
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#454545" />
-                                    <Setter Property="Foreground" Value="White" />
-                                </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#505050" />
-                                    <Setter Property="Foreground" Value="White" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
+                        <ListView.Resources>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="8,6" />
+                                <Setter Property="Margin" Value="0,1" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                Padding="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="True">
+                                                <GridViewRowPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                        <Setter Property="Background" Value="#333333" />
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#454545" />
+                                        <Setter Property="Foreground" Value="White" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#505050" />
+                                        <Setter Property="Foreground" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
 
-                        <Style TargetType="GridViewColumnHeader">
-                            <Setter Property="Background" Value="#3C3C3C"/>
-                            <Setter Property="Foreground" Value="#F0F0F0"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="FontSize" Value="18"/>
-                            <Setter Property="Padding" Value="10,5"/>
-                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                            <Setter Property="BorderBrush" Value="#555555"/>
-                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                        </Style>
-                    </ListView.Resources>
+                            <Style TargetType="GridViewColumnHeader">
+                                <Setter Property="Background" Value="#3C3C3C"/>
+                                <Setter Property="Foreground" Value="#F0F0F0"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="FontSize" Value="18"/>
+                                <Setter Property="Padding" Value="10,5"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="BorderBrush" Value="#555555"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            </Style>
+                        </ListView.Resources>
 
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="#" Width="35">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Turn}" TextAlignment="Center" Padding="0" FontWeight="SemiBold" FontSize="16"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="#" Width="35">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Turn}" TextAlignment="Center" Padding="0" FontWeight="SemiBold" FontSize="16"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
 
-                            <GridViewColumn Header="White" Width="75">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding WhiteMove}" FontWeight="SemiBold" FontSize="16" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
+                                <GridViewColumn Header="White" Width="75">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding WhiteMove}" FontWeight="SemiBold" FontSize="16" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
 
-                            <GridViewColumn Header="Black" Width="95">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding BlackMove}" FontWeight="SemiBold" FontSize="16" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-            </Border>
+                                <GridViewColumn Header="Black" Width="95">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding BlackMove}" FontWeight="SemiBold" FontSize="16" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Border>
+
+                <Border x:Name="GameOverField"
+                Grid.Row="1"
+                Background="#2A2A2A" 
+                CornerRadius="8"
+                Padding="5"
+                Margin="10,0,10,10"
+                Visibility="Collapsed">
+                    <TextBlock x:Name="GameOverTextBlock"
+                           Text="" Foreground="White"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Margin="10,8,10,10" Visibility="Visible" />
+                </Border>
+            </Grid>
         </Grid>
     </Viewbox>
 </Window>

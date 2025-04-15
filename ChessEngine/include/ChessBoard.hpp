@@ -62,7 +62,7 @@ public:
     mate
     stalemate
     draw_repetition
-    draw_50move
+    draw_50
     draw_insufficient
     */
     std::string GetGameState();

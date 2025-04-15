@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using static System.Net.Mime.MediaTypeNames;
+using static Chess.ChessGame;
 
 
 
@@ -46,7 +48,8 @@ namespace Chess
                 images, timer, !bottomIsWhite, MoveLogView);
 
             // Init chess logic
-            chessGame = new ChessGame(whiteIsHuman, blackIsHuman, bottomIsWhite, aiDifficulty, boardUI, this);
+            chessGame = new ChessGame(whiteIsHuman, blackIsHuman, bottomIsWhite, aiDifficulty, boardUI, this); // Pass IPromotionUI
+            chessGame.GameOver += ChessGame_GameOver; // Subscribe to GameOver-event
 
             // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
@@ -69,6 +72,36 @@ namespace Chess
                 boardUI.ToggleTimer(isWhite, true); // Start active timer
                 return (dialogResult == true) ? promoDialog.SelectedPromotionPiece : '-'; // Return '-' if cancelled
             });
-        }   
+        }
+
+        // Triggered by GameOver-event
+        private void ChessGame_GameOver(object sender, GameOverEventArgs e)
+        {
+            // Ensure running on UI thread if ChessGame events could come from another thread
+            Dispatcher.Invoke(() => {
+                boardUI.ToggleTimer(chessGame.isWhiteTurn, false); // Stop active timer
+
+                string message = GetGameOverMessage(e.State); // Format a user-friendly message
+                GameOverTextBlock.Text = message;
+                GameOverField.Visibility = Visibility.Visible; // Show the dedicated text block
+
+                // Disable inputs
+                PieceGrid.IsEnabled = false;
+            });
+        }
+
+        private string GetGameOverMessage(string state)
+        {
+            // Convert state string to user-friendly message
+            switch (state)
+            {
+                case "mate": return chessGame.isWhiteTurn ? "0-1\nBlack wins!" : "1-0\nWhite wins!";
+                case "stalemate": return "½-½\nStalemate!";
+                case "draw_repetition": return "½-½\nDraw by repetition!";
+                case "draw_50": return "½-½\nDraw by 50 move rule!";
+                case "draw_insufficient": return "½-½\nInsufficient material!";
+                default: return $"Game Over: {state}"; // Should never reach here
+            }
+        }
     }
 }

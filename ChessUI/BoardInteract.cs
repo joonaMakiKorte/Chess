@@ -69,7 +69,7 @@ namespace Chess
             // Check if it's an AI's turn and we're not already processing
             bool isAITurn = chessGame.isAIGame && (chessGame.isWhiteAI == chessGame.isWhiteTurn);
 
-            if (isAITurn)
+            if (isAITurn && chessGame.isOngoing)
             {
                 // Prevent re-entrancy / concurrency ONLY if called again while processing
                 if (isProcessingMove) return;
@@ -79,9 +79,6 @@ namespace Chess
 
                 try
                 {
-                    // Indicate AI is thinking (optional)
-                    // boardUi.ShowThinkingIndicator(true);
-
                     await Task.Run(() =>
                     {
                         // This runs on a background thread
@@ -99,7 +96,7 @@ namespace Chess
                         selectedPiece = null; // Ensure no piece is selected after AI move
 
                         // Check for game end AFTER AI move
-                        //CheckGameEnd();
+                        chessGame.CheckGameEnd();
                     });
                 }
                 catch (Exception ex)
@@ -127,7 +124,7 @@ namespace Chess
         {
             // Prevent clicks if processing or it's AI's turn
             bool isAITurn = chessGame.isAIGame && (chessGame.isWhiteAI == chessGame.isWhiteTurn);
-            if (isProcessingMove || isAITurn /*|| IsGameOver()*/) // Also prevent clicks if game over
+            if (isProcessingMove || isAITurn || !chessGame.isOngoing) // Also prevent clicks if game over
             {
                 return;
             }
@@ -228,8 +225,8 @@ namespace Chess
                         boardUi.UpdateBoard(chessGame.GetBoardState()); // Update board
                         boardUi.SwitchActiveTimer(chessGame.isWhiteTurn); // Update turn display
 
-                        // TODO
-                        // Check for game end AFTER human move
+                        // Check for game end
+                        chessGame.CheckGameEnd();
 
                         // Trigger the AI check/move AFTER human move completes and UI updates
                         await CheckAndMakeAIMoveAsync();

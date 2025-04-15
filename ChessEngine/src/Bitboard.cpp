@@ -1249,7 +1249,7 @@ int Bitboard::evaluateKingSafety() {
 }
 
 bool Bitboard::isGameOver() {
-	return state.isCheckmateWhite() || state.isCheckmateBlack() || state.isStalemate();
+	return state.isCheckmateWhite() || state.isCheckmateBlack() || state.isDraw();
 }
 
 bool Bitboard::isDrawByRepetition() {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -27,6 +28,22 @@ namespace Chess
         ChessEngineInterop.BoardStatusInfo boardStatusInfo;
 
         private readonly IPromotionUI _promotionUIService; // Subscribe to MainWindow for promotions
+
+        // Even for game over
+        // Subscribed by MainWindow
+        public class GameOverEventArgs : EventArgs
+        {
+            public string State { get; } // Game over condition (e.g. mate/stalemate/draw_repetition
+            public GameOverEventArgs(string state) { State = state; }
+        }
+        public event EventHandler<GameOverEventArgs> GameOver;
+        public bool isOngoing = true; // Set false if game over
+
+        // Called if game over
+        protected virtual void OnGameOver(GameOverEventArgs e)
+        {
+            GameOver?.Invoke(this, e);
+        }
 
         public ChessGame(bool whiteIsHuman, bool blackIsHuman, bool bottomIsWhite, string aiDifficulty, BoardUI UI, IPromotionUI promotionUIService)
         {
@@ -164,7 +181,6 @@ namespace Chess
             boardStatusInfo = ChessEngineInterop.GetBoardStatus(board);
             LoadFromFEN(boardStatusInfo.Fen); // Update fen
             boardUI.LogMove(boardStatusInfo.Move, !isWhiteTurn, fullMoves); // Log move
-
         }
 
         public void MakeAIMove()
@@ -179,6 +195,18 @@ namespace Chess
                 LoadFromFEN(boardStatusInfo.Fen); // Update fen
                 boardUI.LogMove(boardStatusInfo.Move, !isWhiteTurn, fullMoves); // Log move
             });
+        }
+
+        // Called in BoardInteract after every move
+        public void CheckGameEnd()
+        {
+            if (boardStatusInfo != null)
+            {
+                if (boardStatusInfo.State == "ongoing" || boardStatusInfo.State == "check") return; // No need to proceed if ongoing
+                // Trigger GameOver and pass state
+                isOngoing = false;
+                OnGameOver(new GameOverEventArgs(boardStatusInfo.State));
+            }
         }
 
         // Destroy board
