@@ -55,7 +55,10 @@ namespace Chess
             boardUI.UpdateBoard(chessGame.GetBoardState());
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, chessGame, boardUI, !bottomIsWhite);
+            boardInteract = new BoardInteract(PieceGrid, ResignButton, chessGame, boardUI, !bottomIsWhite);
+
+            // Show resign button only if AI game
+            if (!whiteIsHuman || !blackIsHuman) ResignButton.Visibility = Visibility.Visible;
 
             // Task to start game (needed in case white plays as ai)
             _ = boardInteract.StartGameASync();
@@ -74,6 +77,13 @@ namespace Chess
             });
         }
 
+        // End game by resign
+        private void ResignButton_Click(object sender, EventArgs e)
+        {
+            // Trigger GameOver with 'resign'
+            ChessGame_GameOver(this, new GameOverEventArgs("resign"));
+        }
+
         // Triggered by GameOver-event
         private void ChessGame_GameOver(object sender, GameOverEventArgs e)
         {
@@ -87,6 +97,7 @@ namespace Chess
 
                 // Disable inputs
                 PieceGrid.IsEnabled = false;
+                ResignButton.IsEnabled = false;
             });
         }
 
@@ -100,8 +111,15 @@ namespace Chess
                 case "draw_repetition": return "½-½\nDraw by repetition!";
                 case "draw_50": return "½-½\nDraw by 50 move rule!";
                 case "draw_insufficient": return "½-½\nInsufficient material!";
+                case "resign": return chessGame.isWhiteAI ? "½-0\nBlack resigns!" : "0-½\nWhite resigns!";
                 default: return $"Game Over: {state}"; // Should never reach here
             }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            chessGame.Dispose(); // Explicit cleanup
+            base.OnClosed(e);  
         }
     }
 }

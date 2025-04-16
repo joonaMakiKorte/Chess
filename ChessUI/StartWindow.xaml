@@ -17,7 +17,7 @@
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
-        <!-- Player coise button -->
+        <!-- Player choise button -->
         <Style x:Key="SegmentedControlRadioButtonStyle" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#FFCCCCCC"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -83,8 +83,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBoxItem">
-                        <Border Name="Bd" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        <Border Name="Bd" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="true">
@@ -113,9 +116,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ToggleButton}">
-                        <Border x:Name="templateRoot" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}" BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource AncestorType=ComboBox}}" CornerRadius="4" SnapsToDevicePixels="true">
-                            <Border x:Name="splitBorder" BorderThickness="0" HorizontalAlignment="Right" Margin="0" SnapsToDevicePixels="true" Width="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}">
-                                <Path x:Name="arrow" Data="F1 M 0,0 L 2.5,3 L 5,0 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}" HorizontalAlignment="Center" Margin="0" VerticalAlignment="Center"/>
+                        <Border x:Name="templateRoot" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                CornerRadius="4" SnapsToDevicePixels="true">
+                            <Border x:Name="splitBorder" BorderThickness="0" HorizontalAlignment="Right" Margin="0" SnapsToDevicePixels="true" 
+                                    Width="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}">
+                                <Path x:Name="arrow" Data="F1 M 0,0 L 2.5,3 L 5,0 Z" 
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                      HorizontalAlignment="Center" Margin="0" VerticalAlignment="Center"/>
                             </Border>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -158,15 +167,30 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition MinWidth="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}" Width="0"/>
                             </Grid.ColumnDefinitions>
-                            <Popup x:Name="PART_Popup" AllowsTransparency="true" Grid.ColumnSpan="2" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom">
-                                <Border x:Name="dropDownBorder" Background="{StaticResource ComboBoxPopupBackgroundBrush}" BorderThickness="1" BorderBrush="{StaticResource ComboBoxBorderBrush}" CornerRadius="4" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                            <Popup x:Name="PART_Popup" AllowsTransparency="true" Grid.ColumnSpan="2" 
+                                   IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
+                                   Margin="1" PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom">
+                                <Border x:Name="dropDownBorder" Background="{StaticResource ComboBoxPopupBackgroundBrush}" 
+                                        BorderThickness="1" BorderBrush="{StaticResource ComboBoxBorderBrush}" CornerRadius="4" 
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                     <ScrollViewer x:Name="DropDownScrollViewer">
-                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                                     </ScrollViewer>
                                 </Border>
                             </Popup>
-                            <ToggleButton x:Name="toggleButton" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Grid.ColumnSpan="2" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource ComboBoxToggleButtonSleekStyle}"/>
-                            <ContentPresenter x:Name="contentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            <ToggleButton x:Name="toggleButton" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                          BorderThickness="{TemplateBinding BorderThickness}" Grid.ColumnSpan="2" 
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
+                                          Style="{StaticResource ComboBoxToggleButtonSleekStyle}"/>
+                            <ContentPresenter x:Name="contentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" 
+                                              Content="{TemplateBinding SelectionBoxItem}" 
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" 
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              IsHitTestVisible="false" Margin="{TemplateBinding Padding}"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsEditable" Value="true">
@@ -206,8 +230,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" SnapsToDevicePixels="true">
-                            <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" Focusable="False"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}"
+                              RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="true">
@@ -254,11 +282,14 @@
                         <TextBlock x:Name="LeftHeaderLabel" Text="White" Style="{StaticResource HeaderTextStyle}"/>
                         <Border Style="{StaticResource SegmentedControlContainerStyle}" Margin="0,0,0,15">
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="LeftHumanRadio" Content="Human" GroupName="LeftPlayerType" Style="{StaticResource SegmentedControlRadioButtonStyle}" IsChecked="True" Checked="PlayerType_Changed"/>
-                                <RadioButton x:Name="LeftEngineRadio" Content="Engine" GroupName="LeftPlayerType" Style="{StaticResource SegmentedControlRadioButtonStyle}" Checked="PlayerType_Changed"/>
+                                <RadioButton x:Name="LeftHumanRadio" Content="Human" GroupName="LeftPlayerType" 
+                                             Style="{StaticResource SegmentedControlRadioButtonStyle}" IsChecked="True" Checked="PlayerType_Changed"/>
+                                <RadioButton x:Name="LeftEngineRadio" Content="Engine" GroupName="LeftPlayerType" 
+                                             Style="{StaticResource SegmentedControlRadioButtonStyle}" Checked="PlayerType_Changed"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="LeftAIDifficultyLabel" Text="AI Difficulty" HorizontalAlignment="Center" Margin="0,10,0,5" Visibility="Collapsed"/>
+                        <TextBlock x:Name="LeftAIDifficultyLabel" Text="AI Difficulty" HorizontalAlignment="Center" Margin="0,10,0,5" 
+                                   Visibility="Collapsed"/>
                         <ComboBox x:Name="LeftAIDifficultyComboBox" HorizontalAlignment="Center" Visibility="Collapsed">
                             <ComboBoxItem Content="Easy"/>
                             <ComboBoxItem Content="Medium" IsSelected="True"/>
@@ -267,18 +298,24 @@
                     </StackPanel>
 
                     <!-- Player switch button -->
-                    <Button Grid.Column="1" x:Name="SwitchSidesButton" Content="&#x21C4;" FontSize="30" VerticalAlignment="Top" Margin="0,-14,0,0" Padding="8" FontWeight="Bold" ToolTip="Switch Sides" BorderThickness="0" Background="Transparent" Foreground="White" Cursor="Hand" Click="SwitchSides_Click" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                    <Button Grid.Column="1" x:Name="SwitchSidesButton" Content="&#x21C4;" FontSize="30" 
+                            VerticalAlignment="Top" Margin="0,-14,0,0" Padding="8" FontWeight="Bold" ToolTip="Switch Sides" 
+                            BorderThickness="0" Background="Transparent" Foreground="White" Cursor="Hand" 
+                            Click="SwitchSides_Click" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
 
                     <!-- Right player settings (top) -->
                     <StackPanel Grid.Column="2" HorizontalAlignment="Center" Margin="10,0">
                         <TextBlock x:Name="RightHeaderLabel" Text="Black" Style="{StaticResource HeaderTextStyle}"/>
                         <Border Style="{StaticResource SegmentedControlContainerStyle}" Margin="0,0,0,15">
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="RightHumanRadio" Content="Human" GroupName="RightPlayerType" Style="{StaticResource SegmentedControlRadioButtonStyle}" IsChecked="True" Checked="PlayerType_Changed"/>
-                                <RadioButton x:Name="RightEngineRadio" Content="Engine" GroupName="RightPlayerType" Style="{StaticResource SegmentedControlRadioButtonStyle}" Checked="PlayerType_Changed"/>
+                                <RadioButton x:Name="RightHumanRadio" Content="Human" GroupName="RightPlayerType" 
+                                             Style="{StaticResource SegmentedControlRadioButtonStyle}" IsChecked="True" Checked="PlayerType_Changed"/>
+                                <RadioButton x:Name="RightEngineRadio" Content="Engine" GroupName="RightPlayerType" 
+                                             Style="{StaticResource SegmentedControlRadioButtonStyle}" Checked="PlayerType_Changed"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="RightAIDifficultyLabel" Text="AI Difficulty" HorizontalAlignment="Center" Margin="0,10,0,5" Visibility="Collapsed"/>
+                        <TextBlock x:Name="RightAIDifficultyLabel" Text="AI Difficulty" HorizontalAlignment="Center" Margin="0,10,0,5"
+                                   Visibility="Collapsed"/>
                         <ComboBox x:Name="RightAIDifficultyComboBox" HorizontalAlignment="Center" Visibility="Collapsed">
                             <ComboBoxItem Content="Easy"/>
                             <ComboBoxItem Content="Medium" IsSelected="True"/>
@@ -290,8 +327,10 @@
                 <!-- Timer slider -->
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="0,30,0,0">
                     <TextBlock x:Name="SelectionTextBlock" Text="Select Timer (minutes):" FontSize="18" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                    <Slider x:Name="TimerSlider" Width="400" Minimum="1" Maximum="60" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="TimerSlider_ValueChanged" Margin="0,0,0,8" />
-                    <TextBlock x:Name="TimerValueTextBlock" Text="{Binding ElementName=TimerSlider, Path=Value, StringFormat={}{0} min}" FontSize="18" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+                    <Slider x:Name="TimerSlider" Width="400" Minimum="1" Maximum="60" Value="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                            ValueChanged="TimerSlider_ValueChanged" Margin="0,0,0,8" />
+                    <TextBlock x:Name="TimerValueTextBlock" Text="{Binding ElementName=TimerSlider, Path=Value, StringFormat={}{0} min}"
+                               FontSize="18" HorizontalAlignment="Center" Margin="0,0,0,30"/>
                 </StackPanel>
 
                 <!-- Start/exit buttons -->

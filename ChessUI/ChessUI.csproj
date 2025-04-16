@@ -184,5 +184,8 @@
     <Resource Include="pics\RookB.png" />
     <Resource Include="pics\RookW.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="pics\Resign.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

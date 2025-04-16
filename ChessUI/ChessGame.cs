@@ -29,6 +29,8 @@ namespace Chess
 
         private readonly IPromotionUI _promotionUIService; // Subscribe to MainWindow for promotions
 
+        private bool _disposed = false; // Ensure DLL cleanup
+
         // Even for game over
         // Subscribed by MainWindow
         public class GameOverEventArgs : EventArgs
@@ -212,13 +214,20 @@ namespace Chess
         // Destroy board
         public void Dispose()
         {
-            if (board != IntPtr.Zero)
+            if (!_disposed)
             {
-                ChessEngineInterop.DestroyBoard(board);
-                board = IntPtr.Zero;
+                // Always clean up unmanaged resources
+                if (board != IntPtr.Zero)
+                {
+                    ChessEngineInterop.DestroyBoard(board);
+                    board = IntPtr.Zero;
+                }
+                _disposed = true;
             }
+            GC.SuppressFinalize(this); // Prevent redundant destructor calls
         }
 
+        // Destructor (fallback if Dispose() wasn't called
         ~ChessGame()
         {
             Dispose();

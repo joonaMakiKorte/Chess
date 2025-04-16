@@ -10,6 +10,7 @@
         WindowStartupLocation="CenterScreen"
         Background="#222">
 
+    <!-- Wrap elements in a viewbox -->
     <Viewbox Stretch="Uniform">
         <Grid Width="880" Height="710">
             <Grid.ColumnDefinitions>
@@ -24,11 +25,13 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+                <!-- Top timer -->
                 <Border Grid.Row="0"
                         Background="#111" HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         CornerRadius="3"
                         Padding="8,2"
+                        Width="75"
                         Margin="25,10,0,5">
                     <Label x:Name="TopTimerLabel"
                            Content="00:00"  FontSize="20"
@@ -36,6 +39,7 @@
                            Foreground="White"/>
                 </Border>
 
+                <!-- Main chess board-->
                 <Grid x:Name="PieceGrid"
                       Grid.Row="1" Width="600"
                       Height="600"
@@ -68,18 +72,57 @@
                     </Grid.ColumnDefinitions>
                 </Grid>
 
-                <Border Grid.Row="2"
-                        Background="#111" HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                         CornerRadius="3"
-                         Padding="8,2"
-                        Margin="25,5,0,10">
-                    <Label x:Name="BottomTimerLabel"
-                           Content="00:00" FontSize="20"
+                <Grid Grid.Row="2" HorizontalAlignment="Left" Margin="25,5,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Bottom Timer -->
+                    <Border Grid.Column="0" x:Name="BottomWrap"
+                        Background="#111"
+                        CornerRadius="3"
+                        Padding="8,2"
+                        Width="75"
+                        VerticalAlignment="Center">
+                        <Label x:Name="BottomTimerLabel"
+                           Content="00:00"
+                           FontSize="20"
                            FontWeight="SemiBold"
                            Foreground="White"/>
-                </Border>
+                    </Border>
 
+
+                    <!-- Resign Button -->
+                    <Button Grid.Column="2"
+                       x:Name="ResignButton"
+                       Background="#555555"
+                       Padding="8,2"
+                       Margin="5,0,0,0"
+                       Cursor="Hand"
+                       BorderBrush="#333333"
+                       BorderThickness="1"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Click="ResignButton_Click"
+                       Width="{Binding ActualHeight, ElementName=BottomWrap}"
+                       Height="{Binding ActualHeight, ElementName=BottomWrap}"
+                       Visibility="Hidden">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="3">
+                                    <Viewbox Margin="5">
+                                        <Image Source="pics/Resign.png" Width="20" Height="20"/>
+                                    </Viewbox>         
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
             </Grid>
 
             <Grid Grid.Column="1">
@@ -87,7 +130,8 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                
+
+                <!-- Move log-->
                 <Border Grid.Row="0"
                 Background="#2A2A2A" 
                 CornerRadius="8"
@@ -181,6 +225,7 @@
                     </ListView>
                 </Border>
 
+                <!-- Game over field -->
                 <Border x:Name="GameOverField"
                 Grid.Row="1"
                 Background="#2A2A2A" 
