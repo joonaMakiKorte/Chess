@@ -57,17 +57,17 @@ private:
 	// Minimax algorithm with alpha-beta pruning
 	// Recursively evaluates the board by simulating moves and choosing the best one
 	// Alpha-beta pruning is used to reduce the number of nodes evaluated in the search tree
-    static int minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing);
+    static int minimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int beta, bool maximizing);
 
 	// Quiescence search algorithm
 	// Searches for the best move in a noisy position (captures and promotions)
 	// Reduces the horizon effect by searching deeper in capturing positions
-	static int quiescence(Bitboard& board, int alpha, int beta, bool maximizing);
+	static int quiescence(std::unique_ptr<Bitboard>& board, int alpha, int beta, bool maximizing);
 
 	// Get evaluation of the current board score
 	// Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
 	// Advantegeous positions are assigned higher scores for prioritization
-	static int evaluateBoard(Bitboard& board, int depth, bool maximizing);
+	static int evaluateBoard(std::unique_ptr<Bitboard>& board, int depth, bool maximizing);
 
 
 
@@ -79,16 +79,16 @@ private:
     // Minimax algorithm with alpha-beta pruning
     // Differs from midgame by extending search for moves that chech the opponent
     // Also moves are sorted with different heuristic
-    static int endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing);
+    static int endgameMinimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int beta, bool maximizing);
 
     // Quiescence search algorithm
     // Searches for the best move in a noisy position (captures and promotions)
     // Reduces the horizon effect by searching deeper in capturing positions
-    static int endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizing);
+    static int endgameQuiescence(std::unique_ptr<Bitboard>& board, int alpha, int beta, bool maximizing);
 
     // Get evaluation of the current board score
     // Detect checkmate, stalemate, and evaluate the board based on material and positional advantages
-    static int evaluateEndgameBoard(Bitboard& board, int depth, bool maximizing);
+    static int evaluateEndgameBoard(std::unique_ptr<Bitboard>& board, int depth, bool maximizing);
 
 
 private: 
@@ -108,11 +108,11 @@ private:
     static void updateHistory(uint32_t move, int depth);
 
 public:
-    // Get the best move for the current board state in midgame
-    static uint32_t getBestMove(Bitboard& board, int depth, bool maximizing);
+    // Change the parameter type of 'board' to a reference to a unique_ptr of Bitboard  
+    static uint32_t getBestMove(std::unique_ptr<Bitboard>& board, int depth, bool maximizing);
 
     // Get the best move for the current board state in endgame
-    static uint32_t getBestEndgameMove(Bitboard& board, int depth, bool maximizing);
+    static uint32_t getBestEndgameMove(std::unique_ptr<Bitboard>& board, int depth, bool maximizing);
 
 };
 

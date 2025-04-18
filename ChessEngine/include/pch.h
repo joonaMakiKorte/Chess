@@ -21,5 +21,6 @@
 #include <chrono>
 #include <random>
 #include <unordered_map>
+#include <atomic>
 
 #endif //PCH_H

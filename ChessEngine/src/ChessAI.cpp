@@ -4,10 +4,10 @@
 #include "Tables.hpp"
 
 
-uint32_t ChessAI::getBestMove(Bitboard& board, int depth, bool maximizing) {
+uint32_t ChessAI::getBestMove(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI player
+    board->generateMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI player
 
     if (move_count == 0) {
         return 0; // No legal moves available
@@ -16,17 +16,17 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, bool maximizing) {
     int bestScore = maximizing ? -INF : INF; // Start from worst eval depending if maximizing/minimizing
     uint32_t bestMove = 0;
 
-    board.startNewSearch(); // Clear previous search history
+    board->startNewSearch(); // Clear previous search history
 
     for (int i = 0; i < move_count; i++) {
         // Apply the move
-        board.applyMoveAI(move_list[i], maximizing);
+        board->applyMoveAI(move_list[i], maximizing);
 
         // Call minimax with !maximizing
         int score = minimax(board, depth - 1, -INF, INF, !maximizing);
 
         // Undo move
-        board.undoMoveAI(move_list[i], maximizing);
+        board->undoMoveAI(move_list[i], maximizing);
 
         // Logic to account for AI being either black or white
         if ((maximizing && score > bestScore) || (!maximizing && score < bestScore)) {
@@ -39,10 +39,10 @@ uint32_t ChessAI::getBestMove(Bitboard& board, int depth, bool maximizing) {
 }
 
 
-uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, bool maximizing) {
+uint32_t ChessAI::getBestEndgameMove(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateEndgameMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI
+    board->generateEndgameMoves(move_list, move_count, 0, maximizing, NULL_MOVE_32); // Generate all legal moves for AI
 
     if (move_count == 0) {
         return 0; // No legal moves available
@@ -51,16 +51,16 @@ uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, bool maximizing
     int bestScore = maximizing ? -INF : INF; // Start from worst eval
     uint32_t bestMove = 0;
 
-    board.startNewSearch(); // Clear previous search history
+    board->startNewSearch(); // Clear previous search history
 
     for (int i = 0; i < move_count; i++) {
         // Apply the move
-        board.applyMoveAI(move_list[i], maximizing);
+        board->applyMoveAI(move_list[i], maximizing);
 
         int score = endgameMinimax(board, depth - 1, -INF, INF, !maximizing);
 
         // Undo move
-        board.undoMoveAI(move_list[i], maximizing);
+        board->undoMoveAI(move_list[i], maximizing);
 
         // Logic to account for AI being either black or white
         if ((maximizing && score > bestScore) || (!maximizing && score < bestScore)) {
@@ -72,20 +72,20 @@ uint32_t ChessAI::getBestEndgameMove(Bitboard& board, int depth, bool maximizing
     return bestMove;
 }
 
-int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing) {
+int ChessAI::minimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
-    if (board.getHalfMoveClock() >= 50) {
+    if (board->getHalfMoveClock() >= 50) {
         return 0; // Draw score
     }
     // Check threefold repetition using the path history
     // Important: Check the *current* node before exploring children
-    if (board.isDrawByRepetition()) {
+    if (board->isDrawByRepetition()) {
         return 0; // Draw score
     }
 
     // Lookup the current position in the transposition table using the incremental Zobrist hash key
-    uint64_t key = board.getHashKey();
+    uint64_t key = board->getHashKey();
     uint32_t tt_best_move = NULL_MOVE_32; // Hint for move ordering
     int original_alpha = alpha; // Store original alpha for TT store logic
     int original_beta = beta; // Store original beta as well for clarity
@@ -149,7 +149,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     }
     
     // Check for terminal conditions after TT probe (mate/draw)
-	if (board.isGameOver()) {
+	if (board->isGameOver()) {
         return evaluateBoard(board, depth, maximizing);
 	}
 
@@ -163,7 +163,7 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     // --- Main search logic ---
     std::array<uint32_t, MAX_MOVES> move_list;
 	int move_count = 0;
-    board.generateMoves(move_list, move_count, depth, maximizing, tt_best_move); // Passing best move from tt to movegen
+    board->generateMoves(move_list, move_count, depth, maximizing, tt_best_move); // Passing best move from tt to movegen
 
     // Check if no moves were generated (safeguard)
     if (move_count == 0) {
@@ -177,11 +177,11 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     if (maximizing) { 
         best_eval = -INF;
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizing);
+            board->applyMoveAI(move_list[i], maximizing);
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizing);
+            board->undoMoveAI(move_list[i], maximizing);
 
 			// --- Update best score and alpha ---
             if (eval > best_eval) {
@@ -226,11 +226,11 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     else { 
         best_eval = INF; // Initialize appropriately for minimization
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizing);
+            board->applyMoveAI(move_list[i], maximizing);
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizing);
+            board->undoMoveAI(move_list[i], maximizing);
 
             // --- Update best score and beta ---
             if (eval < best_eval) {
@@ -287,15 +287,15 @@ int ChessAI::minimax(Bitboard& board, int depth, int alpha, int beta, bool maxim
     return best_eval; // Return the final evaluation for this node
 }
 
-int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizing) {
+int ChessAI::quiescence(std::unique_ptr<Bitboard>& board, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
-    if (board.getHalfMoveClock() >= 50) {
+    if (board->getHalfMoveClock() >= 50) {
         return 0; // Draw score
     }
     // Check threefold repetition using the path history
     // Important: Check the *current* node before exploring children
-    if (board.isDrawByRepetition()) {
+    if (board->isDrawByRepetition()) {
         return 0; // Draw score
     }
 
@@ -308,21 +308,21 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizing) {
     // Generate captures + promotions (non quiet moves)
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateNoisyMoves(move_list, move_count, maximizing);
+    board->generateNoisyMoves(move_list, move_count, maximizing);
 
     for (int i = 0; i < move_count; i++) {
-        int move_value = board.estimateCaptureValue(move_list[i]);
+        int move_value = board->estimateCaptureValue(move_list[i]);
 
         // Delta pruning - skip moves that can't possibly raise alpha
         // Skip delta pruning for all promotions
         if (!isPromotion(move_list[i]) && eval + move_value + DELTA_MARGIN_MIDGAME <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }
-        board.applyMoveAI(move_list[i], maximizing);
+        board->applyMoveAI(move_list[i], maximizing);
 
         int score = -quiescence(board, -beta, -alpha, !maximizing);  // Negamax approach
 
-        board.undoMoveAI(move_list[i], maximizing);
+        board->undoMoveAI(move_list[i], maximizing);
 
         if (score >= beta) return beta;  // Beta cutoff
         if (score > alpha) alpha = score;  // Improve alpha
@@ -332,40 +332,40 @@ int ChessAI::quiescence(Bitboard& board, int alpha, int beta, bool maximizing) {
 }
 
 
-int ChessAI::evaluateBoard(Bitboard& board, int depth, bool maximizing) {
-    if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
-	if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
-    if (board.state.isStalemate()) return 0; // Draw -> neutral outcome
+int ChessAI::evaluateBoard(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
+    if (board->state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
+	if (board->state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
+    if (board->state.isStalemate()) return 0; // Draw -> neutral outcome
 
     // Evaluate material and positional score of the board
-    int score = board.evaluateBoard();
+    int score = board->evaluateBoard();
 
 	// King safety evaluation for both sides
     // Acts as a penalty more than a bonus
-    score -= static_cast<int>(board.evaluateKingSafety() * KING_SAFETY_WEIGHT);
+    score -= static_cast<int>(board->evaluateKingSafety() * KING_SAFETY_WEIGHT);
 
     // Encourage attacking the opponents king
-    if (board.state.isCheckWhite()) score -= 50; // White in check
-    if (board.state.isCheckBlack()) score += 50; // Black in check
+    if (board->state.isCheckWhite()) score -= 50; // White in check
+    if (board->state.isCheckBlack()) score += 50; // Black in check
 
     // Return the score (negate for black)
     return maximizing ? score : -score;
 }
 
-int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, bool maximizing) {
+int ChessAI::endgameMinimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
-    if (board.getHalfMoveClock() >= 50) {
+    if (board->getHalfMoveClock() >= 50) {
         return 0; // Draw score
     }
     // Check threefold repetition using the path history
     // Important: Check the *current* node before exploring children
-    if (board.isDrawByRepetition()) {
+    if (board->isDrawByRepetition()) {
         return 0; // Draw score
     }
 
     // Lookup the current position in the transposition table using the incremental Zobrist hash key
-    uint64_t key = board.getHashKey();
+    uint64_t key = board->getHashKey();
     uint32_t tt_best_move = NULL_MOVE_32; // Hint for move ordering
     int original_alpha = alpha; // Store original alpha for TT store logic
     int original_beta = beta; // Store original beta as well for clarity
@@ -429,7 +429,7 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
     }
 
     // Check for terminal conditions after TT probe (mate/draw)
-    if (board.isGameOver()) {
+    if (board->isGameOver()) {
         return evaluateEndgameBoard(board, depth, maximizing);
     }
 
@@ -441,14 +441,14 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
     }
 
     // Check extension: Extend if current player is in check
-    if (maximizing ? board.state.isCheckBlack() : board.state.isCheckWhite()) {
+    if (maximizing ? board->state.isCheckBlack() : board->state.isCheckWhite()) {
         depth += 1; // Standard extension
     }
 
     // --- Main search logic ---
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateEndgameMoves(move_list, move_count, depth, maximizing, tt_best_move);
+    board->generateEndgameMoves(move_list, move_count, depth, maximizing, tt_best_move);
 
     // Check if no moves were generated (safeguard)
     if (move_count == 0) {
@@ -462,11 +462,11 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
     if (maximizing) { 
         best_eval = -INF;
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizing);
+            board->applyMoveAI(move_list[i], maximizing);
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizing);
+            board->undoMoveAI(move_list[i], maximizing);
 
             // --- Update best score and alpha ---
             if (eval > best_eval) {
@@ -511,11 +511,11 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
     else { 
         best_eval = INF; // Initialize appropriately for minimization
         for (int i = 0; i < move_count; i++) {
-            board.applyMoveAI(move_list[i], maximizing);
+            board->applyMoveAI(move_list[i], maximizing);
 
             int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
 
-            board.undoMoveAI(move_list[i], maximizing);
+            board->undoMoveAI(move_list[i], maximizing);
 
             // --- Update best score and beta ---
             if (eval < best_eval) {
@@ -572,15 +572,15 @@ int ChessAI::endgameMinimax(Bitboard& board, int depth, int alpha, int beta, boo
     return best_eval; // Return the final evaluation for this node
 }
 
-int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximizing) {
+int ChessAI::endgameQuiescence(std::unique_ptr<Bitboard>& board, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
     // Check 50-move rule first (simple counter check)
-    if (board.getHalfMoveClock() >= 50) {
+    if (board->getHalfMoveClock() >= 50) {
         return 0; // Draw score
     }
     // Check threefold repetition using the path history
     // Important: Check the *current* node before exploring children
-    if (board.isDrawByRepetition()) {
+    if (board->isDrawByRepetition()) {
         return 0; // Draw score
     }
 
@@ -593,21 +593,21 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
     // Generate captures + promotions (non quiet moves)
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
-    board.generateEndgameNoisyMoves(move_list, move_count, maximizing);
+    board->generateEndgameNoisyMoves(move_list, move_count, maximizing);
 
     for (int i = 0; i < move_count; i++) {
-        int move_value = board.estimateCaptureValue(move_list[i]);
+        int move_value = board->estimateCaptureValue(move_list[i]);
 
         // Delta pruning - skip moves that can't possibly raise alpha
         // Skip delta pruning for all promotions and checks
         if (!isPromotion(move_list[i]) && !isCheck(move_list[i]) && eval + move_value + DELTA_MARGIN_ENDGAME <= alpha) {
             continue; // Skip this move as it can't improve alpha
         }
-        board.applyMoveAI(move_list[i], maximizing);
+        board->applyMoveAI(move_list[i], maximizing);
 
         int score = -quiescence(board, -beta, -alpha, !maximizing);  // Negamax approach
 
-        board.undoMoveAI(move_list[i], maximizing);
+        board->undoMoveAI(move_list[i], maximizing);
 
         if (score >= beta) return beta;  // Beta cutoff
         if (score > alpha) alpha = score;  // Improve alpha
@@ -616,22 +616,22 @@ int ChessAI::endgameQuiescence(Bitboard& board, int alpha, int beta, bool maximi
     return alpha;  // Best evaluation we found
 }
 
-int ChessAI::evaluateEndgameBoard(Bitboard& board, int depth, bool maximizing) {
-    if (board.state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
-    if (board.state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
-    if (board.state.isStalemate()) return 0; // Draw -> neutral outcome
+int ChessAI::evaluateEndgameBoard(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
+    if (board->state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
+    if (board->state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
+    if (board->state.isStalemate()) return 0; // Draw -> neutral outcome
 
     // Evaluate material and positional score of the board
-    int score = board.evaluateBoard();
+    int score = board->evaluateBoard();
 
     // Evaluate passed pawns
-    score += board.evaluatePassedPawns(true) - board.evaluatePassedPawns(false); // Passed pawn delta between white and black
+    score += board->evaluatePassedPawns(true) - board->evaluatePassedPawns(false); // Passed pawn delta between white and black
 
     // Encourage closing distance between kings by giving bonus
-    score += 10 * (7 - board.calculateKingDistance());
+    score += 10 * (7 - board->calculateKingDistance());
 
     // Award king centralization (if opponent is more centralized acts as a penalty)
-    score += board.getKingCentralization();
+    score += board->getKingCentralization();
 
     // Negate score for black
     return maximizing ? score : -score;

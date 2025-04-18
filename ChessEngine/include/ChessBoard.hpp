@@ -6,7 +6,7 @@
 class ChessBoard {
 private:
     // Store the board logic
-    Bitboard board; // Smart pointer
+    std::unique_ptr<Bitboard> board;
 
     // Keep track of player turns
     bool white;
@@ -25,6 +25,8 @@ private:
 public:
     // Initialize the chessboard
     ChessBoard();
+
+    ~ChessBoard() = default; // unique_ptr handles bitboard cleanup
 
     // Get legal moves from the parameter square as a bitboard
     uint64_t LegalMoves(int square);

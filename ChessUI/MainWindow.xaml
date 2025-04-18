@@ -129,14 +129,15 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Move log-->
-                <Border Grid.Row="0"
-                Background="#2A2A2A" 
-                CornerRadius="8"
-                Padding="5"
-                Margin="10">
+                <Border Grid.Row="0" x:Name="MoveLogWrap"
+                    Background="#2A2A2A" 
+                    CornerRadius="8"
+                    Padding="5"
+                    Margin="10">
                     <ListView x:Name="MoveLogView"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
@@ -227,20 +228,153 @@
 
                 <!-- Game over field -->
                 <Border x:Name="GameOverField"
-                Grid.Row="1"
-                Background="#2A2A2A" 
-                CornerRadius="8"
-                Padding="5"
-                Margin="10,0,10,10"
-                Visibility="Collapsed">
+                    Grid.Row="1"
+                    Background="#2A2A2A" 
+                    CornerRadius="8"
+                    Padding="5"
+                    Margin="10,0,10,0"
+                    Visibility="Collapsed">
                     <TextBlock x:Name="GameOverTextBlock"
-                           Text="" Foreground="White"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap"
-                           Margin="10,8,10,10" Visibility="Visible" />
+                            Text="" Foreground="White"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap"
+                            Margin="10,8,10,10"/>
                 </Border>
+
+                <!-- Button container with fixed height -->
+                <Grid Grid.Row="2"
+                    x:Name="ButtonContainer"
+                    Height="40"
+                    Margin="10">
+
+                    <!-- New game button -->
+                    <Button x:Name="NewGameButton"
+                        Background="#555555"
+                        Padding="5"
+                        Cursor="Hand"
+                        BorderBrush="#333333"
+                        BorderThickness="1"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Click="NewGameButton_Click" 
+                        Content="New Game"
+                        Foreground="White"
+                        FontSize="16" 
+                        FontWeight="SemiBold">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="#4A90E2"/>
+                                        <Setter TargetName="border" Property="BorderBrush" Value="#357ABD"/>
+                                        <Setter TargetName="border" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect BlurRadius="10" Color="#4A90E2" Opacity="0.7"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <!-- Confirmation buttons -->
+                    <Grid x:Name="ConfirmationPanel"
+                        Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Yes Button -->
+                        <Button Grid.Column="0"
+                            x:Name="YesButton"
+                            Background="#555555"
+                            Padding="5"
+                            Cursor="Hand"
+                            BorderBrush="#333333"
+                            BorderThickness="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Click="YesButton_Click"
+                            Content="Yes"
+                            Foreground="White"
+                            FontSize="16" 
+                            FontWeight="SemiBold">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="8">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#4CAF50"/>
+                                            <Setter TargetName="border" Property="BorderBrush" Value="#388E3C"/>
+                                            <Setter TargetName="border" Property="Effect">
+                                                <Setter.Value>
+                                                    <DropShadowEffect BlurRadius="10" Color="#FF4CAF50" Opacity="0.7"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- No Button -->
+                        <Button Grid.Column="2"
+                            x:Name="NoButton"
+                            Background="#555555"
+                            Padding="5"
+                            Cursor="Hand"
+                            BorderBrush="#333333"
+                            BorderThickness="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Click="NoButton_Click"
+                            Content="No"
+                            Foreground="White"
+                            FontSize="16" 
+                            FontWeight="SemiBold">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="8">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#F44336"/>
+                                            <Setter TargetName="border" Property="BorderBrush" Value="#D32F2F"/>
+                                            <Setter TargetName="border" Property="Effect">
+                                                <Setter.Value>
+                                                    <DropShadowEffect BlurRadius="10" Color="#FFF44336" Opacity="0.7"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+                </Grid>
             </Grid>
         </Grid>
     </Viewbox>

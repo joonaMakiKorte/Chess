@@ -8,6 +8,8 @@ namespace Magic {
     MagicMoves MAGIC_TABLE_BISHOP[64];
     MagicMoves MAGIC_TABLE_ROOK[64];
 
+    std::atomic<bool> initialized{ false };
+
     uint64_t maskBishopAttackRays(int square) {
         uint64_t attacks = 0ULL;
 
@@ -125,10 +127,10 @@ namespace Magic {
     }
 
     void initMagicTables() {
-        // Set flag to prevent unnecessary reinitialization
-        static bool initialized = false;
-        if (initialized) return;
-        initialized = true;
+        bool expected = false;
+        if (!initialized.compare_exchange_strong(expected, true)) {
+            return; // Already initialized
+        }
 
         // Init bishop
         for (int sq = 0; sq < 64; sq++) {
@@ -143,6 +145,13 @@ namespace Magic {
             MAGIC_TABLE_ROOK[sq].magic = MAGICS_ROOK[sq];
             MAGIC_TABLE_ROOK[sq].shift = 64 - RELEVANT_BITS_COUNT_ROOK[sq];
         }
+    }
+
+    void teardownTables() {
+        initialized.store(false);
+        // Zero out table contents just in case
+        std::memset(MAGIC_TABLE_BISHOP, 0, sizeof(MAGIC_TABLE_BISHOP));
+        std::memset(MAGIC_TABLE_ROOK, 0, sizeof(MAGIC_TABLE_ROOK));
     }
 }
 

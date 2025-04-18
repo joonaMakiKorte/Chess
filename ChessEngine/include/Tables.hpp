@@ -30,6 +30,7 @@ namespace Tables {
 	extern uint64_t EN_PASSANT_KEYS[8];   // En passant file
 
 	// Generate all precomputed tables 
+	extern std::atomic<bool> initialized; // Track re-initialization need
 	void initTables();
 
 	void teardownTables();

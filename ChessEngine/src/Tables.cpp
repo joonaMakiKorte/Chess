@@ -20,6 +20,8 @@ namespace Tables {
 	uint64_t CASTLING_KEYS[16];
 	uint64_t EN_PASSANT_KEYS[8];
 
+	std::atomic<bool> initialized{ false }; // Atomic for thread safety
+
 	// Compute direction between squares
 	Direction getDirection(int sq1, int sq2) {
 		int dx = Utils::getFile(sq2) - Utils::getFile(sq1);
@@ -153,6 +155,17 @@ namespace Tables {
 	}
 
 	void initTables() {
+		bool expected = false;
+		if (!initialized.compare_exchange_strong(expected, true)) {
+			return; // Already initialized
+		}
+
+		// Reallocate if needed
+		// TT is reallocated in it's init function
+		if (HISTORY_TABLE == nullptr) {
+			HISTORY_TABLE = new int[MAX_HISTORY_KEY]();
+		}
+
 		// Zero initialize killer moves explicitly
 		std::memset(KILLER_MOVES, 0, sizeof(KILLER_MOVES));
 
@@ -173,11 +186,20 @@ namespace Tables {
 	}
 
 	void teardownTables() {
-		// Free dynamically allocated space
+		if (!initialized.load()) return;
+
+		// Thread-safe cleanup
 		delete[] HISTORY_TABLE;
 		HISTORY_TABLE = nullptr;
 
 		delete[] TRANSPOSITION_TABLE;
 		TRANSPOSITION_TABLE = nullptr;
+
+		// Reset sizes
+		TT_NUM_ENTRIES = 0;
+		TT_MASK = 0;
+
+		// Must be last operation
+		initialized = false;
 	}
 }

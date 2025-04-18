@@ -55,7 +55,7 @@ namespace Chess
             boardUI.UpdateBoard(chessGame.GetBoardState());
 
             // Init UI interactions
-            boardInteract = new BoardInteract(PieceGrid, ResignButton, chessGame, boardUI, !bottomIsWhite);
+            boardInteract = new BoardInteract(PieceGrid, ResignButton, NewGameButton, chessGame, boardUI, !bottomIsWhite);
 
             // Show resign button only if AI game
             if (!whiteIsHuman || !blackIsHuman) ResignButton.Visibility = Visibility.Visible;
@@ -81,13 +81,14 @@ namespace Chess
         private void ResignButton_Click(object sender, EventArgs e)
         {
             // Trigger GameOver with 'resign'
+            chessGame.isOngoing = false;
             ChessGame_GameOver(this, new GameOverEventArgs("resign"));
         }
 
         // Triggered by GameOver-event
         private void ChessGame_GameOver(object sender, GameOverEventArgs e)
         {
-            // Ensure running on UI thread if ChessGame events could come from another thread
+            // Ensure running on UI thread
             Dispatcher.Invoke(() => {
                 boardUI.ToggleTimer(chessGame.isWhiteTurn, false); // Stop active timer
 
@@ -97,7 +98,7 @@ namespace Chess
 
                 // Disable inputs
                 PieceGrid.IsEnabled = false;
-                ResignButton.IsEnabled = false;
+                ResignButton.Visibility = Visibility.Hidden;
             });
         }
 
@@ -114,6 +115,51 @@ namespace Chess
                 case "resign": return chessGame.isWhiteAI ? "½-0\nBlack resigns!" : "0-½\nWhite resigns!";
                 default: return $"Game Over: {state}"; // Should never reach here
             }
+        }
+
+        private void NewGameButton_Click(object sender, EventArgs e)
+        {
+            // If game has ended, launch start window right away
+            if (!chessGame.isOngoing)
+            {
+                StartWindow startWindow = new StartWindow();
+                startWindow.Show();
+                this.Close();
+            }
+            // Else show confirmation buttons
+            else
+            {
+                // Show confirmation question
+                GameOverTextBlock.Text = "Are you sure?";
+                GameOverField.Visibility = Visibility.Visible;
+
+                // Disable inputs
+                PieceGrid.IsEnabled = false;
+                ResignButton.IsEnabled = false;
+
+                NewGameButton.Visibility = Visibility.Collapsed;
+                ConfirmationPanel.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void YesButton_Click(Object sender, EventArgs e)
+        {
+            // Launch start window
+            StartWindow startWindow = new StartWindow();
+            startWindow.Show();
+            this.Close();
+        }
+
+        private void NoButton_Click(Object sender, EventArgs e)
+        {
+            // Hide confirmation question and enable inputs
+            GameOverField.Visibility = Visibility.Collapsed;
+
+            PieceGrid.IsEnabled = true;
+            ResignButton.IsEnabled = true;
+
+            NewGameButton.Visibility = Visibility.Visible;
+            ConfirmationPanel.Visibility = Visibility.Collapsed;
         }
 
         protected override void OnClosed(EventArgs e)

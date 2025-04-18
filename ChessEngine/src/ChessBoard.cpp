@@ -3,19 +3,20 @@
 #include "ChessAI.hpp"
 
 ChessBoard::ChessBoard() :
-    board(Bitboard()),
     white(true), // White starts
     full_moves(1), // Starts at 1
     isEndgame(false),
     previous_move("")
-{}
+{
+    board = std::make_unique<Bitboard>();
+}
 
 uint64_t ChessBoard::LegalMoves(int square) {
     // Validate move notation
     if (square < 0 || square > 63) return 0ULL;
 
     // Get all legal moves from the source square
-    return board.getLegalMoves(square, white);
+    return board->getLegalMoves(square, white);
 }
 
 void ChessBoard::MovePiece(int source, int target, char promotion_char) {
@@ -33,7 +34,7 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
     }
 
     // Apply move in bitboard and get the applied move in encoded form
-    uint32_t move = board.applyMove(source, target, promotion, white);
+    uint32_t move = board->applyMove(source, target, promotion, white);
 
     // If black moved increment full moves
     if (!white) full_moves++;
@@ -46,7 +47,7 @@ void ChessBoard::MovePiece(int source, int target, char promotion_char) {
 
     // Check if triggered endgame
     if (isEndgame) return; // Skip if already endgame
-    isEndgame = board.isEndgame();
+    isEndgame = board->isEndgame();
 }
 
 void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
@@ -64,10 +65,10 @@ void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
 	}
 
     // Apply move
-	board.applyMoveAI(best_move, maximizing);
+	board->applyMoveAI(best_move, maximizing);
     if (!white) full_moves++;
 
-    board.updateDrawByRepetition(); // Check if resulted in draw by repetition
+    board->updateDrawByRepetition(); // Check if resulted in draw by repetition
 
     // Transform move to algebraic notation
     std::string move_notation = getMoveNotation(best_move);
@@ -77,7 +78,7 @@ void ChessBoard::MakeMoveAI(int depth, bool maximizing) {
 
     // Check if triggered endgame
     if (isEndgame) return; // Skip if already endgame
-    isEndgame = board.isEndgame();
+    isEndgame = board->isEndgame();
 }
 
 std::string ChessBoard::GetFEN() {
@@ -91,7 +92,7 @@ std::string ChessBoard::GetFEN() {
             int square = rank * 8 + file; // Get current square as bitboard
 
             // Get piece type at square
-            char piece = board.getPieceTypeChar(square);
+            char piece = board->getPieceTypeChar(square);
 
             // If empty continue
             if (piece == '\0') {
@@ -125,13 +126,13 @@ std::string ChessBoard::GetFEN() {
     fen += active_color;
 
     // 3. Castling Rights (assume all castling rights available for simplicity)
-    fen += board.getCastlingRightsString();
+    fen += board->getCastlingRightsString();
 
     // 4. En Passant Target Square
-    fen += " " + board.getEnPassantString();
+    fen += " " + board->getEnPassantString();
 
     // 5. Half-Move Clock
-    fen += " " + std::to_string(board.getHalfMoveClock());
+    fen += " " + std::to_string(board->getHalfMoveClock());
 
     // 6. Full-Move Number
     fen += " " + std::to_string(full_moves);
@@ -200,7 +201,7 @@ std::string ChessBoard::getMoveNotation(uint32_t move) const {
         }
 
         // Add target square
-        algebraic_move += board.squareToString(to);
+        algebraic_move += board->squareToString(to);
 
         // Promotion
         if (move_type == PROMOTION) algebraic_move += getPieceLetter(ChessAI::promotion(move));
@@ -210,19 +211,19 @@ std::string ChessBoard::getMoveNotation(uint32_t move) const {
     }
 
     // Handle check and mate marking
-    if (board.state.isCheckmateWhite() || board.state.isCheckmateBlack()) algebraic_move += "#";
-    else if (board.state.isCheckWhite() || board.state.isCheckBlack()) algebraic_move += "+";
+    if (board->state.isCheckmateWhite() || board->state.isCheckmateBlack()) algebraic_move += "#";
+    else if (board->state.isCheckWhite() || board->state.isCheckBlack()) algebraic_move += "+";
 
     return algebraic_move;
 }
 
 std::string ChessBoard::GetGameState() {
-    if (board.state.isCheckmateWhite() || board.state.isCheckmateBlack()) return "mate";
-    else if (board.state.isCheckWhite() || board.state.isCheckBlack()) return "check";
-    else if (board.state.isStalemate()) return "stalemate";
-    else if (board.state.isDrawRepetition()) return "draw_repetition";
-    else if (board.state.isDraw50()) return "draw_50";
-    // else if (board.state.isDrawInsufficient()) return "draw_insufficient";
+    if (board->state.isCheckmateWhite() || board->state.isCheckmateBlack()) return "mate";
+    else if (board->state.isCheckWhite() || board->state.isCheckBlack()) return "check";
+    else if (board->state.isStalemate()) return "stalemate";
+    else if (board->state.isDrawRepetition()) return "draw_repetition";
+    else if (board->state.isDraw50()) return "draw_50";
+    // else if (board->state.isDrawInsufficient()) return "draw_insufficient";
     return "ongoing"; // Normal game state
 }
 
