@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Chess"
         mc:Ignorable="d"
         Title="Chess" Width="900" Height="750"
-        Icon="pics/icon.ico"
+        Icon="pack://application:,,,/src/Assets/Images/icon.ico"
         WindowStartupLocation="CenterScreen"
         Background="#222">
 
@@ -47,7 +47,7 @@
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center">
                     <Grid.Background>
-                        <ImageBrush ImageSource="pics/Board.png"/>
+                        <ImageBrush ImageSource="pack://application:,,,/src/Assets/Images/Board.png"/>
                     </Grid.Background>
 
                     <Grid.RowDefinitions>
@@ -116,7 +116,7 @@
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="3">
                                     <Viewbox Margin="5">
-                                        <Image Source="pics/Resign.png" Width="20" Height="20"/>
+                                        <Image Source="pack://application:,,,/src/Assets/Images/Resign.png" Width="20" Height="20"/>
                                     </Viewbox>         
                                 </Border>
                             </ControlTemplate>

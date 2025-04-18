@@ -105,43 +105,14 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-    <Compile Include="PromotionWindow.xaml.cs">
-      <DependentUpon>PromotionWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="StartWindow.xaml.cs">
-      <DependentUpon>StartWindow.xaml</DependentUpon>
-    </Compile>
-    <Page Include="MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Compile Include="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="BoardInteract.cs" />
-    <Compile Include="BoardUI.cs" />
-    <Compile Include="ChessEngineInterop.cs" />
-    <Compile Include="ChessGame.cs" />
-    <Compile Include="Images.cs" />
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Page Include="PromotionWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="StartWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="src\App.xaml.cs" />
+    <Compile Include="src\Services\BoardInteract.cs" />
+    <Compile Include="src\Services\BoardUI.cs" />
+    <Compile Include="src\Services\ChessEngineInterop.cs" />
+    <Compile Include="src\Services\ChessGame.cs" />
+    <Compile Include="src\Services\Images.cs" />
+    <Compile Include="src\Views\MainWindow.xaml.cs" />
+    <Compile Include="src\Views\PromotionWindow.xaml.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -155,37 +126,64 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="src\Views\StartWindow.xaml.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="packages.config" />
+    <None Include="src\App.config" />
+    <None Include="src\packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <Resource Include="src\Assets\Images\BishopB.png" />
+    <Resource Include="src\Assets\Images\BishopW.png" />
+    <Resource Include="src\Assets\Images\Board.png" />
+    <Resource Include="src\Assets\Images\icon.ico" />
+    <Resource Include="src\Assets\Images\KingB.png" />
+    <Resource Include="src\Assets\Images\KingW.png" />
+    <Resource Include="src\Assets\Images\KnightB.png" />
+    <Resource Include="src\Assets\Images\KnightW.png" />
+    <Resource Include="src\Assets\Images\PawnB.png" />
+    <Resource Include="src\Assets\Images\PawnW.png" />
+    <Resource Include="src\Assets\Images\QueenB.png" />
+    <Resource Include="src\Assets\Images\QueenW.png" />
+    <Resource Include="src\Assets\Images\Resign.png" />
+    <Resource Include="src\Assets\Images\RookB.png" />
+    <Resource Include="src\Assets\Images\RookW.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="pics\BishopB.png" />
-    <Resource Include="pics\BishopW.png" />
-    <Resource Include="pics\Board.png" />
-    <Resource Include="pics\icon.ico" />
-    <Resource Include="pics\KingB.png" />
-    <Resource Include="pics\KingW.png" />
-    <Resource Include="pics\KnightB.png" />
-    <Resource Include="pics\KnightW.png" />
-    <Resource Include="pics\PawnB.png" />
-    <Resource Include="pics\PawnW.png" />
-    <Resource Include="pics\QueenB.png" />
-    <Resource Include="pics\QueenW.png" />
-    <Resource Include="pics\RookB.png" />
-    <Resource Include="pics\RookW.png" />
+	<ApplicationDefinition Include="src\App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="src\Views\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="src\Views\PromotionWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="src\Views\StartWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
-  <ItemGroup>
-    <Resource Include="pics\Resign.png" />
-  </ItemGroup>
+  <ItemGroup />
+	<ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+		<None Include="libs\x64\Debug\ChessEngine.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+		<None Include="libs\x64\Release\ChessEngine.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

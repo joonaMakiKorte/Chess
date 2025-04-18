@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessUI", "ChessUI\ChessUI.csproj", "{4B72FF6A-C4C4-4916-8FEE-8189076ED222}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EF44702E-6A80-4DFD-A3FB-86E6DA088FE3} = {EF44702E-6A80-4DFD-A3FB-86E6DA088FE3}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChessEngine", "ChessEngine\ChessEngine.vcxproj", "{EF44702E-6A80-4DFD-A3FB-86E6DA088FE3}"
 EndProject
@@ -44,5 +47,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7CF8CB17-094C-4F45-84BD-6CC42B7C1DE8}
 	EndGlobalSection
 EndGlobal

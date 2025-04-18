@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Chess Start" 
         Height="700" Width="900" MinHeight="600" MinWidth="800"
-        Icon="pics/icon.ico"
+        Icon="pack://application:,,,/src/Assets/Images/icon.ico"
         Background="#222">
 
     <!-- Styling for each window element -->
