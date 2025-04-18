@@ -19,16 +19,21 @@ namespace Chess
         private ChessGame chessGame;
         private BoardUI boardUi;
         private (int logicRow, int logicCol)? selectedPiece = null; // LOGIC coordinates of the selected piece
-        private readonly Grid pieceGrid; // store to reference PieceGrid
+        private readonly Grid pieceGrid; 
+        private readonly Button resignButton;
+        private readonly Button newGameButton;
         private bool isProcessingMove = false; // Flag to prevent overlapping actions
         private bool isFlipped;
 
         // Small delay for AI and timer start in the initial call
         const int initialStartDelayMs = 750;
 
-        public BoardInteract( Grid pieceGrid, ChessGame chessGame, BoardUI boardUi, bool flipped)
+        public BoardInteract( Grid pieceGrid, Button resignButton, Button newGameButton,
+            ChessGame chessGame, BoardUI boardUi, bool flipped)
         {
             this.pieceGrid = pieceGrid;
+            this.resignButton = resignButton;
+            this.newGameButton = newGameButton;
             this.chessGame = chessGame;
             this.boardUi = boardUi;
             this.isFlipped = flipped; // Flipped logic if black is bottom
@@ -76,6 +81,8 @@ namespace Chess
 
                 isProcessingMove = true;
                 pieceGrid.IsEnabled = false; // Disable board input during AI move
+                resignButton.IsEnabled = false;
+                newGameButton.IsEnabled = false;
 
                 try
                 {
@@ -110,9 +117,11 @@ namespace Chess
                     isProcessingMove = false;
                     // Re-enable grid ONLY if it's now a human's turn
                     bool isNextTurnHuman = !chessGame.isAIGame || (chessGame.isWhiteAI != chessGame.IsWhiteTURN());
-                    if (isNextTurnHuman /* && !IsGameOver()*/) // Re-enable only if game is not over
+                    if (isNextTurnHuman && chessGame.isOngoing) // Re-enable only if game is not over
                     {
                         pieceGrid.IsEnabled = true;
+                        resignButton.IsEnabled = true;
+                        newGameButton.IsEnabled = true;
                         pieceGrid.Focus(); // Ensure grid can receive input
                     }
                 }

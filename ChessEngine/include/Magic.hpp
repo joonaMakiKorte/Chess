@@ -16,7 +16,13 @@ namespace Magic {
     uint64_t maskRookXrayAttacks(int square, uint64_t blockers);
     uint64_t maskBishopXrayAttacks(int square, uint64_t blockers);
 
+    extern std::atomic<bool> initialized; // Track re-init need
     void initMagicTables();
+    void teardownTables();
+
+    static bool isInitialized() {
+        return initialized.load(std::memory_order_acquire);
+    }
 
     // Tables for relevant bits count
     constexpr int RELEVANT_BITS_COUNT_BISHOP[64] = {

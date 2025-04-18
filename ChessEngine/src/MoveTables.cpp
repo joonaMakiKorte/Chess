@@ -15,6 +15,8 @@ namespace MoveTables {
 	uint64_t(*ATTACKS_BISHOP)[512] = new uint64_t[64][512];
 	uint64_t(*ATTACKS_ROOK)[4096] = new uint64_t[64][4096];
 
+	std::atomic<bool> initialized{ false }; // Atomic for thread safety
+
 	void initWhitePawnMoves(int square) {
 		uint64_t bitboard = 1ULL << square; // Cast square to bitboard
 
@@ -102,10 +104,18 @@ namespace MoveTables {
 	}
 
 	void initMoveTables() {
-		// Set flag to prevent unnecessary reinitialization
-		static bool initialized = false;
-		if (initialized) return;
-		initialized = true;
+		bool expected = false;
+		if (!initialized.compare_exchange_strong(expected, true)) {
+			return; // Already initialized
+		}
+
+		// Reallocate if needed
+		if (ATTACKS_BISHOP == nullptr) {
+			ATTACKS_BISHOP = new uint64_t[64][512];
+		}
+		if (ATTACKS_ROOK == nullptr) {
+			ATTACKS_ROOK = new uint64_t[64][4096];
+		}
 
 		// Non-sliding pieces
 		for (int square = 0; square < 64; square++) {
@@ -140,7 +150,20 @@ namespace MoveTables {
 	}
 
 	void teardownMoveTables() {
-		delete[] ATTACKS_BISHOP;
-		delete[] ATTACKS_ROOK;
+		if (!initialized.load()) return; // No redundant teardown
+
+		Magic::teardownTables();
+
+		// Validate before deletion
+		if (ATTACKS_BISHOP) {
+			delete[] ATTACKS_BISHOP;
+			ATTACKS_BISHOP = nullptr;
+		}
+		if (ATTACKS_ROOK) {
+			delete[] ATTACKS_ROOK;
+			ATTACKS_ROOK = nullptr;
+		}
+
+		initialized = false;
 	}
 }

@@ -29,6 +29,8 @@ namespace Chess
 
         private readonly IPromotionUI _promotionUIService; // Subscribe to MainWindow for promotions
 
+        private bool _disposed = false; // Ensure DLL cleanup
+
         // Even for game over
         // Subscribed by MainWindow
         public class GameOverEventArgs : EventArgs
@@ -63,6 +65,7 @@ namespace Chess
             _promotionUIService = promotionUIService; // Subscribe to MainWindow for promotions
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
+            Console.WriteLine(board);
             if (board == IntPtr.Zero)
             {
                 throw new Exception("Failed to initialize the chess board from the engine.");
@@ -212,13 +215,20 @@ namespace Chess
         // Destroy board
         public void Dispose()
         {
-            if (board != IntPtr.Zero)
+            if (!_disposed)
             {
-                ChessEngineInterop.DestroyBoard(board);
-                board = IntPtr.Zero;
+                // Always clean up unmanaged resources
+                if (board != IntPtr.Zero)
+                {
+                    ChessEngineInterop.DestroyBoard(board);
+                    board = IntPtr.Zero;
+                }
+                _disposed = true;
             }
+            GC.SuppressFinalize(this); // Prevent redundant destructor calls
         }
 
+        // Destructor (fallback if Dispose() wasn't called
         ~ChessGame()
         {
             Dispose();

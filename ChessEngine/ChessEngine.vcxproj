@@ -126,12 +126,7 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>if "$(Configuration)"=="Debug" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Debug\"
-) else if "$(Configuration)"=="Release" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Release\"
-)
-</Command>
+      <Command>xcopy /Y "$(TargetPath)" "$(SolutionDir)ChessUI\libs\$(Platform)\$(Configuration)\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -156,12 +151,7 @@
       <EnableUAC>false</EnableUAC>
     </Link>
     <PostBuildEvent>
-      <Command>if "$(Configuration)"=="Debug" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Debug\"
-) else if "$(Configuration)"=="Release" (
-    xcopy /Y /D "$(SolutionDir)ChessEngine\x64\$(Configuration)\ChessEngine.dll" "$(SolutionDir)ChessUI\bin\x64\Release\"
-)
-</Command>
+      <Command>xcopy /Y "$(TargetPath)" "$(SolutionDir)ChessUI\libs\$(Platform)\$(Configuration)\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
