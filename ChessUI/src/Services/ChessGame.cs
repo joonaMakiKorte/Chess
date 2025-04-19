@@ -65,7 +65,6 @@ namespace Chess
             _promotionUIService = promotionUIService; // Subscribe to MainWindow for promotions
 
             board = ChessEngineInterop.CreateBoard(); // Initialize DLL board
-            Console.WriteLine(board);
             if (board == IntPtr.Zero)
             {
                 throw new Exception("Failed to initialize the chess board from the engine.");

@@ -14,6 +14,13 @@ namespace Chess
         public StartWindow()
         {
             InitializeComponent();
+
+            // Apply size
+            this.Top = Properties.Settings.Default.WindowTop;
+            this.Left = Properties.Settings.Default.WindowLeft;
+            this.Width = Properties.Settings.Default.WindowWidth;
+            this.Height = Properties.Settings.Default.WindowHeight;
+
             this.Loaded += StartWindow_Loaded; // Keep Loaded event for initialization
         }
 
@@ -151,6 +158,13 @@ namespace Chess
 
             try
             {
+                // Save window position & size to settings
+                Properties.Settings.Default.WindowTop = this.Top;
+                Properties.Settings.Default.WindowLeft = this.Left;
+                Properties.Settings.Default.WindowWidth = this.Width;
+                Properties.Settings.Default.WindowHeight = this.Height;
+                Properties.Settings.Default.Save();
+
                 // Pass AI flags, playing sides, difficulty and timer to MainWindow
                 MainWindow mainWindow = new MainWindow(
                     whiteIsHuman, blackIsHuman, leftIsWhite, difficulty, timerMinutes

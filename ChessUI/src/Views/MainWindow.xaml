@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Chess"
         mc:Ignorable="d"
-        Title="Chess" Width="900" Height="750"
+        Title="Chess Engine"
         Icon="pack://application:,,,/src/Assets/Images/icon.ico"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
+        ResizeMode="CanResize"
         Background="#222">
 
     <!-- Wrap elements in a viewbox -->
@@ -111,7 +112,8 @@
                        Visibility="Hidden">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}"
+                                <Border x:Name="border" 
+                                    Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="3">
@@ -119,6 +121,17 @@
                                         <Image Source="pack://application:,,,/src/Assets/Images/Resign.png" Width="20" Height="20"/>
                                     </Viewbox>         
                                 </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="WhiteSmoke"/>
+                                        <Setter TargetName="border" Property="BorderBrush" Value="Gainsboro"/>
+                                        <Setter TargetName="border" Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect BlurRadius="10" Color="WhiteSmoke" Opacity="0.7"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                     </Button>

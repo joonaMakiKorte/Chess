@@ -131,6 +131,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="app.config" />
     <None Include="src\App.config" />
     <None Include="src\packages.config" />
     <None Include="Properties\Settings.settings">
@@ -156,7 +157,7 @@
     <Resource Include="src\Assets\Images\RookW.png" />
   </ItemGroup>
   <ItemGroup>
-	<ApplicationDefinition Include="src\App.xaml">
+    <ApplicationDefinition Include="src\App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
@@ -174,16 +175,15 @@
     </Page>
   </ItemGroup>
   <ItemGroup />
-	<ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-		<None Include="libs\x64\Debug\ChessEngine.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-		<None Include="libs\x64\Release\ChessEngine.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <None Include="libs\x64\Debug\ChessEngine.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <None Include="libs\x64\Release\ChessEngine.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

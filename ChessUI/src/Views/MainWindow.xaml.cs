@@ -42,7 +42,13 @@ namespace Chess
         {
             
             InitializeComponent();
-            
+
+            // Apply window size inherited from startup
+            this.Top = Properties.Settings.Default.WindowTop;
+            this.Left = Properties.Settings.Default.WindowLeft;
+            this.Width = Properties.Settings.Default.WindowWidth;
+            this.Height = Properties.Settings.Default.WindowHeight;
+
             // Init UI
             boardUI = new BoardUI(PieceGrid, TopTimerLabel, BottomTimerLabel,
                 images, timer, !bottomIsWhite, MoveLogView);
@@ -165,6 +171,14 @@ namespace Chess
         protected override void OnClosed(EventArgs e)
         {
             chessGame.Dispose(); // Explicit cleanup
+
+            // Save size to setting 
+            Properties.Settings.Default.WindowTop = this.Top;
+            Properties.Settings.Default.WindowLeft = this.Left;
+            Properties.Settings.Default.WindowWidth = this.Width;
+            Properties.Settings.Default.WindowHeight = this.Height;
+            Properties.Settings.Default.Save();
+
             base.OnClosed(e);  
         }
     }
