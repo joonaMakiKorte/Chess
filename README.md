@@ -34,7 +34,7 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
 ## Build Instructions for MSVC (Visual Studio)
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/joonaMakiKorte/ChessEngine.git
+   git clone https://github.com/joonaMakiKorte/Chess.git
    cd Chess
    ```
 
