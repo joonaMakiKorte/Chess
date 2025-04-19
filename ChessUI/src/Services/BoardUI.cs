@@ -17,7 +17,9 @@ namespace Chess
         private readonly Grid pieceGrid;
         private readonly Border[,] pieceBorders = new Border[8, 8]; // To keep track of borders
         private readonly Image[,] pieceImages = new Image[8, 8];
+
         private Images images; // Hold piece image data
+        private ChessGame chessGame; // Hold instance to game logic
 
         // Move-log logic
         public class MoveLogEntry
@@ -60,6 +62,9 @@ namespace Chess
 
             moveLogPanel.ItemsSource = moveLogEntries;
         }
+
+        // Save instance to chess logic
+        public void SetGameInstance(ChessGame chessGame) => this.chessGame = chessGame;
         
         public void InitializeBoard()
         {
@@ -306,8 +311,9 @@ namespace Chess
             }
             else
             {
+                // Stop timer and trigger game over event in chessgame
                 whiteTimer.Stop();
-
+                chessGame.EndGameTime();
             }
         }
 
@@ -321,6 +327,7 @@ namespace Chess
             else
             {
                 blackTimer.Stop();
+                chessGame.EndGameTime();
             }
         }
         private void UpdateTimerLabels()

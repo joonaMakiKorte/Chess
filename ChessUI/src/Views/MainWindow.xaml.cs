@@ -59,6 +59,7 @@ namespace Chess
 
             // Update status from chessGame to ui
             boardUI.UpdateBoard(chessGame.GetBoardState());
+            boardUI.SetGameInstance(chessGame); // Pass instance
 
             // Init UI interactions
             boardInteract = new BoardInteract(PieceGrid, ResignButton, NewGameButton, chessGame, boardUI, !bottomIsWhite);

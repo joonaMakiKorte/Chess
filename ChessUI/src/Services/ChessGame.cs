@@ -211,6 +211,17 @@ namespace Chess
             }
         }
 
+        // End game when time runs out
+        public void EndGameTime()
+        {
+            if (boardStatusInfo != null)
+            {            
+                // Trigger GameOver with 'mate' for simplicity
+                isOngoing = false;
+                OnGameOver(new GameOverEventArgs("mate"));
+            }
+        }
+
         // Destroy board
         public void Dispose()
         {
