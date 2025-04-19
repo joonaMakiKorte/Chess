@@ -1,6 +1,6 @@
 # Chess Engine Project
 
-**TODO** Project description
+A Windows‑based chess application combining a sleek C# WPF frontend with a high‑performance C++ bitboard engine compiled as a DLL. It supports local Human vs Human and Human vs Computer matches (three difficulty levels) powered by a Minimax search with alpha‑beta pruning and an adaptive evaluation function that shifts strategy between midgame and endgame.
 
 ## Features
 
@@ -21,7 +21,7 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
 ### Start Window
 ![Start Window](https://imgur.com/NNPXgY4.png)
 
-### Main Game Window
+### Main Window
 ![Main Game Window](https://imgur.com/7fdxJZV.png)
 
 ### Promotion Pop-Up
@@ -192,5 +192,15 @@ Dual-phase evaluation system:
   
 *Performance achieved with MSVC Release build: Maximum Optimization (Favor Speed), Enhanced Instruction Set (AVX2)*
 
+### **Known limitations** *(To be fixed)*
+- **Endgame Forced Mates**: The AI currently struggles to detect and execute forced mates in endgame scenarios.
+- **White Side Play**: The AI performs significantly worse when playing as White compared to Black.
+
+## Contributing
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+
 ## Acknowledgements
-- **[Chess Programming Wiki](http://chessprogramming.org/)**: For providing the main insights and theories of chess programming principles
+- **[Chess Programming Wiki](http://chessprogramming.org/)**: For providing the main insights and theories on chess programming principles
+
+## Contact
+For any questions or suggestions, please open an issue or contact the maintainer directly.
