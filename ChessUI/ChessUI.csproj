@@ -133,7 +133,7 @@
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="src\App.config" />
-    <None Include="src\packages.config" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
