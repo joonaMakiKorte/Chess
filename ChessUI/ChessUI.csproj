@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProjectGuid>{4B72FF6A-C4C4-4916-8FEE-8189076ED222}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Chess</RootNamespace>
@@ -175,15 +175,18 @@
     </Page>
   </ItemGroup>
   <ItemGroup />
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <None Include="libs\x64\Debug\ChessEngine.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <None Include="libs\x64\Release\ChessEngine.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+	    <Content Include="libs\x64\Debug\ChessEngine.dll">
+		    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		    <Link>ChessEngine.dll</Link>
+	    </Content>
+    </ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+		<Content Include="libs\x64\Release\ChessEngine.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>ChessEngine.dll</Link>
+		</Content>
+	</ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
