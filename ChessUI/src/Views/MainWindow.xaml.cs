@@ -106,6 +106,9 @@ namespace Chess
                 // Disable inputs
                 PieceGrid.IsEnabled = false;
                 ResignButton.Visibility = Visibility.Hidden;
+
+                // Re-enable new game button (was disabled for move duration if AI game)
+                NewGameButton.IsEnabled = true;
             });
         }
 

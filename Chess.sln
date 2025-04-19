@@ -47,6 +47,7 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+		StartupProject = ChessUI
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7CF8CB17-094C-4F45-84BD-6CC42B7C1DE8}
