@@ -18,7 +18,14 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
 
 ## Screenshots
 
-**TODO**
+### Start Window
+![Start Window](https://imgur.com/NNPXgY4.png)
+
+### Main Game Window
+![Main Game Window](https://imgur.com/7fdxJZV.png)
+
+### Promotion Pop-Up
+![Promotion Pop-Up](https://imgur.com/WZsWGsI.png)
 
 ## Requirements
 - **Microsoft Visual Studio 2022** for compatability with MSVC and modern C++ features (C++20).
@@ -75,17 +82,62 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
 - **`pch.h/pch.cpp`**: Precompiled header to reduce compile time significantly.
 
 ### ChessUI (C#)
-- **TODO**
+- **`src/`**: Contains the `App` and folders for main source code.
+  - **`Services/`**: Contains the **Frontend** logic.
+    - **`ChessEngineInterop.cs`**: Handles methods for communicating with the chess engine DLL.
+    - **`ChessGame.cs`**: The Frontend side of chess logic.
+    - **`BoardInteract.cs`**: Handles the piece moving in UI.
+    - **`BoardUI.cs`**: Updates the timers and the board after each move.
+    - **`Images.cs`**: Creates BitmapImages for each chess piece.
+  - **`Views/`**: Contains the different windows of the app.
+    - **`StartWindow.xaml(.cs)`**: Interface for game setting initialization.
+    - **`MainWindow.xaml(.cs)`**: The main interface for the chess game.
+    - **`PromotionWindow.xaml(.cs)`**: Pop-up window for pawn promotion.
+  - **`Assets/`**: Assets for the UI.
+    - **`Images/`**: Images for different UI elements.
+  - **`App.xaml(.cs)`**: Application-wide properties. Mostly unused currently but useful for app scaling.
+  - **`App/packages.config`**: Application-wide configuration settings.
+- **`Properties/`**: Application-wide properties.
 
 ## Chess Engine
-The chess engine implements 64-bit bitboard logic, enabling highly optimized board operations through bitwise manipulation. 
+The **chess engine** implements 64-bit **bitboard logic**, enabling **highly optimized** board operations through bitwise manipulation. 
 Board states are communicated to the frontend via [FEN notation](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation), which is parsed on the C# side.
 
-For efficient data handling:
-- Moves are encoded in 32-bit format for compact storage
-- The bitboard class decodes and applies moves to the board
-- State validation checks for check/mate/stalemate after each move
-- Threefold repetition detection uses [Zobrist hashing](https://www.chessprogramming.org/Zobrist_Hashing), with hash keys updated incrementally via XOR
+**For efficient data handling:**
+- Moves are encoded in 32-bit format for **compact storage**
+- The bitboard class **decodes and applies** moves to the board
+- **State validation checks** for check/mate/stalemate after each move
+- **Threefold repetition** detection uses [Zobrist hashing](https://www.chessprogramming.org/Zobrist_Hashing), with hash keys updated incrementally via XOR
+
+## Chess UI
+The frontend is built using **WPF** to provide a **modern graphical interface** with smooth, intuitive controls. The application is configured as a **Windows Application** rather than a Console Application to ensure a seamless and focused user experience. The UI design follows a **minimalistic and calming aesthetic**, emphasizing ease of use and clarity for an enjoyable chess experience.
+
+### Start Window
+The **Start Window** is the first screen displayed when launching the app. It allows players to configure key game settings before beginning a match.
+**Configurable settings include:**
+- **Game duration**
+- **Game mode** (vs. Human or vs. Engine)
+- **Playing side**
+  - If flipped, Black plays from the bottom and the King starts to the left of the Queen.
+- **AI difficulty** (when playing against the engine)
+  - *Note: Engine vs. Engine matches are currently disabled.*
+ 
+### Main Window
+The **Main Window** serves as the primary gameplay interface. It includes:
+- A fully interactive **chessboard**
+- **Timers** for both sides
+- A **New Game** button to return to the Start Window
+- A **Resign** button (visible when playing against the engine)
+- A **Move log** that tracks all played moves
+When the game ends, a **result message** is shown below the move log.
+To make a move, click a piece to activate it, then click on a valid target square.
+All **legal moves** for a selected piece are highlighted directly on the board.
+
+### Promotion Pop-Up
+The **Promotion Pop-Up** appears when a pawn reaches the final rank.
+Players can choose a promotion piece by clicking the corresponding button in the pop-up window.
+
+Promotion is also **cancellable**: simply close the window without selecting a piece, and the move will be cancelled. You may then move another piece instead.
 
 ## AI
 
