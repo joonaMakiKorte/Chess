@@ -42,7 +42,7 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
 - Double-click on **`Chess.sln`** in the root of the repository to open the project in Visual Studio.
 
 3. **Build the Project:**
-- Once the solution is opened in Visual Studio, set the desired configuration to **`Release`** from the toolbar.
+- Once the solution is opened in Visual Studio, set the desired configuration to **`Release`** and platform to **`x64`** from the toolbar.
 - To build the project:
   1. Click **Build** from the menu.
   2. Choose **Build Solution** (**`Ctrl + Shift + B`**).
@@ -54,11 +54,13 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
   2. Choose **Set as StartUp Project.**
 - Then press **F5** or click **Start without Debugging** to run the application.
 
-5. **Clean and Rebuild**: If you encounter any build issues, it's always good to clean the solution and rebuild:
-- In Visual Studio, go to **Build -> Clean Solution** and then **Build Solution**.
-
-6. **Verify the DLL Placement** (If still encountering issues):
-- After building the project, verify that the **DLL** (**`ChessEngine.dll`**) has been copied to the correct location, which should be the
+### Troubleshooting
+- **Clean and Rebuild**: If you encounter any build issues, it's always good to clean the solution and rebuild:
+  - In Visual Studio, go to **Build -> Clean Solution** and then **Build Solution**.
+- **Missing reference errors**: If you get missing reference errors, restore NuGet packages:
+  - In Visual Studio -> Right-click ChessUI solution -> and then **"Restore NuGet Packages"**.
+- **Verify the DLL Placement** (If still encountering issues):
+  - After building the project, verify that the **DLL** (**`ChessEngine.dll`**) has been copied to the correct location, which should be the
   **ChessUI/bin/x64/Release** folder (make sure you built in Release and not in Debug).
 
 ## Project Structure
