@@ -374,6 +374,9 @@ uint32_t Bitboard::applyMove(int source, int target, PieceType promotion, bool w
 		position_history[hash_key]++; // Save new state
 	}
 
+	// Increase ply count
+	ply_count++;
+
 	// Finally return the encoded move
 	return ChessAI::encodeMove(source, target, source_piece, target_piece, move_type, promotion, false); // Don't add check flag
 }
@@ -402,6 +405,10 @@ void Bitboard::updateDrawByRepetition() {
 	else if (half_moves >= 50) {
 		state.flags |= BoardState::DRAW_50;
 	}
+}
+
+int Bitboard::getPlyCount() const {
+	return ply_count;
 }
 
 uint64_t Bitboard::whitePieces() {
@@ -1143,6 +1150,8 @@ void Bitboard::applyMoveAI(uint32_t move, bool white) {
 	}
 
 	updateBoardState(white); // Update board state after applied move (+promoted)
+
+	ply_count++; 
 }
 
 void Bitboard::undoMoveAI(uint32_t move, bool white) {
@@ -1230,6 +1239,8 @@ void Bitboard::undoMoveAI(uint32_t move, bool white) {
 		piece_bitboards[white][source_piece] &= ~(1ULL << target);
 		hash_key ^= Tables::PIECE_KEYS[white][source_piece][target];
 	}
+
+	ply_count--;
 }
 
 int Bitboard::evaluateBoard() {
