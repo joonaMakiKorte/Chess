@@ -2,6 +2,7 @@
 #include "ChessAI.hpp"
 #include "Bitboard.hpp"
 #include "Tables.hpp"
+#include "Scoring.hpp"
 
 
 uint32_t ChessAI::getBestMove(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
@@ -80,10 +81,8 @@ int ChessAI::minimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int
     // If we have already found a mate score, check if the current depth can possibly improve it.
     // alpha and beta track the best scores found so far. Mate scores are typically large.
     // If alpha is already a mate score found sooner (higher value), don't search deeper if we can't beat it.
-    int mate_score = 100000; // Use the same base value as in evaluateBoard
-    int max_ply_from_mate = 128; // Adjust as needed
-    alpha = std::max(alpha, -mate_score + board->getPlyCount()); // Adjust alpha based on ply from root
-    beta = std::min(beta, mate_score - board->getPlyCount());   // Adjust beta based on ply from root
+    alpha = std::max(alpha, -MATE_SCORE + board->getPlyCount()); // Adjust alpha based on ply from root
+    beta = std::min(beta, MATE_SCORE - board->getPlyCount());   // Adjust beta based on ply from root
     if (alpha >= beta) {
         return alpha; // Mate distance pruning
     }
@@ -108,8 +107,8 @@ int ChessAI::minimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int
                 int stored_score = entry.score;
 
                 // Adjust score from mate distance perspective if it's a mate score
-                if (stored_score > mate_score - max_ply_from_mate) stored_score -= board->getPlyCount();
-                if (stored_score < -mate_score + max_ply_from_mate) stored_score += board->getPlyCount();
+                if (stored_score > MATE_SCORE - MAX_PLY_FROM_MATE) stored_score -= board->getPlyCount();
+                if (stored_score < -MATE_SCORE + MAX_PLY_FROM_MATE) stored_score += board->getPlyCount();
 
 
                 // Use stored information based on the flag
@@ -229,7 +228,7 @@ int ChessAI::minimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int
                     entry_to_store.zobrist_key_verify = key;
                     // Adjust score for mate distance before storing
                     int store_score = best_eval;
-                    if (store_score > mate_score - max_ply_from_mate) store_score += board->getPlyCount(); // Store relative to root
+                    if (store_score > MATE_SCORE - MAX_PLY_FROM_MATE) store_score += board->getPlyCount(); // Store relative to root
 
                     entry_to_store.score = (int16_t)std::clamp(store_score, -32767, 32767);
                     entry_to_store.depth = (int8_t)depth;
@@ -257,8 +256,8 @@ int ChessAI::minimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int
             entry_to_store.zobrist_key_verify = key;
             // Adjust score for mate distance before storing
             int store_score = alpha; // alpha holds the best score found within the bounds
-            if (store_score > mate_score - max_ply_from_mate) store_score += board->getPlyCount(); // Store relative to root
-            if (store_score < -mate_score + max_ply_from_mate) store_score -= board->getPlyCount(); // Store relative to root
+            if (store_score > MATE_SCORE - MAX_PLY_FROM_MATE) store_score += board->getPlyCount(); // Store relative to root
+            if (store_score < -MATE_SCORE + MAX_PLY_FROM_MATE) store_score -= board->getPlyCount(); // Store relative to root
 
 
             entry_to_store.score = (int16_t)std::clamp(store_score, -32767, 32767);
@@ -320,8 +319,8 @@ int ChessAI::quiescence(std::unique_ptr<Bitboard>& board, int alpha, int beta, b
 
 int ChessAI::evaluateBoard(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
     int score = 0;
-    if (board->state.isCheckmateWhite()) score = -100000 + (depth * 1000);  // White loses
-	else if (board->state.isCheckmateBlack()) score = 100000 - (depth * 1000); // Black loses
+    if (board->state.isCheckmateWhite()) score = -MATE_SCORE + (depth * 1000);  // White loses
+	else if (board->state.isCheckmateBlack()) score = MATE_SCORE - (depth * 1000); // Black loses
     else if (board->state.isStalemate()) score = 0; // Draw -> neutral outcome
     else {
         score = board->evaluateBoard(); // Material+positional score relative to white
@@ -339,232 +338,182 @@ int ChessAI::evaluateBoard(std::unique_ptr<Bitboard>& board, int depth, bool max
 
 int ChessAI::endgameMinimax(std::unique_ptr<Bitboard>& board, int depth, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
-    // Check 50-move rule first (simple counter check)
     if (board->getHalfMoveClock() >= 50) {
         return 0; // Draw score
     }
-    // Check threefold repetition using the path history
-    // Important: Check the *current* node before exploring children
+
     if (board->isDrawByRepetition()) {
         return 0; // Draw score
     }
 
-    // Lookup the current position in the transposition table using the incremental Zobrist hash key
-    uint64_t key = board->getHashKey();
-    uint32_t tt_best_move = NULL_MOVE_32; // Hint for move ordering
-    int original_alpha = alpha; // Store original alpha for TT store logic
-    int original_beta = beta; // Store original beta as well for clarity
+    // --- Mate Distance Pruning ---
+    alpha = std::max(alpha, -MATE_SCORE + board->getPlyCount()); // Adjust alpha based on ply from root
+    beta = std::min(beta, MATE_SCORE - board->getPlyCount());   // Adjust beta based on ply from root
+    if (alpha >= beta) {
+        return alpha; // Mate distance pruning
+    }
 
     // --- TT Probe ---
-    // Check if TT is initialized and probe only if TT_NUM_ENTRIES > 0
+    // --- Transposition Table Probe ---
+    uint64_t key = board->getHashKey();
+    uint32_t tt_best_move = NULL_MOVE_32;
+    int original_alpha = alpha;
+    bool tt_hit = false;
+    int tt_score = -INF; 
+
     if (Tables::TT_NUM_ENTRIES > 0) {
         size_t index = key & Tables::TT_MASK;
         TTEntry& entry = Tables::TRANSPOSITION_TABLE[index];
 
-        // Verify hash key
         if (entry.zobrist_key_verify == key) {
-            // Entry matches the current position
-            tt_best_move = entry.best_move; // Store best move hint for move ordering
+            tt_hit = true;
+            tt_best_move = entry.best_move; 
 
-            // Check if depth is sufficient for reuse
             if (entry.depth >= depth) {
-                int stored_score = entry.score; // Score is stored relative to the side to move
+                int stored_score = entry.score;
 
-                // Use stored information based on the flag
+                if (stored_score > MATE_SCORE - MAX_PLY_FROM_MATE) stored_score -= board->getPlyCount();
+                if (stored_score < -MATE_SCORE + MAX_PLY_FROM_MATE) stored_score += board->getPlyCount();
+
+
                 if (entry.flag == FLAG_EXACT) {
-                    return stored_score; // Exact score found
+                    return stored_score; 
                 }
-                if (entry.flag == FLAG_LOWERBOUND) { // Failed high previously (score >= beta)
+                if (entry.flag == FLAG_LOWERBOUND) {
                     if (stored_score >= beta) {
-                        // This stored lower bound is sufficient to cause a beta cutoff now
                         if (!isCapture(tt_best_move) && tt_best_move != NULL_MOVE_32) {
-                            updateKillerMoves(tt_best_move, depth); // Update based on TT cutoff
+                            updateKillerMoves(tt_best_move, depth);
                         }
                         return stored_score;
                     }
-                    // If it doesn't cause cutoff, we can still tighten alpha
                     alpha = std::max(alpha, stored_score);
                 }
-                else if (entry.flag == FLAG_UPPERBOUND) { // Failed low previously (score <= alpha)
+                else if (entry.flag == FLAG_UPPERBOUND) {
                     if (stored_score <= alpha) {
-                        // This stored upper bound is sufficient to cause an alpha cutoff now
                         if (!isCapture(tt_best_move) && tt_best_move != NULL_MOVE_32) {
-                            updateKillerMoves(tt_best_move, depth); // Update based on TT cutoff
+                            updateKillerMoves(tt_best_move, depth);
                         }
                         return stored_score;
                     }
-                    // If it doesn't cause cutoff, we can still tighten beta
                     beta = std::min(beta, stored_score);
                 }
 
-                // Check if bounds crossed after tightening
                 if (alpha >= beta) {
-                    // A cutoff occurred due to TT bounds tightening. Return the score that caused it.
-                    // The logic above should already return in these cases, but as a fallback:
-                    // If alpha was raised by LOWERBOUND, return alpha. If beta was lowered by UPPERBOUND, return beta.
-                    // Returning the bound that was *not* crossed seems appropriate for fail-soft.
-                    // If FLAG_LOWERBOUND caused alpha >= beta, return alpha.
-                    // If FLAG_UPPERBOUND caused beta <= alpha, return beta.
-                    // Let's return alpha as it represents a score we know we can achieve (lower bound).
                     return alpha;
                 }
             }
-
         }
     }
 
-    // Check for terminal conditions after TT probe (mate/draw)
+    // --- Base Case: Check for Terminal Nodes or Reached Max Depth ---
     if (board->isGameOver()) {
         return evaluateEndgameBoard(board, depth, maximizing);
     }
 
-    // Quiescence search at depth 0 (with checks)
+    // Call Quiescence Search at depth 0
     if (depth <= 0) {
-        // Results from Q-search are generally not stored in the main TT here,
-        // though Q-search itself could potentially use the TT or its own smaller cache
         return endgameQuiescence(board, alpha, beta, maximizing);
     }
 
-    // Check extension: Extend if current player is in check
-    if (maximizing ? board->state.isCheckBlack() : board->state.isCheckWhite()) {
-        depth += 1; // Standard extension
-    }
-
-    // --- Main search logic ---
+    // --- Main Negamax Search Logic ---
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
     board->generateEndgameMoves(move_list, move_count, depth, maximizing, tt_best_move);
 
-    // Check if no moves were generated (safeguard)
+    // Check if no legal moves (Stalemate or Checkmate handled by isGameOver, but as safeguard)
     if (move_count == 0) {
         return evaluateEndgameBoard(board, depth, maximizing);
     }
 
-    uint32_t best_move_found = NULL_MOVE_32; // Track best move at this ply
-    TTFlag flag = FLAG_UPPERBOUND; // Assume fail-low initially (score <= original_alpha)
-    int best_eval; // Holds the best score found
 
-    if (maximizing) { 
-        best_eval = -INF;
-        for (int i = 0; i < move_count; i++) {
-            board->applyMoveAI(move_list[i], maximizing);
+    int best_eval = -INF; 
+    uint32_t best_move_found = NULL_MOVE_32; 
+    TTFlag flag = FLAG_UPPERBOUND; 
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
+    // --- Iterate Through Moves ---
+    for (int i = 0; i < move_count; i++) {
+        board->applyMoveAI(move_list[i], maximizing);
 
-            board->undoMoveAI(move_list[i], maximizing);
+        int eval = -endgameMinimax(board, depth - 1, -beta, -alpha, !maximizing);
 
-            // --- Update best score and alpha ---
-            if (eval > best_eval) {
-                best_eval = eval;
-                best_move_found = move_list[i]; // Found a better move
-                if (best_eval > alpha) {
-                    alpha = best_eval;
-                    flag = FLAG_EXACT; // Score is now within the original alpha-beta window
-                    // Update history heuristic for improving moves
-                    if (!isCapture(move_list[i])) {
-                        updateHistory(move_list[i], depth);
-                    }
-                }
-            }
+        board->undoMoveAI(move_list[i], maximizing);
 
+        // --- Update Best Score and Alpha ---
+        if (eval > best_eval) {
+            best_eval = eval; 
 
-            // --- Beta cutoff check ---
-            if (alpha >= beta) {
-                // Store killer move *before* storing TT entry
+            if (best_eval > alpha) {
+                alpha = best_eval; 
+                best_move_found = move_list[i];
+                flag = FLAG_EXACT; 
+
                 if (!isCapture(move_list[i])) {
-                    updateKillerMoves(move_list[i], depth);
+                    updateHistory(move_list[i], depth);
                 }
-                flag = FLAG_LOWERBOUND; // Failed high (score >= beta)
-                best_eval = beta; // Return the cutoff bound score (fail-soft)
-
-                // --- TT Store on Cutoff ---
-                if (Tables::TT_NUM_ENTRIES > 0) {
-                    size_t index = key & Tables::TT_MASK;
-                    // Depth-preferred replacement (or always replace)
-                    if (Tables::TRANSPOSITION_TABLE[index].depth <= depth) {
-                        Tables::TRANSPOSITION_TABLE[index].zobrist_key_verify = key;
-                        Tables::TRANSPOSITION_TABLE[index].score = (int16_t)best_eval;
-                        Tables::TRANSPOSITION_TABLE[index].depth = (int8_t)depth;
-                        Tables::TRANSPOSITION_TABLE[index].flag = flag;
-                        Tables::TRANSPOSITION_TABLE[index].best_move = move_list[i]; // Store the move causing cutoff
-                    }
-                }
-                return best_eval; // Prune
             }
         }
-    }
-    else { 
-        best_eval = INF; // Initialize appropriately for minimization
-        for (int i = 0; i < move_count; i++) {
-            board->applyMoveAI(move_list[i], maximizing);
 
-            int eval = minimax(board, depth - 1, alpha, beta, !maximizing);
-
-            board->undoMoveAI(move_list[i], maximizing);
-
-            // --- Update best score and beta ---
-            if (eval < best_eval) {
-                best_eval = eval;
-                best_move_found = move_list[i]; // Found a better move
-                if (best_eval < beta) {
-                    beta = best_eval;
-                    flag = FLAG_EXACT; // Score is now within the original alpha-beta window
-                    // Update history heuristic for this new best move
-                    if (!isCapture(move_list[i])) {
-                        updateHistory(move_list[i], depth);
-                    }
-                }
+        // --- Beta Cutoff Check (Fail High) ---
+        if (alpha >= beta) {
+            if (!isCapture(move_list[i])) {
+                updateKillerMoves(move_list[i], depth);
             }
 
-            // --- Alpha cutoff check (beta <= alpha) ---
-            if (alpha >= beta) {
-                // Store killer move *before* storing TT entry
-                if (!isCapture(move_list[i])) {
-                    updateKillerMoves(move_list[i], depth);
-                }
-                // Flag remains FLAG_UPPERBOUND (initial assumption, score <= original_alpha)
-                best_eval = alpha; // Return the cutoff bound score (fail-soft)
+            flag = FLAG_LOWERBOUND; 
+            best_eval = beta; 
 
-                // --- TT Store on Cutoff ---
-                if (Tables::TT_NUM_ENTRIES > 0) {
-                    size_t index = key & Tables::TT_MASK;
-                    if (Tables::TRANSPOSITION_TABLE[index].depth <= depth) {
-                        Tables::TRANSPOSITION_TABLE[index].zobrist_key_verify = key;
-                        Tables::TRANSPOSITION_TABLE[index].score = (int16_t)best_eval;
-                        Tables::TRANSPOSITION_TABLE[index].depth = (int8_t)depth;
-                        Tables::TRANSPOSITION_TABLE[index].flag = FLAG_UPPERBOUND; // Explicitly store UPPERBOUND flag
-                        Tables::TRANSPOSITION_TABLE[index].best_move = move_list[i]; // Store the move causing cutoff
-                    }
+            // --- TT Store on Beta Cutoff ---
+            if (Tables::TT_NUM_ENTRIES > 0) {
+                size_t index = key & Tables::TT_MASK;
+                if (Tables::TRANSPOSITION_TABLE[index].depth <= depth || Tables::TRANSPOSITION_TABLE[index].zobrist_key_verify != key) {
+                    TTEntry& entry_to_store = Tables::TRANSPOSITION_TABLE[index];
+                    entry_to_store.zobrist_key_verify = key;
+
+                    int store_score = best_eval;
+                    if (store_score > MATE_SCORE - MAX_PLY_FROM_MATE) store_score += board->getPlyCount(); 
+
+                    entry_to_store.score = (int16_t)std::clamp(store_score, -32767, 32767);
+                    entry_to_store.depth = (int8_t)depth;
+                    entry_to_store.flag = flag;
+                    entry_to_store.best_move = move_list[i]; 
                 }
-                return best_eval; // Prune
             }
+            return best_eval; // Prune the rest of the moves at this node
         }
-    }
+    } // End of move loop
 
     // --- Final TT Store (if no cutoff occurred) ---
     if (Tables::TT_NUM_ENTRIES > 0) {
         size_t index = key & Tables::TT_MASK;
-        // Depth-preferred replacement (Only replace if new search is deeper or equal)
-        if (Tables::TRANSPOSITION_TABLE[index].depth <= depth) {
-            Tables::TRANSPOSITION_TABLE[index].zobrist_key_verify = key;
-            // Ensure score is within int16_t range if necessary, although INF/-INF might be large
-            Tables::TRANSPOSITION_TABLE[index].score = (int16_t)std::clamp(best_eval, -32767, 32767); // Clamp if score can exceed int16_t
-            Tables::TRANSPOSITION_TABLE[index].depth = (int8_t)depth;
-            Tables::TRANSPOSITION_TABLE[index].flag = flag; // Flag determined during search (UPPER, EXACT)
-            Tables::TRANSPOSITION_TABLE[index].best_move = best_move_found;
+        bool should_replace = Tables::TRANSPOSITION_TABLE[index].zobrist_key_verify != key ||
+            Tables::TRANSPOSITION_TABLE[index].depth < depth ||
+            (Tables::TRANSPOSITION_TABLE[index].depth == depth && flag == FLAG_EXACT && Tables::TRANSPOSITION_TABLE[index].flag != FLAG_EXACT);
+
+        if (should_replace) {
+            TTEntry& entry_to_store = Tables::TRANSPOSITION_TABLE[index];
+            entry_to_store.zobrist_key_verify = key;
+
+            int store_score = alpha; 
+            if (store_score > MATE_SCORE - MAX_PLY_FROM_MATE) store_score += board->getPlyCount(); 
+            if (store_score < -MATE_SCORE + MAX_PLY_FROM_MATE) store_score -= board->getPlyCount(); 
+
+
+            entry_to_store.score = (int16_t)std::clamp(store_score, -32767, 32767);
+            entry_to_store.depth = (int8_t)depth;
+            entry_to_store.flag = flag; 
+            entry_to_store.best_move = best_move_found; 
         }
     }
-    return best_eval; // Return the final evaluation for this node
+
+    return alpha;
 }
 
 int ChessAI::endgameQuiescence(std::unique_ptr<Bitboard>& board, int alpha, int beta, bool maximizing) {
     // --- Repetition and 50-Move Rule Checks (BEFORE TT Probe/Other Checks) ---
-    // Check 50-move rule first (simple counter check)
     if (board->getHalfMoveClock() >= 50) {
         return 0; // Draw score
     }
     // Check threefold repetition using the path history
-    // Important: Check the *current* node before exploring children
     if (board->isDrawByRepetition()) {
         return 0; // Draw score
     }
@@ -602,23 +551,26 @@ int ChessAI::endgameQuiescence(std::unique_ptr<Bitboard>& board, int alpha, int 
 }
 
 int ChessAI::evaluateEndgameBoard(std::unique_ptr<Bitboard>& board, int depth, bool maximizing) {
-    if (board->state.isCheckmateWhite()) return -100000 + (depth * 1000);  // White loses
-    if (board->state.isCheckmateBlack()) return 100000 - (depth * 1000); // Black loses
-    if (board->state.isStalemate()) return 0; // Draw -> neutral outcome
+    int score = 0;
+    if (board->state.isCheckmateWhite()) score = -MATE_SCORE + (depth * 1000);  // White loses
+    else if (board->state.isCheckmateBlack()) score = MATE_SCORE - (depth * 1000); // Black loses
+    else if (board->state.isStalemate()) score = 0; // Draw -> neutral outcome
+    else {
+        // Evaluate material and positional score of the board
+        score = board->evaluateBoard();
 
-    // Evaluate material and positional score of the board
-    int score = board->evaluateBoard();
+        // Evaluate passed pawns
+        score += board->evaluatePassedPawns(true) - board->evaluatePassedPawns(false); // Passed pawn delta between white and black
 
-    // Evaluate passed pawns
-    score += board->evaluatePassedPawns(true) - board->evaluatePassedPawns(false); // Passed pawn delta between white and black
+        // Encourage closing distance between kings by giving bonus
+        score += 10 * (7 - board->calculateKingDistance());
 
-    // Encourage closing distance between kings by giving bonus
-    score += 10 * (7 - board->calculateKingDistance());
+        // Award king centralization (if opponent is more centralized acts as a penalty)
+        score += board->getKingCentralization();
+    }
 
-    // Award king centralization (if opponent is more centralized acts as a penalty)
-    score += board->getKingCentralization();
-
-    return score;
+    // Return the score (negate for black)
+    return maximizing ? score : -score;
 }
 
 inline bool ChessAI::isCapture(uint32_t move) {

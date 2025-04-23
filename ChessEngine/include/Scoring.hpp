@@ -1,6 +1,9 @@
 #ifndef SCORING_H
 #define SCORING_H
 
+// --- Heavy mate prioritization for minimax and eval ---
+constexpr int MATE_SCORE = 100000; 
+
 // --- Move ordering scoring ---
 constexpr int KILLER_SCORE = 9000; // Score to prioritize killer moves
 constexpr int TT_MOVE_SCORE = 100000; // Score for TT-hint moves
