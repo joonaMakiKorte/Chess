@@ -98,18 +98,24 @@ The engine combines .NET's rich UI capabilities with C++'s computational efficie
   - **`Assets/`**: Assets for the UI.
     - **`Images/`**: Images for different UI elements.
   - **`App.xaml(.cs)`**: Application-wide properties. Mostly unused currently but useful for app scaling.
-  - **`App/packages.config`**: Application-wide configuration settings.
+  - **`App.config`**: Application-wide configuration settings.
 - **`Properties/`**: Application-wide properties.
+- **`app.config`**: Stores configuration settings.
+- **`packages.config`**: Handles NuGet package installing.
 
 ## Chess Engine
 The **chess engine** implements 64-bit **bitboard logic**, enabling **highly optimized** board operations through bitwise manipulation. 
-Board states are communicated to the frontend via [FEN notation](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation), which is parsed on the C# side.
+Board states are communicated to the frontend via **JSON format**, which is parsed on the C# side.
 
 **For efficient data handling:**
 - Moves are encoded in 32-bit format for **compact storage**
 - The bitboard class **decodes and applies** moves to the board
 - **State validation checks** for check/mate/stalemate after each move
 - **Threefold repetition** detection uses [Zobrist hashing](https://www.chessprogramming.org/Zobrist_Hashing), with hash keys updated incrementally via XOR
+- **Board state JSON**: Contains the following information:
+  - Board position in [FEN notation](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
+  - Game status *(e.g., checkmate, stalemate, ongoing, etc.)*
+  - Last applied move in algebraic notation
 
 ## Chess UI
 The frontend is built using **WPF** to provide a **modern graphical interface** with smooth, intuitive controls. The application is configured as a **Windows Application** rather than a Console Application to ensure a seamless and focused user experience. The UI design follows a **minimalistic and calming aesthetic**, emphasizing ease of use and clarity for an enjoyable chess experience.
@@ -149,7 +155,7 @@ The AI combines advanced search algorithms with dynamic evaluation functions to 
  - **Evaluation function**: Assesses board states to guide decision-making
 
 ### Search algorithm
-The core [minimax](https://en.wikipedia.org/wiki/Minimax) algorithm with alpha-beta pruning:
+The core [minimax](https://en.wikipedia.org/wiki/Minimax) algorithm with **negamax**-approach and **alpha-beta** pruning:
 - Alternates turns recursively using apply-evaluate-undo sequences
 - Limits search depth for practical evaluation times
 - Prunes clearly disadvantageous branches for efficiency
@@ -196,13 +202,13 @@ Dual-phase evaluation system:
 
 ### **Known limitations** *(To be fixed)*
 - **Endgame Forced Mates**: The AI currently struggles to detect and execute forced mates in endgame scenarios.
-- **White Side Play**: The AI performs significantly worse when playing as White compared to Black.
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 
 ## Acknowledgements
 - **[Chess Programming Wiki](http://chessprogramming.org/)**: For providing the main insights and theories on chess programming principles
+- **[codfish-engine](https://github.com/jsilll/codfish)**: For providing the magic bitboard logic
 
 ## Contact
 For any questions or suggestions, please open an issue or contact the maintainer directly.
