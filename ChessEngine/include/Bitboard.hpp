@@ -29,6 +29,7 @@ private:
     int en_passant_target;
 
     int half_moves; // Helps determine if a draw can be claimed
+    int ply_count; // = Half moves since game start (used for mate-distance -calculation)
 
     PinData pin_data; // Data of pinned pieces
     AttackData attack_data; // Data of attack squares and attack ray to king
@@ -60,7 +61,6 @@ public:
     std::string getEnPassantString() const;
     std::string getGameState(bool white);
     int getHalfMoveClock() const; 
-    int getFullMoveNumber() const;
     std::string squareToString(int square) const;
 
     // Get all legal moves from a square as a bitboard
@@ -79,6 +79,8 @@ public:
 
     // Check if the move resulted in and update state accordingly
     void updateDrawByRepetition();
+
+    int getPlyCount() const;
 
 private:
     // Initialize board data at the beginning of the game

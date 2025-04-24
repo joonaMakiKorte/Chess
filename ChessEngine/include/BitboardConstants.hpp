@@ -58,6 +58,8 @@ constexpr int MAX_DEPTH = 64;  // Maximum playsible search depth for minimax
 constexpr int MAX_SEARCH_DEPTH = 128; // Covers maximum plausible search depth for minimax + quiescence
 // 128 for alignment + would be an extreme case which is near impossible
 
+constexpr int MAX_PLY_FROM_MATE = 128; // Max ply num to reach mate (64 turns) (adjustable)
+
 constexpr int MAX_QUIET_MOVES = 4; // Cap to limit the number of quiet moves stored
 
 // Margin for delta pruning in q-search
