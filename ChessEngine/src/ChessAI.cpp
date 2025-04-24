@@ -415,6 +415,11 @@ int ChessAI::endgameMinimax(std::unique_ptr<Bitboard>& board, int depth, int alp
         return endgameQuiescence(board, alpha, beta, maximizing);
     }
 
+    // Check extension: Extend if current player is in check
+    if (maximizing ? board->state.isCheckBlack() : board->state.isCheckWhite()) {
+        depth += 1; // Standard extension
+    }
+
     // --- Main Negamax Search Logic ---
     std::array<uint32_t, MAX_MOVES> move_list;
     int move_count = 0;
@@ -539,7 +544,7 @@ int ChessAI::endgameQuiescence(std::unique_ptr<Bitboard>& board, int alpha, int 
         }
         board->applyMoveAI(move_list[i], maximizing);
 
-        int score = -quiescence(board, -beta, -alpha, !maximizing);  // Negamax approach
+        int score = -endgameQuiescence(board, -beta, -alpha, !maximizing);  // Negamax approach
 
         board->undoMoveAI(move_list[i], maximizing);
 
